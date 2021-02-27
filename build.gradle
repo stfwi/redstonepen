@@ -1,5 +1,5 @@
 // @file build.gradle
-// Anthill Inside mod gradle build relay (mc1.15.1)
+// Redstone Pen mod gradle build relay (mc1.15.1)
 import net.minecraftforge.gradle.common.task.SignJar
 buildscript {
   repositories {
@@ -16,7 +16,7 @@ apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 //-----------------------------------------------------------------------------
-version = "${version_anthillinside}"
+version = "${version_redstonepen}"
 group = "wile.redstonepen"
 archivesBaseName = "redstonepen-${version_minecraft}"
 
@@ -74,7 +74,7 @@ jar {
       "Specification-Vendor": "wilechaote",
       "Specification-Version": "1", // We are version 1 of ourselves
       "Implementation-Title": project.name,
-      "Implementation-Version": "${version_anthillinside}",
+      "Implementation-Version": "${version_redstonepen}",
       "Implementation-Vendor" :"wilechaote",
       "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
     ])

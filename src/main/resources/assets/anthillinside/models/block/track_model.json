@@ -1,7 +1,0 @@
-{
-  "parent": "redstonepen:block/block",
-  "textures": {
-    "r": "redstonepen:block/track",
-		"particle": "redstonepen:block/track"
-  }
-}

@@ -1,0 +1,29 @@
+{
+
+	"ambientocclusion": false,
+	"textures": {
+		"particle": "redstonepen:block/track_particle",
+		"r": "redstonepen:block/track",
+    "overlay": "redstonepen:block/track_overlay"
+	},
+	"elements": [
+		{
+			"from": [7, 0, 15.875],
+			"to": [9, 7, 16],
+			"shade": false,
+			"faces": {
+				"north": {"texture": "#r", "tintindex": 0},
+				"south": {"texture": "#r", "tintindex": 0}
+			}
+		},
+		{
+			"from": [7, 0, 15.875],
+			"to": [9, 7, 16],
+			"shade": false,
+			"faces": {
+				"north": {"texture": "#overlay"},
+				"south": {"texture": "#overlay"}
+			}
+		}
+	]
+}

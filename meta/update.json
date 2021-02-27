@@ -1,14 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.16.5": {
-    "1.0.2": "[F] Fixed vertical placement issue (thx geometricaldude).\n[A] Added crop farming (experimental).",
-    "1.0.1": "[A] Added shearing and animal feeding.\n[A] Added No-Ants indicator in the GUI.\n[A] Added No-Ingredients indicator for composting.",
-    "1.0.1-b1": "[M] Slightly increased item collection range to Hopper Minecart range.\n[A] Ant Hive color variants added (normal, sand covered, dirt covered).",
-    "1.0.0": "[R] Initial release.\n[F] Fixed Furnace Processing missing fuel container item insertion.\n[F] Tooltip typo fixed.",
-    "1.0.0-b1": "[U] Initial concept implementation."
+    "1.0.0-b1": "[A] Initial implementation."
   },
   "promos": {
-    "1.16.5-recommended": "1.0.2",
-    "1.16.5-latest": "1.0.2"
+    "1.16.5-recommended": "",
+    "1.16.5-latest": "1.0.0-b1"
   }
 }
