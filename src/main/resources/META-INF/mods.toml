@@ -1,0 +1,31 @@
+# @file mods.toml
+# @spec TOML v0.5.0 (https://github.com/toml-lang/toml)
+modLoader="javafml" # forge FML java
+loaderVersion="[33,)"
+#issueTrackerURL="https://github.com/stfwi/redstonepen/issues/"
+license="MIT"
+
+[[mods]]
+modId="redstonepen"
+version="${file.jarVersion}"
+displayName="Redstone Pen"
+description="Adds a pen to draw detailed Redstone tracks."
+authors="wilechaote"
+credits=""
+#updateJSONURL="https://raw.githubusercontent.com/stfwi/redstonepen/1.16/meta/update.json"
+displayURL="https://github.com/stfwi/redstonepen/"
+logoFile="logo.png"
+
+[[dependencies.redstonepen]]
+  modId="forge"
+  mandatory=true
+  versionRange="[35.0.2,)"
+  ordering="NONE"
+  side="BOTH"
+
+[[dependencies.redstonepen]]
+  modId="minecraft"
+  mandatory=true
+  versionRange="[1.16.4,)"
+  ordering="NONE"
+  side="BOTH"

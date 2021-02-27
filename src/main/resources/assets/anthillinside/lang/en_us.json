@@ -1,0 +1,11 @@
+{
+  "language": "English",
+  "language.code": "en_us",
+  "language.region": "United States",
+  "itemGroup.tabanthillinside": "Redstone Pen",
+  "redstonepen.tooltip.hint.extended": "§6[§9shift§r More§6]§r",
+  "redstonepen.tooltip.hint.help": "§6[§9ctrl-shift§r Help§6]§r",
+  "block.redstonepen.track": "Redstone Track",
+  "item.redstonepen.pen": "Redstone Pen",
+  "item.redstonepen.pen.help": "Used to place Redstone Tracks. Repair with Redstone in your crafting inventory."
+}
