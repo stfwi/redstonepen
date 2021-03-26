@@ -153,7 +153,7 @@ public class RedstoneTrack
         /**
          * Returns the state bit for a connector on a specific face.
          */
-        public static final long getConnectorBit(Direction face)
+        public static final long getBulkConnectorBit(Direction face)
         { return connections.BULK_FACE_MAPPING_REV.get(face); }
 
         /**
@@ -192,6 +192,9 @@ public class RedstoneTrack
             default: return false;
           }
         }
+
+        public static final boolean hasBulkConnection(long mask, Direction side)
+        { return ((connections.BULK_FACE_MAPPING_REV.get(side) & mask) != 0); }
 
         public static final boolean hasRedstoneConnection(long mask, Direction side)
         {
@@ -842,7 +845,7 @@ public class RedstoneTrack
     }
 
     public boolean hasVanillaRedstoneConnection(Direction side)
-    { return defs.connections.hasVanillaWireConnection(getStateFlags(), side); }
+    { return defs.connections.hasVanillaWireConnection(getStateFlags(), side) || (defs.connections.getBulkConnectorBit(side)!=0); }
 
     public int getRedstonePower(Direction redstone_side, boolean weak)
     {
@@ -901,7 +904,7 @@ public class RedstoneTrack
         if((hit.length() < 0.12) && ((!remove_only) || (connection_flags!=0))) {
           // Centre connection
           if(getWireFlags()!=0) {
-            flip_mask = defs.connections.getConnectorBit(face);
+            flip_mask = defs.connections.getBulkConnectorBit(face);
             offset_dir = face;
           } else {
             flip_mask = defs.connections.getWireBit(face, dir);
@@ -997,16 +1000,21 @@ public class RedstoneTrack
       getBlock().disablePower(true);
       final BlockState state = world.getBlockState(pos);
       int p = (!state.isIn(Blocks.REDSTONE_WIRE) && (!state.isIn(getBlock()))) ? state.getWeakPower(world, pos, redstone_side) : 0;
+      //if(trace_) Auxiliaries.logWarn(String.format("GETNWS from [%s @ %s] = %dw", posstr(getPos()), redstone_side, p));
       if(!state.shouldCheckWeakPower(world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
       // According to world.getStrongPower():
       for(Direction rs_side: Direction.values()) {
-        final BlockState side_state = world.getBlockState(pos.offset(rs_side));
-        if(side_state.isIn(Blocks.REDSTONE_WIRE) || state.isIn(getBlock())) continue;
-        final int p_in = side_state.getStrongPower(world, pos, rs_side);
-        if(p_in >= 15) { getBlock().disablePower(false); return 15; }
-        if(p_in > p) p = p_in;
+        final BlockPos side_pos = pos.offset(rs_side);
+        final BlockState side_state = world.getBlockState(side_pos);
+        if(side_state.isIn(Blocks.REDSTONE_WIRE) || side_state.isIn(getBlock())) continue;
+        final int p_in = side_state.getStrongPower(world, side_pos, rs_side);
+        if(p_in > p) {
+          p = p_in;
+          if(p >= 15) break;
+        }
       }
       getBlock().disablePower(false);
+      //if(trace_) Auxiliaries.logWarn(String.format("GETNWS from [%s @ %s] = %dS", posstr(getPos()), redstone_side, p));
       return p;
     }
 
@@ -1016,7 +1024,7 @@ public class RedstoneTrack
       boolean power_changed = false;
       for(TrackNet net: nets_) {
         if(!net.neighbour_positions.contains(fromPos)) continue;
-        //if(trace_) Auxiliaries.logWarn(String.format("NCHG: %s.%s ---> %s", posstr(fromPos), fromBlock.getRegistryName().getPath(), posstr(getPos())));
+        //if(trace_) Auxiliaries.logWarn(String.format("CHNOT: (%s) from [%s]", posstr(getPos()), posstr(fromPos)));
         int pmax = 0;
         for(int i = 0; i<net.neighbour_positions.size(); ++i) {
           final BlockPos ext_pos = net.neighbour_positions.get(i);

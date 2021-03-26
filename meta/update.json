@@ -1,10 +1,11 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.16.5": {
+    "1.0.0": "[R] Initial release.\n[F] Internal mod logo image rescaled.\n[F] Fixed indirect non-wire bulk connector power reading.",
     "1.0.0-b1": "[A] Initial implementation."
   },
   "promos": {
-    "1.16.5-recommended": "",
-    "1.16.5-latest": "1.0.0-b1"
+    "1.16.5-recommended": "1.0.0",
+    "1.16.5-latest": "1.0.0"
   }
 }
