@@ -468,8 +468,11 @@ public class RedstoneTrack
     public BlockState updatePostPlacement(BlockState state, Direction facing, BlockState facingState, IWorld world, BlockPos pos, BlockPos facingPos)
     {
       if(!world.isRemote()) {
-        tile(world, pos).map(te->te.handlePostPlacement(facing, facingState, facingPos));
-        world.getPendingBlockTicks().scheduleTick(pos, this, 1);
+        if(tile(world, pos).map(te->te.handlePostPlacement(facing, facingState, facingPos)).orElse(true)) {
+          world.getPendingBlockTicks().scheduleTick(pos, this, 1);
+        } else {
+          world.removeBlock(pos, false);
+        }
       }
       return super.updatePostPlacement(state, facing, facingState, world, pos, facingPos);
     }
@@ -845,7 +848,7 @@ public class RedstoneTrack
     }
 
     public boolean hasVanillaRedstoneConnection(Direction side)
-    { return defs.connections.hasVanillaWireConnection(getStateFlags(), side) || (defs.connections.getBulkConnectorBit(side)!=0); }
+    { return defs.connections.hasVanillaWireConnection(getStateFlags(), side) || ((state_flags_ & defs.connections.getBulkConnectorBit(side))!=0); }
 
     public int getRedstonePower(Direction redstone_side, boolean weak)
     {
@@ -991,7 +994,7 @@ public class RedstoneTrack
           handleNeighborChanged(facingState.getBlock(), fromPos);
         }
       }
-      return true;
+      return (getWireFlags()!=0);
     }
 
     private int getNonWireSignal(World world, BlockPos pos, Direction redstone_side)
