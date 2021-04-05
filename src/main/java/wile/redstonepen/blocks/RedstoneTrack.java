@@ -539,11 +539,12 @@ public class RedstoneTrack
         }
         if(te.getWireFlags() == 0) {
           world.setBlockState(pos, state.getFluidState().getBlockState(), 1|2);
+        } else {
+          te.updateAllPowerValuesFromAdjacent();
         }
-        world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
-        te.updateAllPowerValuesFromAdjacent();
         state.updateNeighbours(world, pos, 1|2);
         notifyAdjacent(world, pos);
+        world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
         return ActionResultType.CONSUME;
       } else {
         final ItemStack stack = player.getHeldItem(hand);
@@ -665,7 +666,10 @@ public class RedstoneTrack
     public void notifyAdjacent(World world, BlockPos pos)
     {
       world.notifyNeighborsOfStateChange(pos, this);
-      for(Direction side: Direction.values()) world.notifyNeighborsOfStateExcept(pos.offset(side), this, side.getOpposite());
+      for(Direction side: Direction.values()) {
+        final BlockPos ppos = pos.offset(side);
+        world.notifyNeighborsOfStateExcept(ppos, world.getBlockState(ppos).getBlock(), side.getOpposite());
+      }
     }
 
   }
@@ -892,7 +896,7 @@ public class RedstoneTrack
       final ItemStack used_stack = player.getHeldItem(hand);
       if((!used_stack.isEmpty()) && (used_stack.getItem()!=Items.REDSTONE) && (used_stack.getItem()!=ModContent.PEN_ITEM)) return 0;
       long flip_mask;
-      Direction offset_dir;
+      final Direction face = clicked_face.getOpposite();
       {
         Vector3d hit = hitvec.subtract(Vector3d.copyCentered(pos));
         switch(clicked_face) {
@@ -900,7 +904,6 @@ public class RedstoneTrack
           case SOUTH: case NORTH: hit = hit.mul(1, 1, 0); break;
           default:                hit = hit.mul(1, 0, 1); break;
         }
-        final Direction face = clicked_face.getOpposite();
         final Direction dir = Direction.getFacingFromVector(hit.getX(), hit.getY(), hit.getZ());
         final int wire_flags = getWireFlags();
         final int connection_flags = getConnectionFlags();
@@ -908,22 +911,24 @@ public class RedstoneTrack
           // Centre connection
           if(getWireFlags()!=0) {
             flip_mask = defs.connections.getBulkConnectorBit(face);
-            offset_dir = face;
           } else {
             flip_mask = defs.connections.getWireBit(face, dir);
-            offset_dir = dir;
           }
         } else {
           // Wire
           flip_mask = defs.connections.getWireBit(face, dir);
-          offset_dir = dir;
         }
       }
       // Explicit assignment not just `state_flags_ ^ flip_mask`.
       int material_use = 0;
       if((state_flags_ & flip_mask) != 0) {
         state_flags_ &= ~flip_mask;
-        material_use = -1;
+        material_use -= 1;
+        final long bc = defs.connections.getBulkConnectorBit(face);
+        if((state_flags_ & defs.connections.getAllElementsOnFace(face)) == bc) {
+          state_flags_ &= ~bc;
+          material_use -= 1;
+        }
         if(getWireFlags()==0) {
           material_use -= getRedstoneDustCount();
           state_flags_ = 0;
@@ -937,15 +942,28 @@ public class RedstoneTrack
         }
         if(can_place) {
           state_flags_ |= flip_mask;
-          material_use = +1;
+          material_use += 1;
         }
       }
       if(material_use != 0) {
         updateConnections();
         updateAllPowerValuesFromAdjacent();
         sync(true);
-        TileEntity te = getWorld().getTileEntity(getPos().offset(offset_dir));
-        if(te instanceof TrackTileEntity) ((TrackTileEntity)te).updateConnections();
+        for(int i=0; (i<defs.STATE_FLAG_WIR_COUNT) && (flip_mask!=0); ++i) {
+          long bit = 1L<<i;
+          if((flip_mask & bit) == 0) continue;
+          flip_mask &= ~bit;
+          Tuple<Direction,Direction> side_dir = defs.connections.getWireBitSideAndDirection(bit);
+          TileEntity te = getWorld().getTileEntity(getPos().offset(side_dir.getB()));
+          if(te instanceof TrackTileEntity) {
+            ((TrackTileEntity)te).updateConnections();
+          } else {
+            te = getWorld().getTileEntity(getPos().offset(side_dir.getA()).offset(side_dir.getB()));
+            if(te instanceof TrackTileEntity) {
+              ((TrackTileEntity)te).updateConnections();
+            }
+          }
+        }
       }
       return material_use;
     }
@@ -1100,7 +1118,7 @@ public class RedstoneTrack
       final long external_connected_routes[] = {0,0,0,0,0,0};
       // Own internal and external connections.
       {
-        long external_connection_flags = getStateFlags();
+        long external_connection_flags = getStateFlags() & (defs.STATE_FLAG_WIR_MASK|defs.STATE_FLAG_CON_MASK);
         for(Map.Entry<Long,Tuple<Direction,Direction>> kv: defs.connections.INTERNAL_EDGE_CONNECTION_MAPPING.entrySet()) {
           final long wire_bit_pair = kv.getKey();
           if((getStateFlags() & wire_bit_pair) != wire_bit_pair) continue; // no internal connection.
@@ -1169,31 +1187,37 @@ public class RedstoneTrack
                 final Direction tdir = side_dir.getB();
                 final BlockPos wire_pos = getPos().offset(tdir);
                 final BlockState wire_state = getWorld().getBlockState(wire_pos);
-                // adjacent track
+                boolean diagonal_check = false;
                 if(wire_state.isIn(getBlock())) {
                   // adjacent track
                   long adjacent_mask = defs.connections.getWireBit(tsid, tdir.getOpposite());
                   TrackTileEntity adj_te = RedstoneTrackBlock.tile(getWorld(), wire_pos).orElse(null);
-                  if((adj_te==null) || (adj_te.getStateFlags() & adjacent_mask) != adjacent_mask) continue;
-                  block_positions.add(wire_pos);
-                  block_sides.add(tsid);
-                  internal_sides.add(side);
-                  power_sides.add(tdir);
-                  track_connection_updates.add(adj_te);
-                  continue;
+                  if((adj_te==null) || (adj_te.getStateFlags() & adjacent_mask) != adjacent_mask) {
+                    diagonal_check = true;
+                  } else {
+                    block_positions.add(wire_pos);
+                    block_sides.add(tsid);
+                    internal_sides.add(side);
+                    power_sides.add(tdir);
+                    track_connection_updates.add(adj_te);
+                    continue;
+                  }
                 }
                 // adjacent vanilla wire
-                if(wire_state.isIn(Blocks.REDSTONE_WIRE)) {
+                if((!diagonal_check) && wire_state.isIn(Blocks.REDSTONE_WIRE)) {
                   // adjacent vanilla redstone wire, only connected on the bottom face.
-                  if(side!=Direction.DOWN) continue;
-                  block_positions.add(wire_pos);
-                  block_sides.add(tdir.getOpposite()); // NOT the redstone side, the real face.
-                  internal_sides.add(side);
-                  power_sides.add(tdir);
-                  continue;
+                  if(side!=Direction.DOWN) {
+                    diagonal_check = true;
+                  } else {
+                    block_positions.add(wire_pos);
+                    block_sides.add(tdir.getOpposite()); // NOT the redstone side, the real face.
+                    internal_sides.add(side);
+                    power_sides.add(tdir);
+                    continue;
+                  }
                 }
                 // power source
-                if(wire_state.canProvidePower()) {
+                if((!diagonal_check) && wire_state.canProvidePower()) {
                   // adjacent power block
                   block_positions.add(wire_pos);
                   block_sides.add(tdir.getOpposite()); // real face.

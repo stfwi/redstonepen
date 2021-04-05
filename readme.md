@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.0.2-b1   [F] Fixed placement net update of tracks around the corner.
+                  [I] Known issue: Power update around the corner when placing
+                      not yet always working.
+
     - v1.0.1      [F] Fixed block removal bug (thx focsie).
                   [F] Fixed vanilla Redstone connection bug.
 
