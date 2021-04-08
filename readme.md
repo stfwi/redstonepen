@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.2      [A] Added Redstone Quill (uses Redstone directly from the inventory).
+                  [F] Wire update when removing diagonal/orthogonal tracks fixed.
+
     - v1.0.2-b1   [F] Fixed placement net update of tracks around the corner.
                   [I] Known issue: Power update around the corner when placing
                       not yet always working.

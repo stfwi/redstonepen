@@ -45,10 +45,8 @@ import java.util.stream.Collectors;
 
 public class RedstonePenItem extends Item
 {
-  private static final int MAX_DAMAGE = 256;
-
   public RedstonePenItem(Item.Properties properties)
-  { super(properties.group(ModRedstonePen.ITEMGROUP).maxStackSize(1).defaultMaxDamage(MAX_DAMAGE).setNoRepair()); }
+  { super(properties.group(ModRedstonePen.ITEMGROUP).setNoRepair()); }
 
   //------------------------------------------------------------------------------------------------------------------
 
@@ -56,7 +54,11 @@ public class RedstonePenItem extends Item
   @OnlyIn(Dist.CLIENT)
   public void addInformation(ItemStack stack, @Nullable World world, List<ITextComponent> tooltip, ITooltipFlag flag)
   {
-    tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.numstored", getMaxDamage(stack)-getDamage(stack)));
+    if(getMaxDamage(stack)>0) {
+      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.numstored", getMaxDamage(stack)-getDamage(stack)));
+    } else {
+      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.rsfrominventory"));
+    }
     Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true);
   }
 
@@ -73,8 +75,9 @@ public class RedstonePenItem extends Item
   { return false; }
 
   @Override
+  @SuppressWarnings("deprecation")
   public boolean isDamageable()
-  { return true; }
+  { return getMaxDamage()>0; }
 
   @Override
   public boolean isBookEnchantable(ItemStack stack, ItemStack book)
@@ -86,11 +89,11 @@ public class RedstonePenItem extends Item
 
   @Override
   public boolean showDurabilityBar(ItemStack stack)
-  { return stack.getDamage()>0; }
+  { return isDamageable() && (stack.getDamage()>0); }
 
   @Override
   public double getDurabilityForDisplay(ItemStack stack)
-  { return MathHelper.clamp((double)stack.getDamage()/(double)stack.getMaxDamage(), 0.0, 1.0); }
+  { return (stack.getMaxDamage()<=0) ? (1.0) : MathHelper.clamp((double)stack.getDamage()/(double)stack.getMaxDamage(), 0.0, 1.0); }
 
   @Override
   public int getRGBDurabilityForDisplay(ItemStack stack)
@@ -101,40 +104,26 @@ public class RedstonePenItem extends Item
   { return true; }
 
   @Override
+  @SuppressWarnings("deprecation")
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, PlayerEntity player)
   {
-    if(getDamage(stack) == 0) return true;
     final World world = player.getEntityWorld();
     final BlockState state = world.getBlockState(pos);
     if(state.getBlock() instanceof RedstoneDiodeBlock) return false;
     if(state.isIn(Blocks.REDSTONE_WIRE)) {
+      pushRedstone(stack, 1, player);
       world.removeBlock(pos, false);
-      setDamage(stack, getDamage(stack)-1);
       return true;
     }
     if(state.isIn(ModContent.TRACK_BLOCK)) {
-      RedstoneTrack.TrackTileEntity te = RedstoneTrack.RedstoneTrackBlock.tile(world, pos).orElse(null);
-      if(te==null) return false;
       RayTraceResult rt = player.pick(10.0, 0f, false);
       final BlockRayTraceResult brtr = (BlockRayTraceResult)rt;
       if(rt.getType() != RayTraceResult.Type.BLOCK) return false;
-      if(!world.isRemote()) {
-        int redstone_use = te.handleActivation(pos, player, player.getActiveHand(), ((BlockRayTraceResult)rt).getFace(), rt.getHitVec(), true);
-        if(redstone_use < 0) {
-          redstone_use = -redstone_use;
-          world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
-          if(stack.getDamage() >= redstone_use) {
-            stack.setDamage(stack.getDamage()-redstone_use);
-          } else {
-            redstone_use -= stack.getDamage();
-            stack.setDamage(0);
-            Inventories.give(player, new ItemStack(Items.REDSTONE, redstone_use));
-          }
-          state.updateNeighbours(world, pos, 1|2);
-          ModContent.TRACK_BLOCK.notifyAdjacent(world, pos);
-        }
+      Hand hand = (player.getHeldItem(Hand.MAIN_HAND).getItem()==this) ? Hand.MAIN_HAND : Hand.OFF_HAND;
+      if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
+        ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).onBlockActivated(state, player.getEntityWorld(), pos, player, hand, ((BlockRayTraceResult)rt), true);
+        return true;
       }
-      return true;
     }
     return (state.getBlockHardness(world, pos) != 0);
   }
@@ -151,11 +140,9 @@ public class RedstonePenItem extends Item
     final BlockState state = world.getBlockState(pos);
     if(state.isIn(Blocks.REDSTONE_WIRE)) {
       if(context.getWorld().isRemote()) return ActionResultType.SUCCESS;
-      if(stack.getDamage() > 0) {
-        stack.setDamage(stack.getDamage()-1);
-        world.removeBlock(pos, false);
-        world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
-      }
+      pushRedstone(stack, 1, player);
+      world.removeBlock(pos, false);
+      world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
       return ActionResultType.CONSUME;
     }
     if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
@@ -253,5 +240,85 @@ public class RedstonePenItem extends Item
 
   private String powerFormatted(int p)
   { return String.format("%02d", p); }
+
+  //------------------------------------------------------------------------------------------------------------------
+
+  public static final void pushRedstone(ItemStack stack, int amount, PlayerEntity player)
+  {
+    if(amount <= 0) {
+      return;
+    } else if(isPen(stack)) {
+      if(!stack.isDamageable()) {
+        ItemStack remaining = Inventories.insert(player, new ItemStack(Items.REDSTONE, amount), false);
+        if(!remaining.isEmpty()) Inventories.give(player, remaining); // also drops, but with sound.
+      } else if(stack.getDamage() >= amount) {
+        stack.setDamage(stack.getDamage()-amount);
+      } else {
+        amount -= stack.getDamage();
+        stack.setDamage(0);
+        Inventories.give(player, new ItemStack(Items.REDSTONE, amount));
+      }
+    } else if(stack.getItem() == Items.REDSTONE) {
+      if(stack.getCount() <= stack.getMaxStackSize()-amount) {
+        stack.grow(amount);
+      } else {
+        Inventories.give(player, new ItemStack(Items.REDSTONE, amount));
+      }
+    } else {
+      Inventories.give(player, new ItemStack(Items.REDSTONE, amount));
+    }
+  }
+
+  public static final int popRedstone(ItemStack stack, int amount, PlayerEntity player, Hand hand)
+  {
+    if(amount <= 0) {
+      return 0;
+    } else if(isPen(stack)) {
+      if(stack.isDamageable()) {
+        int dmg = stack.getDamage()+amount;
+        if(dmg >= stack.getMaxDamage()) {
+          amount = stack.getMaxDamage()-stack.getDamage();
+          player.setHeldItem(hand, ItemStack.EMPTY);
+        } else {
+          stack.setDamage(dmg);
+        }
+      } else {
+        amount = Inventories.extract(player, Items.REDSTONE, amount, false).getCount();
+      }
+    } else if(stack.getItem() == Items.REDSTONE) {
+      if(stack.getCount() <= amount) {
+        amount = stack.getCount();
+        player.setHeldItem(hand, ItemStack.EMPTY);
+      } else {
+        stack.shrink(amount);
+      }
+    }
+    return amount;
+  }
+
+  public static final boolean hasEnoughRedstone(ItemStack stack, int amount, PlayerEntity player)
+  {
+    if(isPen(stack)) {
+      if(stack.isDamageable()) {
+        return stack.getDamage() < (stack.getMaxDamage()-amount);
+      } else {
+        return Inventories.extract(player, Items.REDSTONE, amount, true).getCount() >= amount;
+      }
+    } else if(stack.getItem() == Items.REDSTONE) {
+      return (stack.getCount() >= amount);
+    } else {
+      return false;
+    }
+  }
+
+  public static final boolean isFullRedstone(ItemStack stack)
+  {
+    if(isPen(stack)) return (stack.getDamage() <= 0);
+    if(stack.getItem() == Items.REDSTONE) return (stack.getCount() >= stack.getMaxStackSize());
+    return false;
+  }
+
+  public static final boolean isPen(ItemStack stack)
+  { return (stack.getItem() instanceof RedstonePenItem); }
 
 }

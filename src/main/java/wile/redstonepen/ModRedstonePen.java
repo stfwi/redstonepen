@@ -11,12 +11,12 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipeSerializer;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -34,13 +34,15 @@ public class ModRedstonePen
   public static final String MODID = "redstonepen";
   public static final String MODNAME = "Redstone Pen";
   public static final Logger LOGGER = LogManager.getLogger();
+  public static final boolean USE_CONFIG = false;
 
   public ModRedstonePen()
   {
-    Auxiliaries.init(MODID, LOGGER, ()->new CompoundNBT());
+    Auxiliaries.init(MODID, LOGGER, ModConfig::getServerConfig);
     Auxiliaries.logGitVersion(MODNAME);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
+    if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
   }
 
@@ -89,6 +91,19 @@ public class ModRedstonePen
     @SubscribeEvent
     public static final void onRecipeRegistry(final RegistryEvent.Register<IRecipeSerializer<?>> event)
     { event.getRegistry().register(wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER); }
+
+    public static void onConfigLoad(net.minecraftforge.fml.config.ModConfig.Loading configEvent)
+    { ModConfig.apply(); }
+
+    public static void onConfigReload(net.minecraftforge.fml.config.ModConfig.Reloading configEvent)
+    {
+      try {
+        logger().info("Config file changed {}", configEvent.getConfig().getFileName());
+        ModConfig.apply();
+      } catch(Throwable e) {
+        logger().error("Failed to load changed config: " + e.getMessage());
+      }
+    }
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -98,6 +113,6 @@ public class ModRedstonePen
   public static final ItemGroup ITEMGROUP = (new ItemGroup("tab" + MODID) {
     @OnlyIn(Dist.CLIENT)
     public ItemStack createIcon()
-    { return new ItemStack(ModContent.PEN_ITEM); }
+    { return new ItemStack(ModContent.QUILL_ITEM); }
   });
 }

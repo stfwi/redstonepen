@@ -49,11 +49,16 @@ public class ModContent
   // Items
   //--------------------------------------------------------------------------------------------------------------------
 
+  public static final RedstonePenItem QUILL_ITEM = (RedstonePenItem)((new RedstonePenItem(
+    (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).maxStackSize(1).defaultMaxDamage(0)
+  ).setRegistryName(MODID, "quill")));
+
   public static final RedstonePenItem PEN_ITEM = (RedstonePenItem)((new RedstonePenItem(
-    (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON)
+    (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).maxStackSize(0).defaultMaxDamage(256)
   ).setRegistryName(MODID, "pen")));
 
   private static final Item modItems[] = {
+    QUILL_ITEM,
     PEN_ITEM,
   };
 
