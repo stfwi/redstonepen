@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCT",
+    "CCD"
+  ],
+  "key": {
+    "C": { "item": "minecraft:cobblestone" },
+    "T": { "item": "minecraft:redstone_torch" },
+    "D": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "item": "redstonepen:relay"
+  }
+}

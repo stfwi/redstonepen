@@ -8,6 +8,7 @@ package wile.redstonepen;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Rarity;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.Block;
@@ -22,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import wile.redstonepen.blocks.*;
 import wile.redstonepen.items.*;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
+import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -41,8 +43,16 @@ public class ModContent
     Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance().variableOpacity().tickRandomly()
   )).setRegistryName(new ResourceLocation(MODID, "track"));
 
+  public static final CircuitComponents.RelayBlock RELAY_BLOCK = (CircuitComponents.RelayBlock)(new CircuitComponents.RelayBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
+  )).setRegistryName(new ResourceLocation(MODID, "relay"));
+
+
   private static final Block modBlocks[] = {
-    TRACK_BLOCK
+    TRACK_BLOCK,
+    RELAY_BLOCK,
   };
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -83,7 +93,11 @@ public class ModContent
   { return Arrays.asList(modBlocks); }
 
   public static List<Item> allItems()
-  { return Arrays.asList(modItems); }
+  {
+    final List<Item> items = new ArrayList<>(Arrays.asList(modItems));
+    items.add(new BlockItem(RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    return items;
+  }
 
   @Nonnull
   public static List<Block> getRegisteredBlocks()

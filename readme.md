@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.3      [A] Added Redstone Relay.
+
     - v1.0.2      [A] Added Redstone Quill (uses Redstone directly from the inventory).
                   [F] Wire update when removing diagonal/orthogonal tracks fixed.
 

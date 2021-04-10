@@ -278,6 +278,9 @@ public class Auxiliaries
   public static final AxisAlignedBB getPixeledAABB(double x0, double y0, double z0, double x1, double y1, double z1)
   { return new AxisAlignedBB(x0/16.0, y0/16.0, z0/16.0, x1/16.0, y1/16.0, z1/16.0); }
 
+  public static final AxisAlignedBB getRotatedAABB(AxisAlignedBB bb, Direction new_facing)
+  { return getRotatedAABB(bb, new_facing, false); }
+
   public static final AxisAlignedBB getRotatedAABB(AxisAlignedBB bb, Direction new_facing, boolean horizontal_rotation)
   {
     if(!horizontal_rotation) {

@@ -223,15 +223,34 @@ public class RedstonePenItem extends Item
         }
       }
     } else if(state.canProvidePower()) {
-      tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(Math.max(state.getStrongPower(world, pos, rs_side), state.getWeakPower(world, pos, rs_side))));
+      int p = Math.max(state.getStrongPower(world, pos, rs_side), state.getWeakPower(world, pos, rs_side));
+      if(p > 0) {
+        tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(p));
+      } else {
+        Direction max_side = null;
+        for(Direction side: Direction.values()) {
+          if(side == rs_side) continue;
+          int ps = Math.max(state.getStrongPower(world, pos, side), state.getWeakPower(world, pos, side));
+          if(ps > p) {
+            p = ps;
+            max_side = side;
+            if(p >= 15) break;
+          }
+        }
+        if((p == 0) || (max_side==null)) {
+          tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(p));
+        } else {
+          tc = Auxiliaries.localizable("overlay.direct_power_at", powerFormatted(p), max_side.getOpposite());
+        }
+      }
     } else if(state.shouldCheckWeakPower(world, pos, rs_side)) {
-      Direction dmax = Direction.values()[0];
+      Direction max_side = Direction.values()[0];
       int p = 0;
       for(Direction d: Direction.values()) {
         int ps = world.getRedstonePower(pos.offset(d), d);
-        if(ps>p) { p = ps; dmax=d; if(p>=15){break;} }
+        if(ps>p) { p = ps; max_side=d; if(p>=15){break;} }
       }
-      if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), dmax);
+      if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side);
     }
     if(tc!=null) Overlay.show((ServerPlayerEntity)entity, tc, 400);
   }
