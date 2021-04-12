@@ -190,7 +190,7 @@ public class RedstonePenItem extends Item
   @Override
   public void inventoryTick(ItemStack stack, World world, Entity entity, int itemSlot, boolean isSelected)
   {
-    if((!isSelected) || (!entity.isSneaking()) || (world.isRemote()) || ((world.getGameTime() & 0x3) != 0) || (!(entity instanceof ServerPlayerEntity))) return;
+    if((!isSelected) || (!entity.isSneaking()) || (world.isRemote()) || ((world.getGameTime() & 0x1) != 0) || (!(entity instanceof ServerPlayerEntity))) return;
     RayTraceResult rt = entity.pick(10.0, 0f, false);
     if(rt.getType() != RayTraceResult.Type.BLOCK) return;
     final BlockRayTraceResult brtr = (BlockRayTraceResult)rt;

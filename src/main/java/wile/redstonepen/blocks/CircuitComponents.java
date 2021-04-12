@@ -8,7 +8,7 @@ package wile.redstonepen.blocks;
 
 import net.minecraft.block.*;
 import net.minecraft.block.material.PushReaction;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.particles.RedstoneParticleData;
 import net.minecraft.pathfinding.PathType;
 import net.minecraft.state.BooleanProperty;
@@ -20,7 +20,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
@@ -34,6 +33,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 
@@ -44,14 +44,15 @@ import java.util.*;
 public class CircuitComponents
 {
   //--------------------------------------------------------------------------------------------------------------------
-  // Definitions
+  // DirectedComponentBlock
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class SingleOutputComponent extends StandardBlocks.WaterLoggable
+  public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable
   {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final IntegerProperty ROTATION = IntegerProperty.create("rotation", 0, 3);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final IntegerProperty STATE = IntegerProperty.create("state", 0, 1);
     protected final Map<BlockState, VoxelShape> shapes_ = new HashMap<>();
 
     protected static final List<Direction> facing_mapping_ = new ArrayList<>();
@@ -148,10 +149,10 @@ public class CircuitComponents
       return VoxelShapes.fullCube();
     }
 
-    public SingleOutputComponent(long config, Block.Properties builder, AxisAlignedBB aabb)
+    public DirectedComponentBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
     {
       super(config, builder);
-      setDefaultState(super.getDefaultState().with(FACING, Direction.NORTH).with(ROTATION,0).with(POWERED,false));
+      setDefaultState(super.getDefaultState().with(FACING, Direction.NORTH).with(ROTATION,0).with(POWERED,false).with(STATE,0));
       stateContainer.getValidStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabb)));
     }
 
@@ -159,7 +160,7 @@ public class CircuitComponents
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder)
-    { super.fillStateContainer(builder); builder.add(FACING, ROTATION, POWERED); }
+    { super.fillStateContainer(builder); builder.add(FACING, ROTATION, POWERED, STATE); }
 
     @Override
     public boolean hasTileEntity(BlockState state)
@@ -203,12 +204,12 @@ public class CircuitComponents
     public boolean hasComparatorInputOverride(BlockState state)
     { return false; }
 
-    @Deprecated
+    @Override
     @SuppressWarnings("deprecation")
     public int getComparatorInputOverride(BlockState state, World world, BlockPos pos)
     { return 0; }
 
-    @Deprecated
+    @Override
     @SuppressWarnings("deprecation")
     public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
     { return 0; }
@@ -280,7 +281,7 @@ public class CircuitComponents
           }
           break;
       }
-      state = state.with(FACING, face).with(ROTATION, rotation).with(POWERED, false);
+      state = state.with(FACING, face).with(ROTATION, rotation).with(POWERED, false).with(STATE,0);
       if(!isValidPosition(state, context.getWorld(), context.getPos())) return null;
       return state;
     }
@@ -290,8 +291,7 @@ public class CircuitComponents
     {
       if((state=super.updatePostPlacement(state, facing, facingState, world, pos, facingPos)) == null) return state;
       if(!isValidPosition(state, world, pos)) return Blocks.AIR.getDefaultState();
-      if(!world.isRemote()) world.getPendingBlockTicks().scheduleTick(pos, this, 1);
-      return state;
+      return (world instanceof ServerWorld) ? update(state, (ServerWorld)world, pos, facingPos) : state;
     }
 
     @Override
@@ -314,12 +314,15 @@ public class CircuitComponents
     {
       if(isMoving || state.isIn(newState.getBlock())) return;
       super.onReplaced(state, world, pos, newState, isMoving);
-      if(!world.isRemote()) world.notifyNeighborsOfStateChange(pos, this);
+      if(!world.isRemote()) {
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+        world.notifyNeighborsOfStateChange(pos, this);
+      }
     }
 
     @Override
-    public ActionResultType onBlockActivated(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rtr)
-    { return ActionResultType.PASS; }
+    public boolean shouldCheckWeakPower(BlockState state, IWorldReader world, BlockPos pos, Direction side)
+    { return false; }
 
     @Override
     @SuppressWarnings("deprecation")
@@ -327,14 +330,12 @@ public class CircuitComponents
     { update(state, world, pos, fromPos); }
 
     @OnlyIn(Dist.CLIENT)
-    private void spawnPoweredParticle(World world, Random rand, BlockPos pos, Vector3f color, Direction from, Direction to, float minChance, float maxChance) {
-      float f = maxChance - minChance;
-      if(rand.nextFloat() < 0.3f * f) {
-        double c1 = 0.4375;
-        double c2 = minChance + f * rand.nextFloat();
-        double p0 = 0.5 + (c1 * from.getXOffset()) + (c2*.1 * to.getXOffset());
-        double p1 = 0.5 + (c1 * from.getYOffset()) + (c2*.1 * to.getYOffset());
-        double p2 = 0.5 + (c1 * from.getZOffset()) + (c2*.1 * to.getZOffset());
+    private void spawnPoweredParticle(World world, Random rand, BlockPos pos, Vector3f color, Direction side, float chance) {
+      if(rand.nextFloat() < chance) {
+        double c2 = chance * rand.nextFloat();
+        double p0 = 0.5 + (side.getXOffset()*0.4) + (c2*.1);
+        double p1 = 0.5 + (side.getYOffset()*0.4) + (c2*.1);
+        double p2 = 0.5 + (side.getZOffset()*0.4) + (c2*.1);
         world.addParticle(new RedstoneParticleData(color.getX(),color.getY(),color.getZ(),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
@@ -345,8 +346,8 @@ public class CircuitComponents
     {
       if(!state.get(POWERED) || (rand.nextFloat() > 0.4)) return;
       final Vector3f color = new Vector3f(0.6f,0,0);
-      Direction side = Direction.NORTH;
-      spawnPoweredParticle(world, rand, pos, color, side, side.getOpposite(), -0.5F, 0.5F);
+      Direction side = state.get(FACING);
+      spawnPoweredParticle(world, rand, pos, color, side, 0.3f);
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -354,46 +355,38 @@ public class CircuitComponents
     protected final Direction getOutputFacing(BlockState state)
     { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + state.get(ROTATION)); }
 
-    public void update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
-    {}
-
-  }
-
-
-  //--------------------------------------------------------------------------------------------------------------------
-  // Block
-  //--------------------------------------------------------------------------------------------------------------------
-
-  public static class RelayBlock extends SingleOutputComponent
-  {
-    public RelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
-    { super(config, builder, aabb); }
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    protected void notifyOutputNeighbourOfStateChange(BlockState state, World world, BlockPos pos)
     {
-      if(!state.get(POWERED)) return 0;
-      if(redsrone_side != getOutputFacing(state).getOpposite()) return 0;
-      return 15;
-    }
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public int getStrongPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
-    { return getWeakPower(state, world, pos, redsrone_side); }
-
-    @Override
-    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
-    {
-      if(!isPowered(state, world, pos)) {
-        world.setBlockState(pos, state.with(POWERED,false), 2|15);
+      final Direction facing = getOutputFacing(state);
+      final BlockPos adjacent_pos = pos.offset(facing);
+      final BlockState adjacent_state = world.getBlockState(adjacent_pos);
+      try {
+        adjacent_state.neighborChanged(world, adjacent_pos, this, pos, false);
+        if(adjacent_state.shouldCheckWeakPower(world, adjacent_pos, facing)) {
+          world.notifyNeighborsOfStateExcept(adjacent_pos, state.getBlock(), facing.getOpposite());
+        }
+      } catch(Throwable ex) {
+        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        Vector3d p = Vector3d.copyCentered(pos);
+        world.addEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(this, 1)));
+        world.setBlockState(pos, world.getBlockState(pos).getFluidState().getBlockState(), 2|16);
       }
     }
 
-    // ---------------------------------------------------------------------------------------------------
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    { return state; }
 
-    private boolean isPowered(BlockState state, World world, BlockPos pos)
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // RelayBlock
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class RelayBlock extends DirectedComponentBlock
+  {
+    private boolean lock_update = false;
+
+    protected boolean isPowered(BlockState state, World world, BlockPos pos)
     {
       final Direction output_side = getOutputFacing(state);
       final Direction mount_side = state.get(FACING);
@@ -405,23 +398,131 @@ public class CircuitComponents
       return false;
     }
 
+    public RelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { super(config, builder, aabb); }
+
     @Override
-    public void update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    @SuppressWarnings("deprecation")
+    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return ((!state.get(POWERED)) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15;}
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getStrongPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return getWeakPower(state, world, pos, redsrone_side); }
+
+    @Override
+    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
     {
-      boolean is_powered = state.get(POWERED);
-      if(isPowered(state, world, pos)) {
-        if(!is_powered) {
-          world.setBlockState(pos, state.with(POWERED,true), 2|15);
-        }
-      } else {
-        if(is_powered) {
-          if(!world.getPendingBlockTicks().isTickScheduled(pos, this)) {
-            world.getPendingBlockTicks().scheduleTick(pos, this, 2);
-          }
-        }
+      final boolean powered = isPowered(state, world, pos);
+      if(powered == state.get(POWERED)) return;
+      if(!powered) {
+        lock_update = true;
+        world.setBlockState(pos, state.with(POWERED,false), 2|15);
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+        lock_update = false;
       }
     }
 
+    @Override
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    {
+      final boolean powered = isPowered(state, world, pos);
+      if(powered == state.get(POWERED)) return state;
+      if(world.getPendingBlockTicks().isTickScheduled(pos, this)) return state;
+      if(powered) {
+        lock_update = true;
+        world.setBlockState(pos, state.with(POWERED,true), 2|15);
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+        lock_update = false;
+      } else {
+        world.getPendingBlockTicks().scheduleTick(pos, this, 2);
+      }
+      return state;
+    }
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // InvertedRelayBlock
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class InvertedRelayBlock extends RelayBlock
+  {
+    private boolean lock_update = false;
+
+    public InvertedRelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { super(config, builder, aabb); }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return (state.get(POWERED) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+
+    @Override
+    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
+    {
+      final boolean powered = isPowered(state, world, pos);
+      if(powered == state.get(POWERED)) return;
+      if(powered) {
+        lock_update = true;
+        world.setBlockState(pos, state.with(POWERED,true), 2|15);
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+        lock_update = false;
+      }
+    }
+
+    @Override
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    {
+      final boolean powered = isPowered(state, world, pos);
+      if(powered == state.get(POWERED)) return state;
+      if(world.getPendingBlockTicks().isTickScheduled(pos, this)) return state;
+      if(powered) {
+        world.getPendingBlockTicks().scheduleTick(pos, this, 2);
+      } else {
+        lock_update = true;
+        world.setBlockState(pos, state.with(POWERED,false), 2|15);
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+        lock_update = false;
+      }
+      return state;
+    }
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // BistableRelayBlock
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class BistableRelayBlock extends RelayBlock
+  {
+    public BistableRelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { super(config, builder, aabb); }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return ((state.get(STATE) == 0) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+
+    @Override
+    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
+    {}
+
+    @Override
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    {
+      final boolean powered = isPowered(state, world, pos);
+      final boolean pwstate = state.get(POWERED);
+      if(powered == pwstate) return state;
+      state = state.with(POWERED, powered);
+      if(powered && !pwstate) {
+        state = state.with(STATE, (state.get(STATE)==0) ? (1) : (0));
+        world.setBlockState(pos, state, 2|15);
+        notifyOutputNeighbourOfStateChange(state, world, pos);
+      } else if(!powered && pwstate) {
+        world.setBlockState(pos, state, 2|15);
+      }
+      return state;
+    }
   }
 
 }

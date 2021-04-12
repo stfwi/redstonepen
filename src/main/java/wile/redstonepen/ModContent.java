@@ -49,10 +49,24 @@ public class ModContent
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "relay"));
 
+  public static final CircuitComponents.InvertedRelayBlock INVERTED_RELAY_BLOCK = (CircuitComponents.InvertedRelayBlock)(new CircuitComponents.InvertedRelayBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
+  )).setRegistryName(new ResourceLocation(MODID, "inverted_relay"));
+
+  public static final CircuitComponents.BistableRelayBlock BISTABLE_RELAY_BLOCK = (CircuitComponents.BistableRelayBlock)(new CircuitComponents.BistableRelayBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
+  )).setRegistryName(new ResourceLocation(MODID, "bistable_relay"));
+
 
   private static final Block modBlocks[] = {
     TRACK_BLOCK,
     RELAY_BLOCK,
+    INVERTED_RELAY_BLOCK,
+    BISTABLE_RELAY_BLOCK,
   };
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -96,6 +110,8 @@ public class ModContent
   {
     final List<Item> items = new ArrayList<>(Arrays.asList(modItems));
     items.add(new BlockItem(RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    items.add(new BlockItem(INVERTED_RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
+    items.add(new BlockItem(BISTABLE_RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
     return items;
   }
 

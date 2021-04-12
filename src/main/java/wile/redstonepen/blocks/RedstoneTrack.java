@@ -33,16 +33,14 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.math.vector.Vector3i;
-import net.minecraft.world.IBlockReader;
+import net.minecraft.world.*;
 import net.minecraft.item.*;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.Constants.NBT;
 import wile.redstonepen.ModContent;
+import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
@@ -465,6 +463,10 @@ public class RedstoneTrack
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redsrone_side, false)).orElse(0) : 0; }
 
     @Override
+    public boolean shouldCheckWeakPower(BlockState state, IWorldReader world, BlockPos pos, Direction side)
+    { return false; }
+
+    @Override
     public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
@@ -550,11 +552,22 @@ public class RedstoneTrack
     public void neighborChanged(BlockState state, World world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     {
       if(world.isRemote()) return;
+
       final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
       if(blocks_to_update.isEmpty()) return;
-      for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
-        //Auxiliaries.logWarn(String.format("NCUP:    [%d,%d,%d] -> [%d,%d,%d]", pos.getX(), pos.getY(), pos.getZ(), update_pos.getX(), update_pos.getY(), update_pos.getZ()));
-        world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
+      try {
+        for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
+          //Auxiliaries.logWarn(String.format("NCUP:    [%d,%d,%d] -> [%d,%d,%d]", pos.getX(), pos.getY(), pos.getZ(), update_pos.getX(), update_pos.getY(), update_pos.getZ()));
+          world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
+        }
+      } catch(Throwable ex) {
+        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        final int num_redstone = tile(world, pos).map(te->te.getRedstoneDustCount()).orElse(0);
+        if(num_redstone > 0) {
+          Vector3d p = Vector3d.copyCentered(pos);
+          world.addEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(Items.REDSTONE, num_redstone)));
+          world.setBlockState(pos, world.getBlockState(pos).getFluidState().getBlockState(), 2|16);
+        }
       }
     }
 
