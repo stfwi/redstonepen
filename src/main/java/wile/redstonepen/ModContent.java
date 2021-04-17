@@ -61,12 +61,18 @@ public class ModContent
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "bistable_relay"));
 
+  public static final CircuitComponents.PulseRelayBlock PULSE_RELAY_BLOCK = (CircuitComponents.PulseRelayBlock)(new CircuitComponents.PulseRelayBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
+  )).setRegistryName(new ResourceLocation(MODID, "pulse_relay"));
 
   private static final Block modBlocks[] = {
     TRACK_BLOCK,
     RELAY_BLOCK,
     INVERTED_RELAY_BLOCK,
     BISTABLE_RELAY_BLOCK,
+    PULSE_RELAY_BLOCK
   };
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -109,9 +115,10 @@ public class ModContent
   public static List<Item> allItems()
   {
     final List<Item> items = new ArrayList<>(Arrays.asList(modItems));
-    items.add(new BlockItem(RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
-    items.add(new BlockItem(INVERTED_RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
-    items.add(new BlockItem(BISTABLE_RELAY_BLOCK,  (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
+    items.add(new BlockItem(RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
+    items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
+    items.add(new BlockItem(PULSE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
     return items;
   }
 

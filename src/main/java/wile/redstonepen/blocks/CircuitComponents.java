@@ -525,4 +525,50 @@ public class CircuitComponents
     }
   }
 
+//--------------------------------------------------------------------------------------------------------------------
+  // PulseRelayBlock
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class PulseRelayBlock extends RelayBlock
+  {
+    public PulseRelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { super(config, builder, aabb); }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return ((state.get(STATE) == 0) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+
+    @Override
+    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random rnd)
+    {
+      if(state.get(STATE) == 0) return;
+      state = state.with(STATE, 0);
+      world.setBlockState(pos, state, 2|15);
+      notifyOutputNeighbourOfStateChange(state, world, pos);
+    }
+
+    @Override
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    {
+      final boolean powered = isPowered(state, world, pos);
+      if(powered != state.get(POWERED)) {
+        state = state.with(POWERED, powered);
+        if(powered) {
+          boolean trig = (state.get(STATE) == 0);
+          state = state.with(STATE, 1);
+          world.setBlockState(pos, state, 2|15);
+          if(trig) notifyOutputNeighbourOfStateChange(state, world, pos);
+        } else {
+          world.setBlockState(pos, state, 2|15);
+        }
+      }
+      if(!world.getPendingBlockTicks().isTickScheduled(pos, this)) {
+        world.getPendingBlockTicks().scheduleTick(pos, this, 2);
+      }
+      return state;
+    }
+  }
+
+
 }

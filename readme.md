@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.5      [A] Added Pulse Redstone Relay.
+
     - v1.0.4      [A] Added Inverted Redstone Relay.
                   [A] Added Bi-Stable Redstone Relay.
                   [F] Fixed Pen/Quill model 3rd person view.
