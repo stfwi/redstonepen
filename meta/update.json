@@ -1,6 +1,7 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.16.5": {
+    "1.0.6-b1": "[F] Fixed track net update power flags caching issue.",
     "1.0.5": "[A] Added Pulse Redstone Relay.",
     "1.0.4": "[A] Added Inverted Redstone Relay.\n[A] Added Bi-Stable Redstone Relay.\n[F] Fixed Pen/Quill model 3rd person view.",
     "1.0.3": "[A] Added Redstone Relay.",
@@ -12,6 +13,6 @@
   },
   "promos": {
     "1.16.5-recommended": "1.0.5",
-    "1.16.5-latest": "1.0.5"
+    "1.16.5-latest": "1.0.6-b1"
   }
 }

@@ -552,7 +552,6 @@ public class RedstoneTrack
     public void neighborChanged(BlockState state, World world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     {
       if(world.isRemote()) return;
-
       final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
       if(blocks_to_update.isEmpty()) return;
       try {
@@ -1121,6 +1120,9 @@ public class RedstoneTrack
 
     private void updateConnections(int recursion_left)
     {
+      final int[] current_side_powers = {0,0,0,0,0,0};
+      nets_.forEach((net)->net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power));
+      if(trace_) Auxiliaries.logWarn(String.format("UCON %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
       nets_.clear();
       final Set<TrackTileEntity> track_connection_updates = new HashSet<>();
       final long internal_connected_sides[] = {0,0,0,0,0,0};
@@ -1137,7 +1139,7 @@ public class RedstoneTrack
             internal_connected_sides[i] |= wire_bit_pair;
           }
         }
-        if(trace_) Auxiliaries.logWarn(String.format("UCON %s AA: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
+        if(trace_) Auxiliaries.logWarn(String.format("UCON %s CONFL: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
         // Condense internal connections.
         for(int k=0; k<2; ++k) {
           for(int i=0; i<6; ++i) {
@@ -1166,8 +1168,8 @@ public class RedstoneTrack
             external_connection_flags &= ~(mask|bulk);
           }
         }
-        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s B1: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
-        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s B2: ext:%08x | ext:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, external_connected_routes[0], external_connected_routes[1], external_connected_routes[2], external_connected_routes[3], external_connected_routes[4], external_connected_routes[5]));
+        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s CONSD: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
+        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s CONRT: ext:%08x | ext:[%08x %08x %08x %08x %08x %08x]", posstr(getPos()), external_connection_flags, external_connected_routes[0], external_connected_routes[1], external_connected_routes[2], external_connected_routes[3], external_connected_routes[4], external_connected_routes[5]));
       }
       // Net list.
       {
@@ -1273,7 +1275,9 @@ public class RedstoneTrack
           }
           // Update net
           if(!block_positions.isEmpty()) {
-            nets_.add(new TrackNet(block_positions, block_sides, new ArrayList<>(internal_sides), new ArrayList<>(power_sides)));
+            TrackNet net = new TrackNet(block_positions, block_sides, new ArrayList<>(internal_sides), new ArrayList<>(power_sides));
+            net.power = net.internal_sides.stream().mapToInt(side->current_side_powers[side.ordinal()]).max().orElse(0);
+            nets_.add(net);
             used_sides.addAll(internal_sides);
           }
         }
