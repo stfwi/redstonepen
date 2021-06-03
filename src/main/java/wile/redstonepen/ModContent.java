@@ -15,6 +15,7 @@ import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -67,13 +68,20 @@ public class ModContent
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "pulse_relay"));
 
-  private static final Block modBlocks[] = {
-    TRACK_BLOCK,
-    RELAY_BLOCK,
-    INVERTED_RELAY_BLOCK,
-    BISTABLE_RELAY_BLOCK,
-    PULSE_RELAY_BLOCK
-  };
+  public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)(new CircuitComponents.BridgeRelayBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
+  )).setRegistryName(new ResourceLocation(MODID, "bridge_relay"));
+
+  public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)(new ControlBox.ControlBoxBlock(
+    StandardBlocks.CFG_CUTOUT,
+    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    new AxisAlignedBB[]{
+      Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
+      Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
+    }
+  )).setRegistryName(new ResourceLocation(MODID, "control_box"));
 
   //--------------------------------------------------------------------------------------------------------------------
   // Items
@@ -86,11 +94,6 @@ public class ModContent
   public static final RedstonePenItem PEN_ITEM = (RedstonePenItem)((new RedstonePenItem(
     (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).maxStackSize(0).defaultMaxDamage(256)
   ).setRegistryName(MODID, "pen")));
-
-  private static final Item modItems[] = {
-    QUILL_ITEM,
-    PEN_ITEM,
-  };
 
   //--------------------------------------------------------------------------------------------------------------------
   // Tile entities and entities
@@ -110,15 +113,29 @@ public class ModContent
   //--------------------------------------------------------------------------------------------------------------------
 
   public static List<Block> allBlocks()
-  { return Arrays.asList(modBlocks); }
+  {
+    List<Block> blocks = new ArrayList<>();
+    blocks.add(TRACK_BLOCK);
+    blocks.add(RELAY_BLOCK);
+    blocks.add(INVERTED_RELAY_BLOCK);
+    blocks.add(BISTABLE_RELAY_BLOCK);
+    blocks.add(PULSE_RELAY_BLOCK);
+    blocks.add(BRIDGE_RELAY_BLOCK);
+    //blocks.add(CONTROLBOX_BLOCK);
+    return blocks;
+  }
 
   public static List<Item> allItems()
   {
-    final List<Item> items = new ArrayList<>(Arrays.asList(modItems));
+    final List<Item> items = new ArrayList<>();
+    items.add(QUILL_ITEM);
+    items.add(PEN_ITEM);
     items.add(new BlockItem(RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
     items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
     items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
     items.add(new BlockItem(PULSE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
+    items.add(new BlockItem(BRIDGE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
+    //items.add(new BlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
     return items;
   }
 

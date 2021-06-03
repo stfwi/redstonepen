@@ -281,6 +281,9 @@ public class Auxiliaries
   public static final AxisAlignedBB getRotatedAABB(AxisAlignedBB bb, Direction new_facing)
   { return getRotatedAABB(bb, new_facing, false); }
 
+  public static final AxisAlignedBB[] getRotatedAABB(AxisAlignedBB[] bb, Direction new_facing)
+  { return getRotatedAABB(bb, new_facing, false); }
+
   public static final AxisAlignedBB getRotatedAABB(AxisAlignedBB bb, Direction new_facing, boolean horizontal_rotation)
   {
     if(!horizontal_rotation) {

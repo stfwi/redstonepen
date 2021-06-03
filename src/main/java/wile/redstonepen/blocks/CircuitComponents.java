@@ -25,6 +25,7 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.item.*;
 import net.minecraft.world.IWorld;
@@ -33,6 +34,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
@@ -100,7 +102,7 @@ public class CircuitComponents
       });
     }
 
-    protected static final VoxelShape mapped_shape(BlockState state, AxisAlignedBB aabb)
+    protected static final VoxelShape mapped_shape(BlockState state, AxisAlignedBB[] aabb)
     {
       switch(state.get(FACING)) {
         case DOWN:
@@ -149,12 +151,15 @@ public class CircuitComponents
       return VoxelShapes.fullCube();
     }
 
-    public DirectedComponentBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    public DirectedComponentBlock(long config, Block.Properties builder, AxisAlignedBB[] aabbs)
     {
       super(config, builder);
       setDefaultState(super.getDefaultState().with(FACING, Direction.NORTH).with(ROTATION,0).with(POWERED,false).with(STATE,0));
-      stateContainer.getValidStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabb)));
+      stateContainer.getValidStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabbs)));
     }
+
+    public DirectedComponentBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { this(config, builder, new AxisAlignedBB[]{aabb}); }
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -355,6 +360,18 @@ public class CircuitComponents
     protected final Direction getOutputFacing(BlockState state)
     { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + state.get(ROTATION)); }
 
+    protected final Direction getFrontFacing(BlockState state)
+    { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + (((state.get(ROTATION)  )) & 0x3)); }
+
+    protected final Direction getRightFacing(BlockState state)
+    { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + (((state.get(ROTATION)+1)) & 0x3)); }
+
+    protected final Direction getBackFacing(BlockState state)
+    { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + (((state.get(ROTATION)+2)) & 0x3)); }
+
+    protected final Direction getLeftFacing(BlockState state)
+    { return facing_mapping_.get((state.get(FACING).getIndex()) * 4 + (((state.get(ROTATION)+3)) & 0x3)); }
+
     protected void notifyOutputNeighbourOfStateChange(BlockState state, World world, BlockPos pos)
     {
       final Direction facing = getOutputFacing(state);
@@ -384,7 +401,7 @@ public class CircuitComponents
 
   public static class RelayBlock extends DirectedComponentBlock
   {
-    private boolean lock_update = false;
+    protected boolean lock_update = false;
 
     protected boolean isPowered(BlockState state, World world, BlockPos pos)
     {
@@ -525,7 +542,7 @@ public class CircuitComponents
     }
   }
 
-//--------------------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------------------
   // PulseRelayBlock
   //--------------------------------------------------------------------------------------------------------------------
 
@@ -570,5 +587,132 @@ public class CircuitComponents
     }
   }
 
+  //--------------------------------------------------------------------------------------------------------------------
+  // BridgeRelayBlock
+  //--------------------------------------------------------------------------------------------------------------------
 
+  public static class BridgeRelayBlock extends RelayBlock
+  {
+    private int power_update_recursion_level_ = 0;
+
+    public BridgeRelayBlock(long config, Block.Properties builder, AxisAlignedBB aabb)
+    { super(config, builder, aabb); }
+
+    protected int getInputPower(World world, BlockPos relay_pos, Direction side)
+    {
+      final BlockPos pos = relay_pos.offset(side);
+      final BlockState state = world.getBlockState(pos);
+      int p = 0;
+      if(power_update_recursion_level_ < 32) {
+        ++power_update_recursion_level_;
+        if(state.isIn(Blocks.REDSTONE_WIRE)) {
+          p = Math.max(0, state.get(RedstoneWireBlock.POWER)-2);
+        } else if(state.isIn(ModContent.TRACK_BLOCK)) {
+          p = Math.max(0, RedstoneTrack.RedstoneTrackBlock.tile(world, pos).map((te->te.getRedstonePower(side, true))).orElse(0)-2);
+        } else if(state.isIn(ModContent.BRIDGE_RELAY_BLOCK)) {
+          if(state.get(FACING) != world.getBlockState(relay_pos).get(FACING)) {
+            p = 0;
+          } else if((state.get(ROTATION) & 0x1) != (world.getBlockState(relay_pos).get(ROTATION) & 0x1)) {
+            p = 0;
+          } else {
+            p = getInputPower(world, pos, side);
+          }
+        } else {
+          p = state.getWeakPower(world, pos, side);
+          if((p<15) && (!state.canProvidePower()) && (state.shouldCheckWeakPower(world, pos, side))) {
+            for(Direction d:Direction.values()) {
+              if(d == side.getOpposite()) continue;
+              p = Math.max(p, world.getBlockState(pos.offset(d)).getWeakPower(world, pos.offset(d), d));
+              if(p >= 15) break;
+            }
+          }
+        }
+        if((--power_update_recursion_level_) < 0) power_update_recursion_level_ = 0;
+      } else {
+        System.out.println("recursion");
+      }
+      return p;
+    }
+
+    protected boolean isWireConnected(World world, BlockPos relay_pos, Direction side)
+    {
+      final BlockPos pos = relay_pos.offset(side);
+      final BlockState state = world.getBlockState(pos);
+      return state.isIn(Blocks.REDSTONE_WIRE) || state.isIn(ModContent.TRACK_BLOCK);
+    }
+
+    protected boolean isSidePowered(World world, BlockPos pos, Direction side)
+    { return world.getRedstonePower(pos.offset(side), side) > 0; }
+
+    protected boolean isPowered(BlockState state, World world, BlockPos pos)
+    { return isSidePowered(world, pos, state.get(FACING)) || isSidePowered(world, pos, getOutputFacing(state).getOpposite()); }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redstone_side)
+    {
+      if((redstone_side == getOutputFacing(state).getOpposite())) return state.get(POWERED) ? 15 : 0;
+      int p = 0;
+      final Direction left = getLeftFacing(state);
+      final Direction right = getRightFacing(state);
+      if(((redstone_side == left) || (redstone_side == right)) && (world instanceof ServerWorld)) {
+        final boolean left_source = !isWireConnected((ServerWorld)world, pos, left) && world.getBlockState(pos.offset(left)).canProvidePower();
+        final boolean right_source = !isWireConnected((ServerWorld)world, pos, right) && world.getBlockState(pos.offset(right)).canProvidePower();
+        if(left_source && !right_source) {
+          p = getInputPower((ServerWorld)world, pos, left);
+        } else if(!left_source && right_source) {
+          p = getInputPower((ServerWorld)world, pos, right);
+        } else {
+          p = Math.max(0, Math.max(getInputPower((ServerWorld)world, pos, left), getInputPower((ServerWorld)world, pos, right)));
+        }
+        //System.out.println("p@" + redstone_side.getOpposite() + ":" + p);
+      }
+      return p;
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public int getStrongPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return getWeakPower(state, world, pos, redsrone_side); }
+
+    @Override
+    public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)
+    {
+      // Relay branch update
+      {
+        final boolean powered = isPowered(state, world, pos);
+        if(powered != state.get(POWERED)) {
+          if(!world.getPendingBlockTicks().isTickScheduled(pos, this)) {
+            if(powered) {
+              lock_update = true;
+              world.setBlockState(pos, (state=state.with(POWERED,true)), 2|15);
+              world.neighborChanged(pos.offset(getOutputFacing(state)), this, pos);
+              lock_update = false;
+            } else {
+              world.getPendingBlockTicks().scheduleTick(pos, this, 2);
+            }
+          }
+        }
+      }
+      // Wire branch update
+      if(fromPos != null) {
+        final Vector3i v = pos.subtract(fromPos);
+        final Direction dir = Direction.getFacingFromVector(v.getX(), v.getY(), v.getZ());
+        final Direction left = getLeftFacing(state);
+        final Direction right = getRightFacing(state);
+        if((dir == left) || (dir == right)) {
+          lock_update = true;
+          power_update_recursion_level_ = 0;
+          int pr = getWeakPower(state, world, pos, right);
+          int pl = getWeakPower(state, world, pos, left);
+          final boolean track_powered = (pr>0) || (pl>0);
+          //System.out.println("u->" + dir + " track_powered:" + track_powered);
+          if(track_powered != (state.get(STATE)==1)) world.setBlockState(pos, (state=state.with(STATE, track_powered?1:0)), 2|15);
+          world.neighborChanged(pos.offset(dir), this, pos);
+          lock_update = false;
+        }
+      }
+      return state;
+    }
+  }
 }

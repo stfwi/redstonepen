@@ -16,7 +16,6 @@
     "facing=down,powered=true,rotation=2,waterlogged=true":    { "model": "redstonepen:block/relay_n_on" , "x":  0, "y":180 },
     "facing=down,powered=true,rotation=3,waterlogged=false":   { "model": "redstonepen:block/relay_n_on" , "x":  0, "y":270 },
     "facing=down,powered=true,rotation=3,waterlogged=true":    { "model": "redstonepen:block/relay_n_on" , "x":  0, "y":270 },
-
     "facing=east,powered=false,rotation=0,waterlogged=false":  { "model": "redstonepen:block/relay_n_off", "x":270, "y": 90 },
     "facing=east,powered=false,rotation=0,waterlogged=true":   { "model": "redstonepen:block/relay_n_off", "x":270, "y": 90 },
     "facing=east,powered=false,rotation=1,waterlogged=false":  { "model": "redstonepen:block/relay_i_off", "x":270, "y": 90 },
@@ -33,7 +32,6 @@
     "facing=east,powered=true,rotation=2,waterlogged=true":    { "model": "redstonepen:block/relay_n_on" , "x": 90, "y":270 },
     "facing=east,powered=true,rotation=3,waterlogged=false":   { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":270 },
     "facing=east,powered=true,rotation=3,waterlogged=true":    { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":270 },
-
     "facing=north,powered=false,rotation=0,waterlogged=false": { "model": "redstonepen:block/relay_n_off", "x":270, "y":  0 },
     "facing=north,powered=false,rotation=0,waterlogged=true":  { "model": "redstonepen:block/relay_n_off", "x":270, "y":  0 },
     "facing=north,powered=false,rotation=1,waterlogged=false": { "model": "redstonepen:block/relay_i_off", "x":270, "y":  0 },
@@ -50,7 +48,6 @@
     "facing=north,powered=true,rotation=2,waterlogged=true":   { "model": "redstonepen:block/relay_n_on" , "x": 90, "y":180 },
     "facing=north,powered=true,rotation=3,waterlogged=false":  { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":180 },
     "facing=north,powered=true,rotation=3,waterlogged=true":   { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":180 },
-
     "facing=south,powered=false,rotation=0,waterlogged=false": { "model": "redstonepen:block/relay_n_off", "x":270, "y":180 },
     "facing=south,powered=false,rotation=0,waterlogged=true":  { "model": "redstonepen:block/relay_n_off", "x":270, "y":180 },
     "facing=south,powered=false,rotation=1,waterlogged=false": { "model": "redstonepen:block/relay_i_off", "x":270, "y":180 },
@@ -67,7 +64,6 @@
     "facing=south,powered=true,rotation=2,waterlogged=true":   { "model": "redstonepen:block/relay_n_on" , "x": 90, "y":  0 },
     "facing=south,powered=true,rotation=3,waterlogged=false":  { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":  0 },
     "facing=south,powered=true,rotation=3,waterlogged=true":   { "model": "redstonepen:block/relay_i_on" , "x": 90, "y":  0 },
-
     "facing=up,powered=false,rotation=0,waterlogged=false":    { "model": "redstonepen:block/relay_n_off", "x":180, "y":180 },
     "facing=up,powered=false,rotation=0,waterlogged=true":     { "model": "redstonepen:block/relay_n_off", "x":180, "y":180 },
     "facing=up,powered=false,rotation=1,waterlogged=false":    { "model": "redstonepen:block/relay_n_off", "x":180, "y":270 },
@@ -84,7 +80,6 @@
     "facing=up,powered=true,rotation=2,waterlogged=true":      { "model": "redstonepen:block/relay_n_on" , "x":180, "y":  0 },
     "facing=up,powered=true,rotation=3,waterlogged=false":     { "model": "redstonepen:block/relay_n_on" , "x":180, "y": 90 },
     "facing=up,powered=true,rotation=3,waterlogged=true":      { "model": "redstonepen:block/relay_n_on" , "x":180, "y": 90 },
-
     "facing=west,powered=false,rotation=0,waterlogged=false":  { "model": "redstonepen:block/relay_n_off", "x":270, "y":270 },
     "facing=west,powered=false,rotation=0,waterlogged=true":   { "model": "redstonepen:block/relay_n_off", "x":270, "y":270 },
     "facing=west,powered=false,rotation=1,waterlogged=false":  { "model": "redstonepen:block/relay_i_off", "x":270, "y":270 },
