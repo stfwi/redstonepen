@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Rarity;
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
@@ -41,42 +42,42 @@ public class ModContent
 
   public static final RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)(new RedstoneTrack.RedstoneTrackBlock(
     StandardBlocks.CFG_DEFAULT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance().variableOpacity().tickRandomly()
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak().dynamicShape().randomTicks()
   )).setRegistryName(new ResourceLocation(MODID, "track"));
 
   public static final CircuitComponents.RelayBlock RELAY_BLOCK = (CircuitComponents.RelayBlock)(new CircuitComponents.RelayBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "relay"));
 
   public static final CircuitComponents.InvertedRelayBlock INVERTED_RELAY_BLOCK = (CircuitComponents.InvertedRelayBlock)(new CircuitComponents.InvertedRelayBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "inverted_relay"));
 
   public static final CircuitComponents.BistableRelayBlock BISTABLE_RELAY_BLOCK = (CircuitComponents.BistableRelayBlock)(new CircuitComponents.BistableRelayBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "bistable_relay"));
 
   public static final CircuitComponents.PulseRelayBlock PULSE_RELAY_BLOCK = (CircuitComponents.PulseRelayBlock)(new CircuitComponents.PulseRelayBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "pulse_relay"));
 
   public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)(new CircuitComponents.BridgeRelayBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
   )).setRegistryName(new ResourceLocation(MODID, "bridge_relay"));
 
   public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)(new ControlBox.ControlBoxBlock(
     StandardBlocks.CFG_CUTOUT,
-    Block.Properties.create(Material.MISCELLANEOUS).doesNotBlockMovement().zeroHardnessAndResistance(),
+    AbstractBlock.Properties.of(Material.DECORATION).noCollission().instabreak(),
     new AxisAlignedBB[]{
       Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
       Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
@@ -88,11 +89,11 @@ public class ModContent
   //--------------------------------------------------------------------------------------------------------------------
 
   public static final RedstonePenItem QUILL_ITEM = (RedstonePenItem)((new RedstonePenItem(
-    (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).maxStackSize(1).defaultMaxDamage(0)
+    (new Item.Properties()).tab(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(0)
   ).setRegistryName(MODID, "quill")));
 
   public static final RedstonePenItem PEN_ITEM = (RedstonePenItem)((new RedstonePenItem(
-    (new Item.Properties()).group(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).maxStackSize(0).defaultMaxDamage(256)
+    (new Item.Properties()).tab(ModRedstonePen.ITEMGROUP).rarity(Rarity.UNCOMMON).stacksTo(0).defaultDurability(256)
   ).setRegistryName(MODID, "pen")));
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -100,7 +101,7 @@ public class ModContent
   //--------------------------------------------------------------------------------------------------------------------
 
   public static final TileEntityType<?> TET_TRACK = TileEntityType.Builder
-    .create(RedstoneTrack.TrackTileEntity::new, TRACK_BLOCK)
+    .of(RedstoneTrack.TrackTileEntity::new, TRACK_BLOCK)
     .build(null)
     .setRegistryName(MODID, "te_track");
 
@@ -130,11 +131,11 @@ public class ModContent
     final List<Item> items = new ArrayList<>();
     items.add(QUILL_ITEM);
     items.add(PEN_ITEM);
-    items.add(new BlockItem(RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
-    items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
-    items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
-    items.add(new BlockItem(PULSE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
-    items.add(new BlockItem(BRIDGE_RELAY_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
+    items.add(new BlockItem(RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
+    items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
+    items.add(new BlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
+    items.add(new BlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
     //items.add(new BlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
     return items;
   }
@@ -153,7 +154,7 @@ public class ModContent
 
   @OnlyIn(Dist.CLIENT)
   public static final void processContentClientSide()
-  { RenderTypeLookup.setRenderLayer(TRACK_BLOCK, RenderType.getCutout()); }
+  { RenderTypeLookup.setRenderLayer(TRACK_BLOCK, RenderType.cutout()); }
 
   @OnlyIn(Dist.CLIENT)
   public static void registerModels()

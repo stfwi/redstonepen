@@ -23,10 +23,10 @@ import javax.annotation.Nullable;
 public class Inventories
 {
   public static boolean areItemStacksIdentical(ItemStack a, ItemStack b)
-  { return (a.getItem()==b.getItem()) && ItemStack.areItemStackTagsEqual(a, b); }
+  { return (a.getItem()==b.getItem()) && ItemStack.tagMatches(a, b); }
 
   public static boolean areItemStacksDifferent(ItemStack a, ItemStack b)
-  { return (a.getItem()!=b.getItem()) || (!ItemStack.areItemStackTagsEqual(a, b)); }
+  { return (a.getItem()!=b.getItem()) || (!ItemStack.tagMatches(a, b)); }
 
   public static ItemStack extract(IItemHandler inventory, @Nullable ItemStack match, int amount, boolean simulate)
   {
@@ -67,9 +67,9 @@ public class Inventories
   {
     if(stack.isEmpty()) stack = ItemStack.EMPTY;
     if(hand == Hand.MAIN_HAND) {
-      player.inventory.mainInventory.set(player.inventory.currentItem, stack);
+      player.inventory.items.set(player.inventory.selected, stack);
     } else {
-      player.inventory.offHandInventory.set(0, stack);
+      player.inventory.offhand.set(0, stack);
     }
   }
 

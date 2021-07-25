@@ -46,13 +46,13 @@ import java.util.stream.Collectors;
 public class RedstonePenItem extends Item
 {
   public RedstonePenItem(Item.Properties properties)
-  { super(properties.group(ModRedstonePen.ITEMGROUP).setNoRepair()); }
+  { super(properties.tab(ModRedstonePen.ITEMGROUP).setNoRepair()); }
 
   //------------------------------------------------------------------------------------------------------------------
 
   @Override
   @OnlyIn(Dist.CLIENT)
-  public void addInformation(ItemStack stack, @Nullable World world, List<ITextComponent> tooltip, ITooltipFlag flag)
+  public void appendHoverText(ItemStack stack, @Nullable World world, List<ITextComponent> tooltip, ITooltipFlag flag)
   {
     if(getMaxDamage(stack)>0) {
       tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.numstored", getMaxDamage(stack)-getDamage(stack)));
@@ -67,16 +67,16 @@ public class RedstonePenItem extends Item
   { return (Collections.singletonList(ModRedstonePen.ITEMGROUP)); }
 
   @Override
-  public int getItemEnchantability()
+  public int getEnchantmentValue()
   { return 0; }
 
   @Override
-  public boolean getIsRepairable(ItemStack toRepair, ItemStack repair)
+  public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair)
   { return false; }
 
   @Override
   @SuppressWarnings("deprecation")
-  public boolean isDamageable()
+  public boolean canBeDepleted()
   { return getMaxDamage()>0; }
 
   @Override
@@ -89,11 +89,11 @@ public class RedstonePenItem extends Item
 
   @Override
   public boolean showDurabilityBar(ItemStack stack)
-  { return isDamageable() && (stack.getDamage()>0); }
+  { return canBeDepleted() && (stack.getDamageValue()>0); }
 
   @Override
   public double getDurabilityForDisplay(ItemStack stack)
-  { return (stack.getMaxDamage()<=0) ? (1.0) : MathHelper.clamp((double)stack.getDamage()/(double)stack.getMaxDamage(), 0.0, 1.0); }
+  { return (stack.getMaxDamage()<=0) ? (1.0) : MathHelper.clamp((double)stack.getDamageValue()/(double)stack.getMaxDamage(), 0.0, 1.0); }
 
   @Override
   public int getRGBDurabilityForDisplay(ItemStack stack)
@@ -107,25 +107,25 @@ public class RedstonePenItem extends Item
   @SuppressWarnings("deprecation")
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, PlayerEntity player)
   {
-    final World world = player.getEntityWorld();
+    final World world = player.getCommandSenderWorld();
     final BlockState state = world.getBlockState(pos);
     if(state.getBlock() instanceof RedstoneDiodeBlock) return false;
-    if(state.isIn(Blocks.REDSTONE_WIRE)) {
+    if(state.is(Blocks.REDSTONE_WIRE)) {
       pushRedstone(stack, 1, player);
       world.removeBlock(pos, false);
       return true;
     }
-    if(state.isIn(ModContent.TRACK_BLOCK)) {
+    if(state.is(ModContent.TRACK_BLOCK)) {
       RayTraceResult rt = player.pick(10.0, 0f, false);
       final BlockRayTraceResult brtr = (BlockRayTraceResult)rt;
       if(rt.getType() != RayTraceResult.Type.BLOCK) return false;
-      Hand hand = (player.getHeldItem(Hand.MAIN_HAND).getItem()==this) ? Hand.MAIN_HAND : Hand.OFF_HAND;
+      Hand hand = (player.getItemInHand(Hand.MAIN_HAND).getItem()==this) ? Hand.MAIN_HAND : Hand.OFF_HAND;
       if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
-        ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).onBlockActivated(state, player.getEntityWorld(), pos, player, hand, ((BlockRayTraceResult)rt), true);
+        ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).onBlockActivated(state, player.getCommandSenderWorld(), pos, player, hand, ((BlockRayTraceResult)rt), true);
         return true;
       }
     }
-    return (state.getBlockHardness(world, pos) != 0);
+    return (state.getDestroySpeed(world, pos) != 0);
   }
 
   @Override
@@ -134,51 +134,51 @@ public class RedstonePenItem extends Item
   {
     final PlayerEntity player = context.getPlayer();
     final Hand hand = context.getHand();
-    final BlockPos pos = context.getPos();
-    final Direction facing = context.getFace();
-    final World world = context.getWorld();
+    final BlockPos pos = context.getClickedPos();
+    final Direction facing = context.getClickedFace();
+    final World world = context.getLevel();
     final BlockState state = world.getBlockState(pos);
-    if(state.isIn(Blocks.REDSTONE_WIRE)) {
-      if(context.getWorld().isRemote()) return ActionResultType.SUCCESS;
+    if(state.is(Blocks.REDSTONE_WIRE)) {
+      if(context.getLevel().isClientSide()) return ActionResultType.SUCCESS;
       pushRedstone(stack, 1, player);
       world.removeBlock(pos, false);
-      world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
+      world.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundCategory.BLOCKS, 0.4f, 2f);
       return ActionResultType.CONSUME;
     }
     if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
       // Add/remove tracks to existing RedstoneTrackBlock
-      if(context.getWorld().isRemote()) return ActionResultType.SUCCESS;
-      if(player.getHeldItemOffhand().getItem() == Items.DEBUG_STICK) {
-        TileEntity te = world.getTileEntity(pos);
+      if(context.getLevel().isClientSide()) return ActionResultType.SUCCESS;
+      if(player.getOffhandItem().getItem() == Items.DEBUG_STICK) {
+        TileEntity te = world.getBlockEntity(pos);
         if(te instanceof RedstoneTrack.TrackTileEntity) ((RedstoneTrack.TrackTileEntity)te).toggle_trace(player);
         return ActionResultType.CONSUME;
       }
-      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getHitVec(), context.getFace(), context.getPos(), context.isInside());
-      return ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).onBlockActivated(state, world, pos, player, hand, rtr);
+      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), context.isInside());
+      return ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).use(state, world, pos, player, hand, rtr);
     }
     if(!RedstoneTrack.RedstoneTrackBlock.canBePlacedOnFace(state, world, pos, facing)) {
       // Cannot place here.
       return ActionResultType.PASS;
     }
-    if(context.getWorld().isRemote()) return ActionResultType.SUCCESS;
-    final BlockPos target_pos = pos.offset(facing);
+    if(context.getLevel().isClientSide()) return ActionResultType.SUCCESS;
+    final BlockPos target_pos = pos.relative(facing);
     final BlockState target_state = world.getBlockState(target_pos);
     if(target_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
       // Add/remove tracks to existing RedstoneTrackBlock
-      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getHitVec(), context.getFace(), target_pos, context.isInside());
-      return ((RedstoneTrack.RedstoneTrackBlock)target_state.getBlock()).onBlockActivated(target_state, world, target_pos, player, hand, rtr);
+      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getClickLocation(), context.getClickedFace(), target_pos, context.isInside());
+      return ((RedstoneTrack.RedstoneTrackBlock)target_state.getBlock()).use(target_state, world, target_pos, player, hand, rtr);
     } else {
-      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getHitVec(), context.getFace(), target_pos, context.isInside());
+      final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getClickLocation(), context.getClickedFace(), target_pos, context.isInside());
       final BlockItemUseContext ctx = new BlockItemUseContext(context.getPlayer(), context.getHand(), new ItemStack(Items.REDSTONE), rtr);
       final BlockState rs_state = ModContent.TRACK_BLOCK.getStateForPlacement(ctx);
       if(rs_state==null) return ActionResultType.FAIL;
-      if(!state.getBlock().isReplaceable(target_state, ctx)) return ActionResultType.FAIL;
-      if(!world.setBlockState(target_pos, rs_state, 1|2)) return ActionResultType.FAIL;
+      if(!state.getBlock().canBeReplaced(target_state, ctx)) return ActionResultType.FAIL;
+      if(!world.setBlock(target_pos, rs_state, 1|2)) return ActionResultType.FAIL;
       final BlockState placed_state = world.getBlockState(target_pos);
       if(!(placed_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock)) {
         world.removeBlock(target_pos, false);
         return ActionResultType.FAIL;
-      } else if(((RedstoneTrack.RedstoneTrackBlock)placed_state.getBlock()).onBlockActivated(placed_state, world, target_pos, player, hand, rtr)==ActionResultType.FAIL) {
+      } else if(((RedstoneTrack.RedstoneTrackBlock)placed_state.getBlock()).use(placed_state, world, target_pos, player, hand, rtr)==ActionResultType.FAIL) {
         return ActionResultType.FAIL;
       } else {
         ((RedstoneTrack.RedstoneTrackBlock)placed_state.getBlock()).checkSmartPlacement(placed_state, world, target_pos, player, hand, rtr);
@@ -190,17 +190,17 @@ public class RedstonePenItem extends Item
   @Override
   public void inventoryTick(ItemStack stack, World world, Entity entity, int itemSlot, boolean isSelected)
   {
-    if((!isSelected) || (!entity.isSneaking()) || (world.isRemote()) || ((world.getGameTime() & 0x1) != 0) || (!(entity instanceof ServerPlayerEntity))) return;
+    if((!isSelected) || (!entity.isShiftKeyDown()) || (world.isClientSide()) || ((world.getGameTime() & 0x1) != 0) || (!(entity instanceof ServerPlayerEntity))) return;
     RayTraceResult rt = entity.pick(10.0, 0f, false);
     if(rt.getType() != RayTraceResult.Type.BLOCK) return;
     final BlockRayTraceResult brtr = (BlockRayTraceResult)rt;
-    final BlockPos pos = brtr.getPos();
+    final BlockPos pos = brtr.getBlockPos();
     final BlockState state = world.getBlockState(pos);
     final Block block = state.getBlock();
-    final Direction rs_side = brtr.getFace().getOpposite();
+    final Direction rs_side = brtr.getDirection().getOpposite();
     TranslationTextComponent tc = null;
     if(block == Blocks.REDSTONE_WIRE) {
-      tc = Auxiliaries.localizable("overlay.wire_power", powerFormatted(state.get(RedstoneWireBlock.POWER)));
+      tc = Auxiliaries.localizable("overlay.wire_power", powerFormatted(state.getValue(RedstoneWireBlock.POWER)));
     } else if(block == ModContent.TRACK_BLOCK) {
       TrackTileEntity te = RedstoneTrack.RedstoneTrackBlock.tile(world, pos).orElse(null);
       if(te==null) return;
@@ -209,28 +209,28 @@ public class RedstonePenItem extends Item
         tc.append(new StringTextComponent(String.format(" | %016x | ", te.getStateFlags())));
         tc.append(new StringTextComponent(Arrays.stream(Direction.values()).map(side->side.toString().substring(0,1) + te.getRedstonePower(side.getOpposite(), false)).collect(Collectors.joining(","))));
       }
-    } else if(state.isIn(Blocks.REPEATER)) {
-      tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(state.get(RepeaterBlock.POWERED) ? 15 : 0));
-      tc.append(Auxiliaries.localizable("overlay.repeater_delay", state.get(RepeaterBlock.DELAY)));
-    } else if(state.isIn(Blocks.COMPARATOR)) {
-      final TileEntity te = world.getTileEntity(pos);
+    } else if(state.is(Blocks.REPEATER)) {
+      tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(state.getValue(RepeaterBlock.POWERED) ? 15 : 0));
+      tc.append(Auxiliaries.localizable("overlay.repeater_delay", state.getValue(RepeaterBlock.DELAY)));
+    } else if(state.is(Blocks.COMPARATOR)) {
+      final TileEntity te = world.getBlockEntity(pos);
       if(te instanceof ComparatorTileEntity) {
         tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(((ComparatorTileEntity)te).getOutputSignal()));
-        switch(state.get(ComparatorBlock.MODE)) {
+        switch(state.getValue(ComparatorBlock.MODE)) {
           case COMPARE: tc.append(Auxiliaries.localizable("overlay.comparator_compare")); break;
           case SUBTRACT: tc.append(Auxiliaries.localizable("overlay.comparator_subtract")); break;
           default: break;
         }
       }
-    } else if(state.canProvidePower()) {
-      int p = Math.max(state.getStrongPower(world, pos, rs_side), state.getWeakPower(world, pos, rs_side));
+    } else if(state.isSignalSource()) {
+      int p = Math.max(state.getDirectSignal(world, pos, rs_side), state.getSignal(world, pos, rs_side));
       if(p > 0) {
         tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(p));
       } else {
         Direction max_side = null;
         for(Direction side: Direction.values()) {
           if(side == rs_side) continue;
-          int ps = Math.max(state.getStrongPower(world, pos, side), state.getWeakPower(world, pos, side));
+          int ps = Math.max(state.getDirectSignal(world, pos, side), state.getSignal(world, pos, side));
           if(ps > p) {
             p = ps;
             max_side = side;
@@ -247,7 +247,7 @@ public class RedstonePenItem extends Item
       Direction max_side = Direction.values()[0];
       int p = 0;
       for(Direction d: Direction.values()) {
-        int ps = world.getRedstonePower(pos.offset(d), d);
+        int ps = world.getSignal(pos.relative(d), d);
         if(ps>p) { p = ps; max_side=d; if(p>=15){break;} }
       }
       if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side);
@@ -267,14 +267,14 @@ public class RedstonePenItem extends Item
     if(amount <= 0) {
       return;
     } else if(isPen(stack)) {
-      if(!stack.isDamageable()) {
+      if(!stack.isDamageableItem()) {
         ItemStack remaining = Inventories.insert(player, new ItemStack(Items.REDSTONE, amount), false);
         if(!remaining.isEmpty()) Inventories.give(player, remaining); // also drops, but with sound.
-      } else if(stack.getDamage() >= amount) {
-        stack.setDamage(stack.getDamage()-amount);
+      } else if(stack.getDamageValue() >= amount) {
+        stack.setDamageValue(stack.getDamageValue()-amount);
       } else {
-        amount -= stack.getDamage();
-        stack.setDamage(0);
+        amount -= stack.getDamageValue();
+        stack.setDamageValue(0);
         Inventories.give(player, new ItemStack(Items.REDSTONE, amount));
       }
     } else if(stack.getItem() == Items.REDSTONE) {
@@ -293,13 +293,13 @@ public class RedstonePenItem extends Item
     if(amount <= 0) {
       return 0;
     } else if(isPen(stack)) {
-      if(stack.isDamageable()) {
-        int dmg = stack.getDamage()+amount;
+      if(stack.isDamageableItem()) {
+        int dmg = stack.getDamageValue()+amount;
         if(dmg >= stack.getMaxDamage()) {
-          amount = stack.getMaxDamage()-stack.getDamage();
-          player.setHeldItem(hand, ItemStack.EMPTY);
+          amount = stack.getMaxDamage()-stack.getDamageValue();
+          player.setItemInHand(hand, ItemStack.EMPTY);
         } else {
-          stack.setDamage(dmg);
+          stack.setDamageValue(dmg);
         }
       } else {
         amount = Inventories.extract(player, Items.REDSTONE, amount, false).getCount();
@@ -307,7 +307,7 @@ public class RedstonePenItem extends Item
     } else if(stack.getItem() == Items.REDSTONE) {
       if(stack.getCount() <= amount) {
         amount = stack.getCount();
-        player.setHeldItem(hand, ItemStack.EMPTY);
+        player.setItemInHand(hand, ItemStack.EMPTY);
       } else {
         stack.shrink(amount);
       }
@@ -318,8 +318,8 @@ public class RedstonePenItem extends Item
   public static final boolean hasEnoughRedstone(ItemStack stack, int amount, PlayerEntity player)
   {
     if(isPen(stack)) {
-      if(stack.isDamageable()) {
-        return stack.getDamage() < (stack.getMaxDamage()-amount);
+      if(stack.isDamageableItem()) {
+        return stack.getDamageValue() < (stack.getMaxDamage()-amount);
       } else {
         return Inventories.extract(player, Items.REDSTONE, amount, true).getCount() >= amount;
       }
@@ -332,7 +332,7 @@ public class RedstonePenItem extends Item
 
   public static final boolean isFullRedstone(ItemStack stack)
   {
-    if(isPen(stack)) return (stack.getDamage() <= 0);
+    if(isPen(stack)) return (stack.getDamageValue() <= 0);
     if(stack.getItem() == Items.REDSTONE) return (stack.getCount() >= stack.getMaxStackSize());
     return false;
   }

@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.7-b1   [A] Mappings ported. Forge references updated to 1.16.5-36.2.0.
+
     - v1.0.6      [F] Bridging Relay added to support wire crossings.
 
     - v1.0.6-b1   [F] Fixed track net update power flags caching issue.

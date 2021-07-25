@@ -21,39 +21,27 @@ group = "wile.redstonepen"
 archivesBaseName = "redstonepen-${version_minecraft}"
 
 minecraft {
-  mappings channel: 'snapshot', version: "${version_fml_mappings}"
+  mappings channel: "official", version: "1.16.5" // mappings channel: 'snapshot', version: "${version_fml_mappings}"
   // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
   runs {
     client {
       workingDirectory project.file('run')
       property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
       property 'forge.logging.console.level', 'info'
-      mods {
-        redstonepen {
-          source sourceSets.main
-        }
-      }
+      mods { redstonepen { source sourceSets.main } }
     }
     server {
       workingDirectory project.file('run')
       property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
       property 'forge.logging.console.level', 'info'
-      mods {
-        redstonepen {
-          source sourceSets.main
-        }
-      }
+      mods { redstonepen { source sourceSets.main } }
     }
     data {
       workingDirectory project.file('run')
       property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
       property 'forge.logging.console.level', 'debug'
       args '--mod', 'redstonepen', '--all', '--output', file('src/generated/resources/')
-      mods {
-        redstonepen {
-          source sourceSets.main
-        }
-      }
+      mods { redstonepen { source sourceSets.main } }
     }
   }
 }

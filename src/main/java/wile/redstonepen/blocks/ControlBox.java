@@ -24,20 +24,20 @@ public class ControlBox
 
   public static class ControlBoxBlock extends CircuitComponents.DirectedComponentBlock
   {
-    public ControlBoxBlock(long config, Block.Properties builder, AxisAlignedBB[] aabb)
+    public ControlBoxBlock(long config, AbstractBlock.Properties builder, AxisAlignedBB[] aabb)
     { super(config, builder, aabb); }
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getWeakPower(BlockState state, IBlockReader world, BlockPos pos, Direction redstone_side)
+    public int getSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redstone_side)
     {
       return 0;
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getStrongPower(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
-    { return getWeakPower(state, world, pos, redsrone_side); }
+    public int getDirectSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
+    { return getSignal(state, world, pos, redsrone_side); }
 
     @Override
     public BlockState update(BlockState state, World world, BlockPos pos, @Nullable BlockPos fromPos)

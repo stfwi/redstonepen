@@ -112,7 +112,7 @@ public class ModRedstonePen
 
   public static final ItemGroup ITEMGROUP = (new ItemGroup("tab" + MODID) {
     @OnlyIn(Dist.CLIENT)
-    public ItemStack createIcon()
+    public ItemStack makeIcon()
     { return new ItemStack(ModContent.QUILL_ITEM); }
   });
 }

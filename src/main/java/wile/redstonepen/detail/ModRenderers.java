@@ -104,9 +104,9 @@ public class ModRenderers
       if(tesr_error_counter <= 0) return;
       try {
         final BlockState block_state = te.getBlockState();
-        final IVertexBuilder vxb = buf.getBuffer(RenderTypeLookup.func_239220_a_(block_state, false));
-        combinedOverlayIn = OverlayTexture.getPackedUV(0, 0);
-        mxs.push();
+        final IVertexBuilder vxb = buf.getBuffer(RenderTypeLookup.getRenderType(block_state, false));
+        combinedOverlayIn = OverlayTexture.pack(0, 0);
+        mxs.pushPose();
         {
           final int wirfl = te.getWireFlags();
           final int wirfc = te.getWireFlagCount();
@@ -115,12 +115,12 @@ public class ModRenderers
             if((wirfl & flag) == 0) continue;
             final Vector3f rgb = getPowerRGB(te.getSidePower(connections.CONNECTION_BIT_ORDER[i/4]));
             IBakedModel model = Minecraft.getInstance().getModelManager().getModel(model_rls[i]);
-            Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
-              mxs.getLast(),
+            Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
+              mxs.last(),
               vxb,
               null,
               model,
-              rgb.getX(), rgb.getY(), rgb.getZ(),
+              rgb.x(), rgb.y(), rgb.z(),
               combinedLightIn,
               combinedOverlayIn,
               net.minecraftforge.client.model.data.EmptyModelData.INSTANCE
@@ -139,19 +139,19 @@ public class ModRenderers
             IBakedModel model = ((confl & con)==0)
               ? Minecraft.getInstance().getModelManager().getModel(modelm_rls[i])  // center model
               : Minecraft.getInstance().getModelManager().getModel(modelc_rls[i]); // connection blob model
-            Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
-              mxs.getLast(),
+            Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
+              mxs.last(),
               vxb,
               null,
               model,
-              rgb.getX(), rgb.getY(), rgb.getZ(),
+              rgb.x(), rgb.y(), rgb.z(),
               combinedLightIn,
               combinedOverlayIn,
               net.minecraftforge.client.model.data.EmptyModelData.INSTANCE
             );
           }
         }
-        mxs.pop();
+        mxs.popPose();
       } catch(Throwable e) {
         if(--tesr_error_counter<=0) {
           ModRedstonePen.logger().error("TER was disabled because broken, exception was: " + e.getMessage());

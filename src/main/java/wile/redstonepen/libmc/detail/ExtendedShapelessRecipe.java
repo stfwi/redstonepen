@@ -66,10 +66,10 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
   {
     final String tool_name = aspects.getString("tool");
     final Map<Item, Integer> repair_items = new HashMap<>();
-    final NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+    final NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
     ItemStack tool_item = ItemStack.EMPTY;
-    for(int i=0; i<inv.getSizeInventory(); ++i) {
-      final ItemStack stack = inv.getStackInSlot(i);
+    for(int i=0; i<inv.getContainerSize(); ++i) {
+      final ItemStack stack = inv.getItem(i);
       if(stack.isEmpty()) {
         continue;
       } else if(stack.getItem().getRegistryName().toString().equals(tool_name)) {
@@ -81,11 +81,11 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
     }
     if(tool_item.isEmpty()) {
       return new Tuple<>(ItemStack.EMPTY, remaining);
-    } else if(!tool_item.isDamageable()) {
+    } else if(!tool_item.isDamageableItem()) {
       Auxiliaries.logWarn("Repairing '"+tool_item.getItem().getRegistryName().toString()+"' can't work, the item is not damageable.");
       return new Tuple<>(ItemStack.EMPTY, remaining);
     } else {
-      final int dmg = tool_item.getDamage();
+      final int dmg = tool_item.getDamageValue();
       if((dmg <= 0) && (!aspects.getBoolean("over_repair"))) return new Tuple<>(ItemStack.EMPTY, remaining);
       final int min_repair_item_count = repair_items.values().stream().mapToInt(Integer::intValue).min().orElse(0);
       if(min_repair_item_count <= 0) return new Tuple<>(ItemStack.EMPTY, remaining);
@@ -96,9 +96,9 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
       if(num_repairs*single_repair_dur < dmg) ++num_repairs;
       num_repairs = Math.min(num_repairs, min_repair_item_count);
       for(Item ki: repair_items.keySet()) repair_items.put(ki, num_repairs);
-      tool_item.setDamage(Math.max(dmg-(single_repair_dur*num_repairs), 0));
+      tool_item.setDamageValue(Math.max(dmg-(single_repair_dur*num_repairs), 0));
       for(int i=0; i<remaining.size(); ++i) {
-        ItemStack stack = inv.getStackInSlot(i);
+        ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
         if(stack.getItem().getRegistryName().toString().equals(tool_name)) continue;
         remaining.set(i, stack.hasContainerItem() ? stack.getContainerItem() : stack.copy());
@@ -117,14 +117,14 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
         }
       }
       if((tool_item.getItem() instanceof IRepairableToolItem)) {
-        tool_item = ((IRepairableToolItem)(tool_item.getItem())).onShapelessRecipeRepaired(tool_item, dmg, tool_item.getDamage());
+        tool_item = ((IRepairableToolItem)(tool_item.getItem())).onShapelessRecipeRepaired(tool_item, dmg, tool_item.getDamageValue());
       }
       return new Tuple<>(tool_item, remaining);
     }
   }
 
   @Override
-  public boolean isDynamic()
+  public boolean isSpecial()
   { return isRepair() || aspects.getBoolean("dynamic"); }
 
   @Override
@@ -138,27 +138,27 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
       NonNullList<ItemStack> remaining = getRepaired(inv).getB();
       for(int i=0; i<remaining.size(); ++i) {
         ItemStack rem_stack = remaining.get(i);
-        ItemStack inv_stack = inv.getStackInSlot(i);
+        ItemStack inv_stack = inv.getItem(i);
         if(inv_stack.isEmpty()) continue;
-        if(!rem_stack.isEmpty() && !inv.getStackInSlot(i).isItemEqual(rem_stack)) continue;
+        if(!rem_stack.isEmpty() && !inv.getItem(i).sameItem(rem_stack)) continue;
         remaining.set(i, ItemStack.EMPTY);
         rem_stack.grow(1);
-        inv.setInventorySlotContents(i, rem_stack);
+        inv.setItem(i, rem_stack);
       }
       return remaining;
     } else {
       final String tool_name = aspects.getString("tool");
       final int tool_damage = getToolDamage();
-      NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+      NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
       for(int i=0; i<remaining.size(); ++i) {
-        final ItemStack stack = inv.getStackInSlot(i);
+        final ItemStack stack = inv.getItem(i);
         if(stack.getItem().getRegistryName().toString().equals(tool_name)) {
-          if(!stack.isDamageable()) {
+          if(!stack.isDamageableItem()) {
             remaining.set(i, stack);
           } else { // implicitly !repair
             ItemStack rstack = stack.copy();
-            rstack.setDamage(rstack.getDamage()+tool_damage);
-            if(rstack.getDamage() < rstack.getMaxDamage()) {
+            rstack.setDamageValue(rstack.getDamageValue()+tool_damage);
+            if(rstack.getDamageValue() < rstack.getMaxDamage()) {
               remaining.set(i, rstack);
             }
           }
@@ -171,103 +171,103 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements ICraftin
   }
 
   @Override
-  public ItemStack getCraftingResult(CraftingInventory inv)
+  public ItemStack assemble(CraftingInventory inv)
   {
     if(isRepair()) {
       return getRepaired(inv).getA();
     } else {
       // Initial item crafting
-      ItemStack rstack = super.getCraftingResult(inv);
+      ItemStack rstack = super.assemble(inv);
       if(rstack.isEmpty()) return ItemStack.EMPTY;
       if(aspects.getInt("initial_durability") > 0) {
         int dmg = Math.max(0, rstack.getMaxDamage() - aspects.getInt("initial_durability"));
-        if(dmg > 0) rstack.setDamage(dmg);
+        if(dmg > 0) rstack.setDamageValue(dmg);
       } else if(aspects.getInt("initial_damage") > 0) {
         int dmg = Math.min(aspects.getInt("initial_damage"), rstack.getMaxDamage());
-        if(dmg > 0) rstack.setDamage(dmg);
+        if(dmg > 0) rstack.setDamageValue(dmg);
       }
       return rstack;
     }
   }
 
   @Override
-  public ItemStack getRecipeOutput()
-  { return isDynamic() ? ItemStack.EMPTY : super.getRecipeOutput(); }
+  public ItemStack getResultItem()
+  { return isSpecial() ? ItemStack.EMPTY : super.getResultItem(); }
 
   //--------------------------------------------------------------------------------------------------------------------
 
   public static class Serializer extends ForgeRegistryEntry<IRecipeSerializer<?>> implements IRecipeSerializer<ExtendedShapelessRecipe>
   {
-    private static int MAX_WIDTH = 3;
-    private static int MAX_HEIGHT = 3;
+    private static final int MAX_WIDTH = 3;
+    private static final int MAX_HEIGHT = 3;
 
     public Serializer()
     {}
 
     @Override
-    public ExtendedShapelessRecipe read(ResourceLocation recipeId, JsonObject json)
+    public ExtendedShapelessRecipe fromJson(ResourceLocation recipeId, JsonObject json)
     {
       ResourceLocation resultTag = new ResourceLocation("libmc", "none"); // just no null
-      String group = JSONUtils.getString(json, "group", "");
+      String group = JSONUtils.getAsString(json, "group", "");
       // Recipe ingredients
       NonNullList<Ingredient> list = NonNullList.create();
-      JsonArray ingredients = JSONUtils.getJsonArray(json, "ingredients");
+      JsonArray ingredients = JSONUtils.getAsJsonArray(json, "ingredients");
       for(int i = 0; i < ingredients.size(); ++i) {
-        Ingredient ingredient = Ingredient.deserialize(ingredients.get(i));
-        if (!ingredient.hasNoMatchingItems()) list.add(ingredient);
+        Ingredient ingredient = Ingredient.fromJson(ingredients.get(i));
+        if (!ingredient.isEmpty()) list.add(ingredient);
       }
       if(list.isEmpty()) throw new JsonParseException("No ingredients for "+this.getRegistryName().getPath()+" recipe");
       if(list.size() > MAX_WIDTH * MAX_HEIGHT) throw new JsonParseException("Too many ingredients for crafting_tool_shapeless recipe the max is " + (MAX_WIDTH * MAX_HEIGHT));
       // Extended recipe aspects
       CompoundNBT aspects_nbt = new CompoundNBT();
       if(json.get("aspects")!=null) {
-        final JsonObject aspects = JSONUtils.getJsonObject(json, "aspects");
+        final JsonObject aspects = JSONUtils.getAsJsonObject(json, "aspects");
         if(aspects.size() > 0) {
           try {
-            aspects_nbt = JsonToNBT.getTagFromJson( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
+            aspects_nbt = JsonToNBT.parseTag( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
           } catch(Exception ex) {
             throw new JsonParseException(this.getRegistryName().getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
           }
         }
       }
       // Recipe result
-      final JsonObject res = JSONUtils.getJsonObject(json, "result");
+      final JsonObject res = JSONUtils.getAsJsonObject(json, "result");
       if(res.has("tag")) {
         // Tag based item picking
         ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
-        ITag<Item> tag = TagCollectionManager.getManager().getItemTags().getIDTagMap().getOrDefault(rl, null);
+        ITag<Item> tag = TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
         if(tag==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag does not exist: #" + rl);
-        if(tag.getAllElements().isEmpty()) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag has no items: #" + rl);
+        if(tag.getValues().isEmpty()) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
-        List<Item> lst = Lists.newArrayList(tag.getAllElements());
+        List<Item> lst = Lists.newArrayList(tag.getValues());
         res.addProperty("item", lst.get(0).getRegistryName().toString());
       }
-      ItemStack result_stack = ShapedRecipe.deserializeItem(res);
+      ItemStack result_stack = ShapedRecipe.itemFromJson(res);
       return new ExtendedShapelessRecipe(recipeId, group, result_stack, list, aspects_nbt, resultTag);
     }
 
     @Override
-    public ExtendedShapelessRecipe read(ResourceLocation recipeId, PacketBuffer pkt)
+    public ExtendedShapelessRecipe fromNetwork(ResourceLocation recipeId, PacketBuffer pkt)
     {
-      String group = pkt.readString(0x7fff);
+      String group = pkt.readUtf(0x7fff);
       final int size = pkt.readVarInt();
       NonNullList<Ingredient> list = NonNullList.withSize(size, Ingredient.EMPTY);
-      for(int i=0; i<list.size(); ++i) list.set(i, Ingredient.read(pkt));
-      ItemStack stack = pkt.readItemStack();
-      CompoundNBT aspects = pkt.readCompoundTag();
+      for(int i=0; i<list.size(); ++i) list.set(i, Ingredient.fromNetwork(pkt));
+      ItemStack stack = pkt.readItem();
+      CompoundNBT aspects = pkt.readNbt();
       ResourceLocation resultTag = pkt.readResourceLocation();
       return new ExtendedShapelessRecipe(recipeId, group, stack, list, aspects, resultTag);
     }
 
     @Override
-    public void write(PacketBuffer pkt, ExtendedShapelessRecipe recipe)
+    public void toNetwork(PacketBuffer pkt, ExtendedShapelessRecipe recipe)
     {
-      pkt.writeString(recipe.getGroup());
+      pkt.writeUtf(recipe.getGroup());
       pkt.writeVarInt(recipe.getIngredients().size());
-      for(Ingredient ingredient : recipe.getIngredients()) ingredient.write(pkt);
-      pkt.writeItemStack(recipe.getRecipeOutput());
-      pkt.writeCompoundTag(recipe.getAspects());
+      for(Ingredient ingredient : recipe.getIngredients()) ingredient.toNetwork(pkt);
+      pkt.writeItem(recipe.getResultItem());
+      pkt.writeNbt(recipe.getAspects());
       pkt.writeResourceLocation(recipe.resultTag);
     }
   }
