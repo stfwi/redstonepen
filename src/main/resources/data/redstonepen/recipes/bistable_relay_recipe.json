@@ -1,0 +1,9 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item": "redstonepen:inverted_relay" }
+  ],
+  "result": {
+    "item": "redstonepen:bistable_relay"
+  }
+}
