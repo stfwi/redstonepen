@@ -1,0 +1,9 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item": "redstonepen:pulse_relay" }
+  ],
+  "result": {
+    "item": "redstonepen:bridge_relay"
+  }
+}

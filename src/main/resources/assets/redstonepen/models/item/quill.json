@@ -1,0 +1,28 @@
+{
+	"parent": "item/generated",
+	"textures": {
+		"layer0": "redstonepen:item/quill"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [43, -62, 27],
+			"translation": [0.75, 0, 2],
+			"scale": [0.5, 0.5, 0.5]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [72, 142, -61],
+			"translation": [0.5, 0.25, 1.5],
+			"scale": [0.5, 0.5, 0.5]
+		},
+		"firstperson_righthand": {
+			"rotation": [-15, -55, 7],
+			"translation": [1.25, 0, 0],
+			"scale": [0.5, 0.5, 0.5]
+		},
+		"firstperson_lefthand": {
+			"rotation": [5, 114, -41],
+			"translation": [1.5, 0, 0],
+			"scale": [0.5, 0.5, 0.5]
+		}
+	}
+}

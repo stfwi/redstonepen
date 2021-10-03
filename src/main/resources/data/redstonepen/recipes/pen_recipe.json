@@ -1,0 +1,20 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:redstone_block" },
+    { "item": "minecraft:feather" }
+  ],
+  "result": {
+    "item": "redstonepen:pen"
+  },
+  "aspects": {
+    "initial_durability": 72
+  }
+}

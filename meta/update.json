@@ -1,0 +1,21 @@
+{
+  "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
+  "1.17.1": {
+    "1.0.7": "[R] Initial 1.17.1 release.",
+    "1.0.7-b1": "[U] Initial 1.17.1 port.",
+    "1.0.6": "[F] Bridging Relay added to support wire crossings.",
+    "1.0.6-b1": "[F] Fixed track net update power flags caching issue.",
+    "1.0.5": "[A] Added Pulse Redstone Relay.",
+    "1.0.4": "[A] Added Inverted Redstone Relay.\n[A] Added Bi-Stable Redstone Relay.\n[F] Fixed Pen/Quill model 3rd person view.",
+    "1.0.3": "[A] Added Redstone Relay.",
+    "1.0.2": "[A] Added Redstone Quill (uses Redstone directly from the inventory).\n[F] Wire update when removing diagonal/orthogonal tracks fixed.",
+    "1.0.2-b1": "[F] Fixed placement net update of tracks around the corner.\n[I] Known issue: Power update around the corner when placing not yet always working.",
+    "1.0.1": "[F] Fixed block removal bug (thx focsie).\n[F] Fixed vanilla Redstone connection bug.",
+    "1.0.0": "[R] Initial release.\n[F] Internal mod logo image rescaled.\n[F] Fixed indirect non-wire bulk connector power reading.",
+    "1.0.0-b1": "[A] Initial implementation."
+  },
+  "promos": {
+    "1.17.1-recommended": "1.0.7",
+    "1.17.1-latest": "1.0.7"
+  }
+}
