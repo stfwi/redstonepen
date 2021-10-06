@@ -1,5 +1,5 @@
 // @file build.gradle
-// Anthill Inside mod gradle build relay (mc1.17.1)
+// Redstone Pen mod gradle build relay (mc1.17.1)
 buildscript {
   repositories {
       maven { url = 'https://maven.minecraftforge.net' }
@@ -39,13 +39,6 @@ minecraft {
       workingDirectory project.file('run')
       property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
       property 'forge.logging.console.level', 'info'
-      mods { redstonepen { source sourceSets.main } }
-    }
-    data {
-      workingDirectory project.file('run')
-      property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-      property 'forge.logging.console.level', 'debug'
-      args '--mod', 'redstonepen', '--all', '--output', file('src/generated/resources/')
       mods { redstonepen { source sourceSets.main } }
     }
   }

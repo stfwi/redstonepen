@@ -4,7 +4,7 @@
  * @copyright (C) 2020 Stefan Wilhelm
  * @license MIT (see https://opensource.org/licenses/MIT)
  *
- * Common functionality class for decor blocks.
+ * Common functionality class for base blocks.
  * Mainly needed for:
  * - MC block defaults.
  * - Tooltip functionality
@@ -97,9 +97,6 @@ public class StandardBlocks
       if((config & CFG_TRANSLUCENT)!=0) return RenderTypeHint.TRANSLUCENT;
       return RenderTypeHint.SOLID;
     }
-
-    default boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
-    { return false; }
 
   }
 

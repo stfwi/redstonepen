@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.8-b1   [F] Fixed compatibility for Forge >=1.17.1-37.0.82
+
     - v1.0.7      [R] Initial 1.17.1 release.
 
     - v1.0.7-b1   [U] Initial 1.17.1 port.
