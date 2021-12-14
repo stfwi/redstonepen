@@ -50,7 +50,7 @@ public class ModRenderers
             break;
           }
         }
-        net.minecraftforge.client.model.ModelLoader.addSpecialModel(mrl);
+        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
         ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
@@ -60,7 +60,7 @@ public class ModRenderers
             break;
           }
         }
-        net.minecraftforge.client.model.ModelLoader.addSpecialModel(mrl);
+        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CNTWIRE_MAPPING.entrySet().forEach((kv->{
         ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
@@ -70,7 +70,7 @@ public class ModRenderers
             break;
           }
         }
-        net.minecraftforge.client.model.ModelLoader.addSpecialModel(mrl);
+        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       power_rgb.clear();
       for(int i = 0; i <= 15; ++i) {

@@ -95,15 +95,15 @@ public class RedstonePenItem extends Item
   { return false; }
 
   @Override
-  public boolean showDurabilityBar(ItemStack stack)
+  public boolean isBarVisible(ItemStack stack)
   { return canBeDepleted() && (stack.getDamageValue()>0); }
 
   @Override
-  public double getDurabilityForDisplay(ItemStack stack)
-  { return (stack.getMaxDamage()<=0) ? (1.0) : Mth.clamp((double)stack.getDamageValue()/(double)stack.getMaxDamage(), 0.0, 1.0); }
+  public int getBarWidth(ItemStack stack)
+  {  return (stack.getMaxDamage()<=0) ? (13) : (13-(Mth.clamp(Math.round(13f*stack.getDamageValue()/stack.getMaxDamage()), 0, 13))); }
 
   @Override
-  public int getRGBDurabilityForDisplay(ItemStack stack)
+  public int getBarColor(ItemStack stack)
   { return 0x663333; }
 
   @Override

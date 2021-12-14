@@ -37,6 +37,6 @@ forge*changelog.txt
 /*.txt
 
 ## Initial testing:
-RedstoneTrack.java
-ControlBox.java
-CircuitComponents.java
+# RedstoneTrack.java
+# ControlBox.java
+# CircuitComponents.java

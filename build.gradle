@@ -1,5 +1,5 @@
 // @file build.gradle
-// Redstone Pen mod gradle build relay (mc1.17.1)
+// Redstone Pen mod gradle build relay (mc1.18.x)
 buildscript {
   repositories {
       maven { url = 'https://maven.minecraftforge.net' }
@@ -12,7 +12,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 //sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 //-----------------------------------------------------------------------------
@@ -27,7 +27,7 @@ repositories {
 }
 
 minecraft {
-  mappings channel: "official", version: "1.17.1"
+  mappings channel: "official", version: "1.18.1"
   // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
   runs {
     client {
@@ -46,8 +46,6 @@ minecraft {
 
 dependencies {
   minecraft "net.minecraftforge:forge:${version_forge_minecraft}"
-  // compileOnly fg.deobf("mezz.jei:jei-${version_jei}:api")
-  // runtimeOnly fg.deobf("mezz.jei:jei-${version_jei}")
 }
 
 processResources {
@@ -69,7 +67,7 @@ jar {
   }
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' } // Include datagen resources
+//sourceSets.main.resources { srcDir 'src/generated/resources' } // Include datagen resources
 
 jar.finalizedBy('reobfJar')
 //def reobfFile = file("$buildDir/reobfJar/output.jar")
