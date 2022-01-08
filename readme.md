@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.0.7      [R] Release build v1.0.7.
+                  [F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).
+                  [M] Creative mode pen handling edited.
+                  [U] Forge/gradle update.
+
     - v1.0.7-b1   [A] Mappings ported. Forge references updated to 1.16.5-36.2.0.
 
     - v1.0.6      [F] Bridging Relay added to support wire crossings.

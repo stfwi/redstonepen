@@ -68,6 +68,7 @@ mrproper: clean-all
 init:
 	@echo "[1.16] Initialising eclipse workspace using gradle ..."
 	@$(GRADLE) eclipse
+	-@$(GRADLE) hideOfficialWarningUntilChanged
 
 sanitize:
 	@echo "[1.16] Running sanitising tasks ..."

@@ -264,6 +264,7 @@ public class RedstonePenItem extends Item
 
   public static final void pushRedstone(ItemStack stack, int amount, PlayerEntity player)
   {
+    if(player.isCreative()) return;
     if(amount <= 0) {
       return;
     } else if(isPen(stack)) {
@@ -290,6 +291,7 @@ public class RedstonePenItem extends Item
 
   public static final int popRedstone(ItemStack stack, int amount, PlayerEntity player, Hand hand)
   {
+    if(player.isCreative()) return amount;
     if(amount <= 0) {
       return 0;
     } else if(isPen(stack)) {
@@ -317,6 +319,7 @@ public class RedstonePenItem extends Item
 
   public static final boolean hasEnoughRedstone(ItemStack stack, int amount, PlayerEntity player)
   {
+    if(player.isCreative()) return true;
     if(isPen(stack)) {
       if(stack.isDamageableItem()) {
         return stack.getDamageValue() < (stack.getMaxDamage()-amount);

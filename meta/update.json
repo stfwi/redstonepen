@@ -1,6 +1,7 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.16.5": {
+    "1.0.7": "[R] Release build v1.0.7.\n[F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).\n[M] Creative mode pen handling edited.\n[U] Forge/gradle update.",
     "1.0.7-b1": "[A] Mappings ported. Forge references updated to 1.16.5-36.2.0.",
     "1.0.6": "[F] Bridging Relay added to support wire crossings.",
     "1.0.6-b1": "[F] Fixed track net update power flags caching issue.",
@@ -14,7 +15,7 @@
     "1.0.0-b1": "[A] Initial implementation."
   },
   "promos": {
-    "1.16.5-recommended": "1.0.6",
-    "1.16.5-latest": "1.0.7-b1"
+    "1.16.5-recommended": "1.0.7",
+    "1.16.5-latest": "1.0.7"
   }
 }

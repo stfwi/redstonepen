@@ -1,6 +1,5 @@
 // @file build.gradle
 // Redstone Pen mod gradle build relay (mc1.15.1)
-import net.minecraftforge.gradle.common.task.SignJar
 buildscript {
   repositories {
     maven { url = 'https://files.minecraftforge.net/maven' }
@@ -8,13 +7,13 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
   }
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 //-----------------------------------------------------------------------------
 version = "${version_redstonepen}"
 group = "wile.redstonepen"
@@ -34,13 +33,6 @@ minecraft {
       workingDirectory project.file('run')
       property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
       property 'forge.logging.console.level', 'info'
-      mods { redstonepen { source sourceSets.main } }
-    }
-    data {
-      workingDirectory project.file('run')
-      property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-      property 'forge.logging.console.level', 'debug'
-      args '--mod', 'redstonepen', '--all', '--output', file('src/generated/resources/')
       mods { redstonepen { source sourceSets.main } }
     }
   }
@@ -69,9 +61,13 @@ jar {
   }
 }
 
+jar.finalizedBy('reobfJar')
+
+/*
 def reobfFile = file("$buildDir/reobfJar/output.jar")
 def reobfArtifact = artifacts.add('default', reobfFile) { type 'jar'; builtBy 'reobfJar' }
 
+import net.minecraftforge.gradle.common.task.SignJar
 task signJar(type: SignJar, dependsOn: jar) {
   onlyIf { project.hasProperty("keystore_file") }
   if(project.hasProperty("keystore_file")) {
@@ -91,3 +87,4 @@ publishing {
   publications { mavenJava(MavenPublication) { artifact reobfArtifact } }
   repositories { maven { url "file:///${project.projectDir}/mcmodsrepo" } }
 }
+*/

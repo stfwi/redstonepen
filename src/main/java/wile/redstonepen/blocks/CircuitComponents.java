@@ -183,6 +183,15 @@ public class CircuitComponents
     { return shapes_.getOrDefault(state, VoxelShapes.block()); }
 
     @Override
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader world, BlockPos pos, ISelectionContext context)
+    { return getShape(state, world, pos, context); }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public VoxelShape getOcclusionShape(BlockState state, IBlockReader world, BlockPos pos)
+    { return shapes_.getOrDefault(state, VoxelShapes.block()); }
+
+    @Override
     public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos)
     { return !state.getValue(WATERLOGGED); }
 
