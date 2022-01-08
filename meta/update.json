@@ -1,6 +1,8 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.18.1": {
+    "1.0.8-b2": "[M] Forge/gradle update, minor adaptions.",
+    "1.0.8-b1": "[U] Initial 1.18.1 port.",
     "1.0.7": "[R] Initial 1.17.1 release.",
     "1.0.7-b1": "[U] Initial 1.17.1 port.",
     "1.0.6": "[F] Bridging Relay added to support wire crossings.",
@@ -16,6 +18,6 @@
   },
   "promos": {
     "1.18.1-recommended": "1.0.7",
-    "1.18.1-latest": "1.0.7"
+    "1.18.1-latest": "1.0.8-b2"
   }
 }

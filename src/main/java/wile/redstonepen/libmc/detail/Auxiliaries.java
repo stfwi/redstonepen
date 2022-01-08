@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,12 +121,17 @@ public class Auxiliaries
   // -------------------------------------------------------------------------------------------------------------------
 
   /**
-   * Text localisation wrapper, implicitly prepends `MODID` to the
+   * Text localization wrapper, implicitly prepends `MODID` to the
    * translation keys. Forces formatting argument, nullable if no special formatting shall be applied..
    */
   public static TranslatableComponent localizable(String modtrkey, Object... args)
+  { return new TranslatableComponent((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid+"."+modtrkey), args); }
+
+  public static TranslatableComponent localizable(String modtrkey, @Nullable ChatFormatting color, Object... args)
   {
-    return new TranslatableComponent((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid+"."+modtrkey), args);
+    TranslatableComponent tr = new TranslatableComponent(modid+"."+modtrkey, args);
+    if(color!=null) tr.withStyle(color);
+    return tr;
   }
 
   public static TranslatableComponent localizable(String modtrkey)
@@ -371,6 +377,12 @@ public class Auxiliaries
       for(AABB aabb: aabbs) shape = Shapes.joinUnoptimized(shape, Shapes.create(aabb), BooleanOp.OR);
     }
     return shape;
+  }
+
+  public static AABB[] getMappedAABB(AABB[] bbs, Function<AABB,AABB> mapper) {
+    final AABB[] transformed = new AABB[bbs.length];
+    for(int i=0; i<bbs.length; ++i) transformed[i] = mapper.apply(bbs[i]);
+    return transformed;
   }
 
   public static final class BlockPosRange implements Iterable<BlockPos>

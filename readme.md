@@ -1,10 +1,12 @@
 
-## Redstone Pen (MC1.17.x)
+## Redstone Pen (MC1.18.x)
 
 ----
 ## Version history
 
-    ~ v1.0.8-b1   [U] Initial 1.18.1 port.
+    - v1.0.8-b2   [M] Forge/gradle update, minor adaptions.
+
+    - v1.0.8-b1   [U] Initial 1.18.1 port.
 
     - v1.0.7      [R] Initial 1.17.1 release.
 
