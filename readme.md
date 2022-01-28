@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.0.9-b1   [F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).
+                  [M] Creative mode pen handling edited.
+                  [F] Relay occlusion/shadow fixed.
+
     - v1.0.8      [R] Release build.
 
     - v1.0.8-b2   [M] Forge/gradle update, minor adaptions.

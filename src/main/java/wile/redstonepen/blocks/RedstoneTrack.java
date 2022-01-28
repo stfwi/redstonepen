@@ -550,7 +550,7 @@ public class RedstoneTrack
         RedstonePenItem.popRedstone(player.getItemInHand(hand), redstone_use, player, hand);
         world.playSound(null, pos, SoundEvents.METAL_PLACE, SoundSource.BLOCKS, 0.4f, 2.4f);
       }
-      state.updateNeighbourShapes(world, pos, 1|2);
+      updateNeighbourShapes(state, world, pos);
       notifyAdjacent(world, pos);
       return InteractionResult.CONSUME;
     }
@@ -656,7 +656,7 @@ public class RedstoneTrack
         RedstonePenItem.popRedstone(pen, n_added, player, hand);
         te.updateConnections(2);
         te.updateAllPowerValuesFromAdjacent();
-        state.updateNeighbourShapes(world, pos, 1|2);
+        updateNeighbourShapes(state, world, pos);
         notifyAdjacent(world, pos);
       }
     }
@@ -664,12 +664,24 @@ public class RedstoneTrack
     private void disablePower(boolean disable)
     { can_provide_power_ = !disable; }
 
-    public void notifyAdjacent(Level world, BlockPos pos)
+    private void updateNeighbourShapes(final BlockState state, final Level world, final BlockPos pos)
+    {
+      state.updateNeighbourShapes(world, pos, 1|2);
+    }
+
+    public void notifyAdjacent(final Level world, final BlockPos pos)
     {
       world.updateNeighborsAt(pos, this);
-      for(Direction side: Direction.values()) {
-        final BlockPos ppos = pos.relative(side);
-        world.updateNeighborsAtExceptFromFacing(ppos, world.getBlockState(ppos).getBlock(), side.getOpposite());
+      BlockPos.MutableBlockPos ppos = new BlockPos.MutableBlockPos();
+      for(Direction dir0: BlockBehaviour.UPDATE_SHAPE_ORDER) {
+        ppos.setWithOffset(pos, dir0);
+        world.updateNeighborsAtExceptFromFacing(ppos, world.getBlockState(ppos).getBlock(), dir0.getOpposite());
+        for(Direction dir1: List.of(Direction.UP, Direction.DOWN)) {
+          ppos.setWithOffset(pos, dir0).move(dir1);
+          final BlockState diagonal_state = world.getBlockState(ppos);
+          if(diagonal_state.getBlock() != this) continue;
+          world.neighborChanged(ppos, this, pos);
+        }
       }
     }
 
