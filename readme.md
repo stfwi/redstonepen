@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    ~ v1.0.9-b3   [F]
+
+    - v1.0.9-b2   [R] Fixed regression issue related to #1.
+
     - v1.0.9-b1   [F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).
                   [M] Creative mode pen handling edited.
                   [F] Relay occlusion/shadow fixed.

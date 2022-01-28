@@ -1,6 +1,7 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/",
   "1.18.1": {
+    "1.0.9-b2": "[R] Fixed regression issue related to #1.",
     "1.0.9-b1": "[F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).\n[M] Creative mode pen handling edited.\n[F] Relay occlusion/shadow fixed.",
     "1.0.8": "[R] Release build.",
     "1.0.8-b2": "[M] Forge/gradle update, minor adaptions.",
@@ -20,6 +21,6 @@
   },
   "promos": {
     "1.18.1-recommended": "1.0.8",
-    "1.18.1-latest": "1.0.9-b1"
+    "1.18.1-latest": "1.0.9-b2"
   }
 }

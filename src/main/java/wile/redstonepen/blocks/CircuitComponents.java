@@ -12,13 +12,16 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneWireBlock;
@@ -33,6 +36,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -43,6 +47,7 @@ import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
+import wile.redstonepen.libmc.detail.Overlay;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -395,6 +400,29 @@ public class CircuitComponents
 
     public BlockState update(BlockState state, Level world, BlockPos pos, @Nullable BlockPos fromPos)
     { return state; }
+
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // Block item
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class DirectedComponentBlockItem extends BlockItem
+  {
+    public DirectedComponentBlockItem(Block block, Item.Properties builder)
+    { super(block, builder); }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int itemSlot, boolean isSelected)
+    {
+      if((!isSelected) || (!world.isClientSide) || !(entity instanceof Player player)) return;
+      final BlockHitResult hr = getPlayerPOVHitResult(world, player, ClipContext.Fluid.ANY);
+      final BlockPlaceContext pc = new BlockPlaceContext(new UseOnContext(player, InteractionHand.MAIN_HAND, hr));
+      if(!pc.canPlace()) return;
+      final BlockState state = getBlock().getStateForPlacement(pc);
+      if(state == null) return;
+      Overlay.show(state, pc.getClickedPos());
+    }
 
   }
 

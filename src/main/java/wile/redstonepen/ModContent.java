@@ -131,11 +131,11 @@ public class ModContent
     final List<Item> items = new ArrayList<>();
     items.add(QUILL_ITEM);
     items.add(PEN_ITEM);
-    items.add(new BlockItem(RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
-    items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
-    items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
-    items.add(new BlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
-    items.add(new BlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(INVERTED_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
     //items.add(new BlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
     return items;
   }
