@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.8-b1   [F] Fixed missing notification recursion level (regression related to #1 fix).
+
     - v1.0.7      [R] Release build v1.0.7.
                   [F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).
                   [M] Creative mode pen handling edited.
