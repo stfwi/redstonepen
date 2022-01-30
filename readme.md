@@ -4,7 +4,9 @@
 ----
 ## Version history
 
-    ~ v1.0.9-b3   [F]
+    ~ v1.0.9-b3   [F] Relay placement preview added.
+                  [A] Added language support for Português (PR#2, faelBrunnoS).
+                  [A] Added Pen crafting advancement.
 
     - v1.0.9-b2   [R] Fixed regression issue related to #1.
 

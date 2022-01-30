@@ -24,6 +24,8 @@
   "item.redstonepen.pen.tooltip.rsfrominventory": "Uses redstone in your inventory",
   "item.redstonepen.quill": "Redstone Quill",
   "item.redstonepen.quill.help": "Used to draw or remove thin Redstone Tracks in all directions. These tracks do normally §lnot§r power the blocks they are placed on (click the center of a track to explicitly place/remove a connector). Sneak while looking at blocks to see what Redstone signal they currently have.\nToo many tracks at unconnected faces in one block cause cross-talk and will not work, simply re-route then.",
+  "advancement.redstonepen.craft_redstonepen": "One pen to draw them all",
+  "advancement.redstonepen.craft_redstonepen.desc": "Craft a Redstone Pen",
   "redstonepen.overlay.comparator_compare": " compare",
   "redstonepen.overlay.comparator_subtract": " subtract",
   "redstonepen.overlay.direct_power": "[%1$s]",
