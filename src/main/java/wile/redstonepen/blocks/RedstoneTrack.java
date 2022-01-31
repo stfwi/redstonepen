@@ -460,13 +460,13 @@ public class RedstoneTrack
 
     @Deprecated
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
-    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redsrone_side, true)).orElse(0) : 0; }
+    public int getSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redstone_side)
+    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0) : 0; }
 
     @Deprecated
     @SuppressWarnings("deprecation")
-    public int getDirectSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redsrone_side)
-    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redsrone_side, false)).orElse(0) : 0; }
+    public int getDirectSignal(BlockState state, IBlockReader world, BlockPos pos, Direction redstone_side)
+    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, false)).orElse(0) : 0; }
 
     @Override
     public boolean shouldCheckWeakPower(BlockState state, IWorldReader world, BlockPos pos, Direction side)

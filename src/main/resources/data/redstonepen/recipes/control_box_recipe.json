@@ -1,17 +1,17 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "ZRZ",
-    "ECL",
-    "ZGZ"
+    "QRQ",
+    "EPL",
+    "QGQ"
   ],
   "key": {
     "R": { "item": "minecraft:redstone" },
     "L": { "item": "minecraft:lapis_lazuli" },
     "G": { "item": "minecraft:gold_ingot" },
     "E": { "item": "minecraft:emerald" },
-    "C": { "item": "minecraft:chiseled_stone_bricks" },
-    "Z": { "item": "redstonepen:relay" }
+    "Q": { "item": "minecraft:quartz" },
+    "P": { "item": "redstonepen:quill" }
   },
   "result": {
     "item": "redstonepen:control_box"

@@ -7,6 +7,7 @@
 package wile.redstonepen;
 
 import net.minecraft.block.Block;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -46,7 +47,7 @@ public class ModRedstonePen
     MinecraftForge.EVENT_BUS.register(this);
   }
 
-  public static final Logger logger() { return LOGGER; }
+  public static Logger logger() { return LOGGER; }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Events
@@ -59,6 +60,7 @@ public class ModRedstonePen
   {
     Overlay.register();
     ModContent.registerTileEntityRenderers(event);
+    ModContent.registerContainerGuis(event);
     ModContent.processContentClientSide();
     Overlay.TextOverlayGui.on_config(
       0.75,
@@ -83,6 +85,10 @@ public class ModRedstonePen
     @SubscribeEvent
     public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event)
     { ModContent.allTileEntityTypes().forEach(e->event.getRegistry().register(e)); }
+
+    @SubscribeEvent
+    public static void onRegisterContainerTypes(final RegistryEvent.Register<ContainerType<?>> event)
+    { ModContent.allMenuTypes().forEach(e->event.getRegistry().register(e)); }
 
     @SubscribeEvent
     public static final void onRegisterModels(final ModelRegistryEvent event)

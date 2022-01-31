@@ -148,11 +148,6 @@ public class RedstonePenItem extends Item
     if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
       // Add/remove tracks to existing RedstoneTrackBlock
       if(context.getLevel().isClientSide()) return ActionResultType.SUCCESS;
-      if(player.getOffhandItem().getItem() == Items.DEBUG_STICK) {
-        TileEntity te = world.getBlockEntity(pos);
-        if(te instanceof RedstoneTrack.TrackTileEntity) ((RedstoneTrack.TrackTileEntity)te).toggle_trace(player);
-        return ActionResultType.CONSUME;
-      }
       final BlockRayTraceResult rtr = new BlockRayTraceResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), context.isInside());
       return ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).use(state, world, pos, player, hand, rtr);
     }

@@ -4,6 +4,12 @@
 ----
 ## Version history
 
+    - v1.0.8-b2   [A] Added Redstone Logic Control.
+                  [A] Added relay placement preview.
+                  [A] Added language support for Português (PR#2, faelBrunnoS).
+                  [A] Added Pen crafting advancement.
+                  [A] Added language es_es (PR#3, hacheraw).
+
     - v1.0.8-b1   [F] Fixed missing notification recursion level (regression related to #1 fix).
 
     - v1.0.7      [R] Release build v1.0.7.

@@ -6,14 +6,15 @@
  */
 package wile.redstonepen;
 
+import net.minecraft.block.AbstractBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Rarity;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.Block;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Item;
+import net.minecraft.item.Rarity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -22,13 +23,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.apache.logging.log4j.Logger;
-import wile.redstonepen.blocks.*;
-import wile.redstonepen.items.*;
+import wile.redstonepen.blocks.CircuitComponents;
+import wile.redstonepen.blocks.ControlBox;
+import wile.redstonepen.blocks.RedstoneTrack;
+import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 
 public class ModContent
@@ -97,7 +103,7 @@ public class ModContent
   ).setRegistryName(MODID, "pen")));
 
   //--------------------------------------------------------------------------------------------------------------------
-  // Tile entities and entities
+  // Tile entities
   //--------------------------------------------------------------------------------------------------------------------
 
   public static final TileEntityType<?> TET_TRACK = TileEntityType.Builder
@@ -105,9 +111,23 @@ public class ModContent
     .build(null)
     .setRegistryName(MODID, "te_track");
 
+  public static final TileEntityType<?> TET_CONTROLBOX = TileEntityType.Builder
+    .of(ControlBox.ControlBoxBlockEntity::new, CONTROLBOX_BLOCK)
+    .build(null)
+    .setRegistryName(MODID, "te_control_box");
+
   private static final TileEntityType<?> tile_entity_types[] = {
-    TET_TRACK
+    TET_TRACK,
+    TET_CONTROLBOX
   };
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // Container registration
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static final ContainerType<ControlBox.ControlBoxUiContainer> CT_CONTROLBOX;
+  static { CT_CONTROLBOX = (new ContainerType<>(ControlBox.ControlBoxUiContainer::new)); CT_CONTROLBOX.setRegistryName(MODID,"ct_control_box"); }
+  private static final ContainerType<?>[] menu_types = { CT_CONTROLBOX };
 
   //--------------------------------------------------------------------------------------------------------------------
   // Initialisation events
@@ -122,7 +142,7 @@ public class ModContent
     blocks.add(BISTABLE_RELAY_BLOCK);
     blocks.add(PULSE_RELAY_BLOCK);
     blocks.add(BRIDGE_RELAY_BLOCK);
-    //blocks.add(CONTROLBOX_BLOCK);
+    blocks.add(CONTROLBOX_BLOCK);
     return blocks;
   }
 
@@ -131,12 +151,12 @@ public class ModContent
     final List<Item> items = new ArrayList<>();
     items.add(QUILL_ITEM);
     items.add(PEN_ITEM);
-    items.add(new BlockItem(RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
-    items.add(new BlockItem(INVERTED_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
-    items.add(new BlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
-    items.add(new BlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
-    items.add(new BlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
-    //items.add(new BlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(INVERTED_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("inverted_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(CONTROLBOX_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
     return items;
   }
 
@@ -151,6 +171,14 @@ public class ModContent
   @Nonnull
   public static List<TileEntityType<?>> allTileEntityTypes()
   { return Arrays.asList(tile_entity_types); }
+
+  @Nonnull
+  public static List<ContainerType<?>> allMenuTypes()
+  { return Arrays.asList(menu_types); }
+
+  @OnlyIn(Dist.CLIENT)
+  public static void registerContainerGuis(final FMLClientSetupEvent event)
+  { ScreenManager.register(CT_CONTROLBOX, ControlBox.ControlBoxGui::new); }
 
   @OnlyIn(Dist.CLIENT)
   public static final void processContentClientSide()
