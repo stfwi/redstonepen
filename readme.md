@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.0.9      [R] Release build.
+                  [A] Added RLC counter documentation.
+                  [A] Added RLC TICKRATE variable.
+                  [M] Pen recipe advancement edited.
+
     - v1.0.9-b3   [A] Added Redstone Logic Control.
                   [A] Added relay placement preview.
                   [A] Added language support for Português (PR#2, faelBrunnoS).

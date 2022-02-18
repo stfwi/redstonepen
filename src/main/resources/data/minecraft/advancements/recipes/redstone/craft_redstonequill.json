@@ -2,24 +2,24 @@
   "parent": "minecraft:recipes/root",
   "rewards": {
     "recipes": [
-      "redstonepen:pen_recipe"
+      "redstonepen:quill_recipe"
     ]
   },
   "criteria": {
-    "has_pen": {
+    "has_quill": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "items": [{ "items": ["minecraft:redstone_block", "minecraft:feather"] }]
+        "items": [{ "items": ["minecraft:redstone", "minecraft:feather"] }]
       }
     },
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "redstonepen:pen_recipe"
+        "recipe": "redstonepen:quill_recipe"
       }
     }
   },
   "requirements": [
-    [ "has_pen", "has_the_recipe" ]
+    [ "has_quill", "has_the_recipe" ]
   ]
 }

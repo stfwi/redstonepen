@@ -173,6 +173,7 @@ public class ControlBox
     private boolean trace_ = false;
     private int tick_timer_ = 0;
     private int num_signal_updates_received_ = 0;
+    private int tick_interval_ = TICK_INTERVAL;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
     { super(ModContent.TET_CONTROLBOX, pos, state); }
@@ -249,7 +250,7 @@ public class ControlBox
     public void tick()
     {
       if(--tick_timer_ > 0) return;
-      tick_timer_ = TICK_INTERVAL;
+      tick_timer_ = tick_interval_;
       final long tick = System.nanoTime();
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
@@ -259,58 +260,65 @@ public class ControlBox
       final Set<String> esyms = logic_.expressions().symbols;
       final int last_output_data = logic_.output_data;
       final int last_input_data = logic_.input_data;
-      // Input fetching
-      {
-        logic_.input_data = 0;
-        for(Direction d:Direction.values()) {
-          final int mask = 0xf<<(4*d.ordinal());
-          if((logic_.output_mask & mask) != 0) continue;
-          final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
-          final BlockPos target_pos = device_pos.relative(world_dir);
-          final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
-          logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
-          if(device_enabled) {
-            // Comparator overrides only if really needed - may be inventories that do expensive lookups.
-            final String port_name = Defs.PORT_NAMES.get(d.ordinal());
-            if(esyms.contains(port_name+".co")) {
-              final BlockState target_state = world.getBlockState(target_pos);
-              if(target_state.hasAnalogOutputSignal()) {
-                @SuppressWarnings("deprecation")
-                final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
-                logic_.symbol(port_name+".co", cov);
-              } else {
-                logic_.symbol(port_name+".co", 0);
+      try {
+        // Input fetching
+        {
+          logic_.input_data = 0;
+          for(Direction d:Direction.values()) {
+            final int mask = 0xf<<(4*d.ordinal());
+            if((logic_.output_mask & mask) != 0) continue;
+            final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
+            final BlockPos target_pos = device_pos.relative(world_dir);
+            final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
+            logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
+            if(device_enabled) {
+              // Comparator overrides only if really needed - may be inventories that do expensive lookups.
+              final String port_name = Defs.PORT_NAMES.get(d.ordinal());
+              if(esyms.contains(port_name+".co")) {
+                final BlockState target_state = world.getBlockState(target_pos);
+                if(target_state.hasAnalogOutputSignal()) {
+                  @SuppressWarnings("deprecation")
+                  final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
+                  logic_.symbol(port_name+".co", cov);
+                } else {
+                  logic_.symbol(port_name+".co", 0);
+                }
               }
             }
           }
         }
-      }
-      // Logic processing
-      {
-        if(trace_) logic_.symbol(".perf1", (int)(Mth.clamp(System.nanoTime()-tick, 0, 0x7fffffff))/1000);
-        if(!device_enabled) {
-          logic_.output_data = 0;
-        } else {
-          logic_.symbol(".clock", (int)(world.getGameTime() & 0x7fffffffL)); // wraps over in >3years
-          logic_.symbol(".time", (int)(world.getDayTime() % 24000));
-          logic_.tick();
-        }
-      }
-      // Output setting
-      {
-        if(logic_.output_data != last_output_data) {
-          for(Direction d:Direction.values()) {
-            if((logic_.output_mask & 0xf<<(4*d.ordinal())) == 0) continue;
-            final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
-            device_block.notifyOutputNeighbourOfStateChange(device_state, world, device_pos, world_dir);
+        // Logic processing
+        {
+          if(trace_) logic_.symbol(".perf1", (int)(Mth.clamp(System.nanoTime()-tick, 0, 0x7fffffff))/1000);
+          if(!device_enabled) {
+            logic_.output_data = 0;
+          } else {
+            logic_.symbol(".clock", (int)(world.getGameTime() & 0x7fffffffL)); // wraps over in >3years
+            logic_.symbol(".time", (int)(world.getDayTime() % 24000));
+            logic_.tick();
           }
         }
-        container_fields_.set(0, logic_.input_data|logic_.output_data);
-        if((logic_.output_data != last_output_data) || (logic_.input_data != last_input_data)) world.blockEntityChanged(device_pos);
+        // Output setting
+        {
+          if(logic_.output_data != last_output_data) {
+            for(Direction d:Direction.values()) {
+              if((logic_.output_mask & 0xf<<(4*d.ordinal())) == 0) continue;
+              final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
+              device_block.notifyOutputNeighbourOfStateChange(device_state, world, device_pos, world_dir);
+            }
+          }
+          container_fields_.set(0, logic_.input_data|logic_.output_data);
+          if((logic_.output_data != last_output_data) || (logic_.input_data != last_input_data)) world.blockEntityChanged(device_pos);
+        }
+      } catch(Throwable ex) {
+        Auxiliaries.logError("RLC tick exception!" + ex);
+        world.removeBlock(getBlockPos(), true);
+        return;
       }
       // Elision of signal updates during this tick, including after output setting
       {
-        tick_timer_ = TICK_INTERVAL;
+        if(logic_.symbols().containsKey("tickrate")) tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
+        tick_timer_ = tick_interval_;
         logic_.intr_redges = 0;
         logic_.intr_fedges = 0;
         if(trace_) logic_.symbol(".perf2", (int)(Mth.clamp(System.nanoTime()-tick, 0, 0x7fffffff))/1000);
@@ -614,8 +622,9 @@ public class ControlBox
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+41, 5, 6, Auxiliaries.localizable(tooltip_prefix+".help.5")));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+49, 5, 4, Auxiliaries.localizable(tooltip_prefix+".help.6")));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+55, 5, 5, Auxiliaries.localizable(tooltip_prefix+".help.7")));
-        tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+62, 5, 7, Auxiliaries.localizable(tooltip_prefix+".help.8")));
-        tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+71, 5, 3, Auxiliaries.localizable(tooltip_prefix+".help.9")));
+        tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+62, 5, 3, Auxiliaries.localizable(tooltip_prefix+".help.8")));
+        tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+67, 5, 7, Auxiliaries.localizable(tooltip_prefix+".help.9")));
+        tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+76, 5, 3, Auxiliaries.localizable(tooltip_prefix+".help.10")));
         tooltip_.init(tooltips).delay(50);
       }
       setInitialFocus(textbox);
@@ -756,7 +765,9 @@ public class ControlBox
         final int nargs = x.length;
         if(nargs <= 0) return 0;
         int q = m.getOrDefault(sym,0);
-        if(nargs == 1) {
+        if(nargs >= 5 && x[4].calc(m)>0) {
+          q = 0;
+        } else if(nargs == 1) {
           if(x[0].calc(m) > 0) ++q;
         } else {
           int x0 = x[0].calc(m);
