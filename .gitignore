@@ -27,6 +27,7 @@
 /dist
 /tmp
 /versions
+/meta
 bin
 build
 desktop.ini
