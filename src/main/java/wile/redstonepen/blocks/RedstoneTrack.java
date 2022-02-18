@@ -463,13 +463,13 @@ public class RedstoneTrack
 
     @Deprecated
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redsrone_side, true)).orElse(0) : 0; }
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0) : 0; }
 
     @Deprecated
     @SuppressWarnings("deprecation")
-    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redsrone_side, false)).orElse(0) : 0; }
+    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, false)).orElse(0) : 0; }
 
     @Override
     public boolean shouldCheckWeakPower(BlockState state, LevelReader world, BlockPos pos, Direction side)
@@ -513,7 +513,15 @@ public class RedstoneTrack
 
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
-    { return onBlockActivated(state, world, pos, player, hand, rtr, false); }
+    {
+      if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
+        if(world.isClientSide) return InteractionResult.SUCCESS;
+        if(world.getBlockEntity(pos) instanceof TrackTileEntity te) te.toggle_trace(player);
+        return InteractionResult.CONSUME;
+      } else {
+        return onBlockActivated(state, world, pos, player, hand, rtr, false);
+      }
+    }
 
     @SuppressWarnings("deprecation")
     public InteractionResult onBlockActivated(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr, boolean remove_only)

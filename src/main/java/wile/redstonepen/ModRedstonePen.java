@@ -6,9 +6,6 @@
  */
 package wile.redstonepen;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -16,20 +13,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import wile.redstonepen.libmc.detail.*;
+import wile.redstonepen.libmc.detail.Auxiliaries;
+import wile.redstonepen.libmc.detail.Overlay;
 
 
 @Mod("redstonepen")
@@ -50,7 +48,7 @@ public class ModRedstonePen
     MinecraftForge.EVENT_BUS.register(this);
   }
 
-  public static final Logger logger() { return LOGGER; }
+  public static Logger logger() { return LOGGER; }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Events
@@ -66,6 +64,7 @@ public class ModRedstonePen
   {
     Overlay.register();
     ModContent.registerTileEntityRenderers(event);
+    ModContent.registerContainerGuis(event);
     ModContent.processContentClientSide();
     Overlay.TextOverlayGui.on_config(
       0.75,
@@ -90,6 +89,10 @@ public class ModRedstonePen
     @SubscribeEvent
     public static void onTileEntityRegistry(final RegistryEvent.Register<BlockEntityType<?>> event)
     { ModContent.allTileEntityTypes().forEach(e->event.getRegistry().register(e)); }
+
+    @SubscribeEvent
+    public static void onRegisterContainerTypes(final RegistryEvent.Register<MenuType<?>> event)
+    { ModContent.allMenuTypes().forEach(e->event.getRegistry().register(e)); }
 
     @SubscribeEvent
     public static void onRegisterModels(final ModelRegistryEvent event)

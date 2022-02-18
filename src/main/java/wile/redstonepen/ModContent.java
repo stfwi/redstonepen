@@ -6,14 +6,17 @@
  */
 package wile.redstonepen;
 
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
@@ -22,19 +25,34 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.apache.logging.log4j.Logger;
-import wile.redstonepen.blocks.*;
-import wile.redstonepen.items.*;
+import wile.redstonepen.blocks.CircuitComponents;
+import wile.redstonepen.blocks.ControlBox;
+import wile.redstonepen.blocks.RedstoneTrack;
+import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.blocks.StandardBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 
 public class ModContent
 {
   private static final Logger LOGGER = ModRedstonePen.LOGGER;
   private static final String MODID = ModRedstonePen.MODID;
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // Registry auxiliary functions.
+  //--------------------------------------------------------------------------------------------------------------------
+
+  private static class ModRegistry
+  {
+    private static <T extends BlockEntity> BlockEntityType<T> register(String name, BlockEntityType.BlockEntitySupplier<T> ctor, Block... blocks)
+    { final BlockEntityType<T> tet =  BlockEntityType.Builder.of(ctor, blocks).build(null); tet.setRegistryName(MODID, name); return tet; }
+  }
 
   // -----------------------------------------------------------------------------------------------------------------
   // -- Blocks
@@ -97,17 +115,24 @@ public class ModContent
   ).setRegistryName(MODID, "pen")));
 
   //--------------------------------------------------------------------------------------------------------------------
-  // Tile entities and entities
+  // Tile entities
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static final BlockEntityType<?> TET_TRACK = BlockEntityType.Builder
-    .of(RedstoneTrack.TrackTileEntity::new, TRACK_BLOCK)
-    .build(null)
-    .setRegistryName(MODID, "te_track");
+  public static final BlockEntityType<RedstoneTrack.TrackTileEntity> TET_TRACK = ModRegistry.register("te_track", RedstoneTrack.TrackTileEntity::new, TRACK_BLOCK);
+  public static final BlockEntityType<ControlBox.ControlBoxBlockEntity> TET_CONTROLBOX = ModRegistry.register("te_control_box", ControlBox.ControlBoxBlockEntity::new, CONTROLBOX_BLOCK);
 
   private static final BlockEntityType<?>[] tile_entity_types = {
-    TET_TRACK
+    TET_TRACK,
+    TET_CONTROLBOX
   };
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // Container registration
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static final MenuType<ControlBox.ControlBoxUiContainer> CT_CONTROLBOX;
+  static { CT_CONTROLBOX = (new MenuType<>(ControlBox.ControlBoxUiContainer::new)); CT_CONTROLBOX.setRegistryName(MODID,"ct_control_box"); }
+  private static final MenuType<?>[] menu_types = { CT_CONTROLBOX };
 
   //--------------------------------------------------------------------------------------------------------------------
   // Initialisation events
@@ -122,7 +147,7 @@ public class ModContent
     blocks.add(BISTABLE_RELAY_BLOCK);
     blocks.add(PULSE_RELAY_BLOCK);
     blocks.add(BRIDGE_RELAY_BLOCK);
-    //blocks.add(CONTROLBOX_BLOCK);
+    blocks.add(CONTROLBOX_BLOCK);
     return blocks;
   }
 
@@ -136,7 +161,7 @@ public class ModContent
     items.add(new CircuitComponents.DirectedComponentBlockItem(BISTABLE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bistable_relay"));
     items.add(new CircuitComponents.DirectedComponentBlockItem(PULSE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("pulse_relay"));
     items.add(new CircuitComponents.DirectedComponentBlockItem(BRIDGE_RELAY_BLOCK, (new Item.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("bridge_relay"));
-    //items.add(new BlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().group(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
+    items.add(new CircuitComponents.DirectedComponentBlockItem(CONTROLBOX_BLOCK, (new BlockItem.Properties().tab(ModRedstonePen.ITEMGROUP))).setRegistryName("control_box"));
     return items;
   }
 
@@ -152,6 +177,14 @@ public class ModContent
   public static List<BlockEntityType<?>> allTileEntityTypes()
   { return Arrays.asList(tile_entity_types); }
 
+  @Nonnull
+  public static List<MenuType<?>> allMenuTypes()
+  { return Arrays.asList(menu_types); }
+
+  @OnlyIn(Dist.CLIENT)
+  public static void registerContainerGuis(final FMLClientSetupEvent event)
+  { MenuScreens.register(CT_CONTROLBOX, ControlBox.ControlBoxGui::new); }
+
   @OnlyIn(Dist.CLIENT)
   public static void processContentClientSide()
   { ItemBlockRenderTypes.setRenderLayer(TRACK_BLOCK, RenderType.cutout()); }
@@ -163,11 +196,6 @@ public class ModContent
   @OnlyIn(Dist.CLIENT)
   @SuppressWarnings("unchecked")
   public static void registerTileEntityRenderers(final FMLClientSetupEvent event)
-  {
-    BlockEntityRenderers.register(
-      (BlockEntityType<RedstoneTrack.TrackTileEntity>)TET_TRACK,
-      wile.redstonepen.detail.ModRenderers.TrackTer::new
-    );
-  }
+  { BlockEntityRenderers.register(TET_TRACK, wile.redstonepen.detail.ModRenderers.TrackTer::new); }
 
 }

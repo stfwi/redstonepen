@@ -3,7 +3,8 @@
 	"ambientocclusion": false,
 	"textures": {
 		"particle": "redstonepen:block/control_box_block_off",
-		"s": "redstonepen:block/control_box_block_off"
+		"s": "redstonepen:block/control_box_block_off",
+    "b": "redstonepen:block/control_box_block_bottom"
 	},
 	"elements": [
 		{
@@ -16,7 +17,7 @@
 				"south": {"uv": [0, 14, 16, 16], "texture": "#s"},
 				"west": {"uv": [0, 0, 2, 16], "rotation": 90, "texture": "#s"},
 				"up": {"uv": [0, 0, 16, 16], "texture": "#s"},
-				"down": {"uv": [16, 0, 0, 16], "rotation": 180, "texture": "#s"}
+				"down": {"uv": [16, 0, 0, 16], "rotation": 180, "texture": "#b"}
 			}
 		},
 		{

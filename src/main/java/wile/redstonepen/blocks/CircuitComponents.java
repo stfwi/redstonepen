@@ -6,6 +6,7 @@
  */
 package wile.redstonepen.blocks;
 
+import com.google.common.collect.ImmutableList;
 import com.mojang.math.Vector3f;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -65,45 +66,68 @@ public class CircuitComponents
     public static final IntegerProperty ROTATION = IntegerProperty.create("rotation", 0, 3);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final IntegerProperty STATE = IntegerProperty.create("state", 0, 1);
+    private static final List<Direction> facing_mapping_ = make_facing_mappings();
+    private static final Direction[][][] facing_fwd_state_mapping_ = new Direction[6][4][6];
+    private static final Direction[][][] facing_rev_state_mapping_ = new Direction[6][4][6];
     protected final Map<BlockState, VoxelShape> shapes_ = new HashMap<>();
 
-    protected static final List<Direction> facing_mapping_ = new ArrayList<>();
-
-    static {
+    private static List<Direction> make_facing_mappings()
+    {
+      final List<Direction> maps = new ArrayList<>();
       Arrays.stream(Direction.values()).forEach((face)->{
-        switch (face) {
+        switch(face) {
           case DOWN, UP -> {
-            facing_mapping_.add(Direction.NORTH);
-            facing_mapping_.add(Direction.EAST);
-            facing_mapping_.add(Direction.SOUTH);
-            facing_mapping_.add(Direction.WEST);
+            maps.add(Direction.NORTH);
+            maps.add(Direction.EAST);
+            maps.add(Direction.SOUTH);
+            maps.add(Direction.WEST);
           }
           case NORTH -> {
-            facing_mapping_.add(Direction.UP);
-            facing_mapping_.add(Direction.EAST);
-            facing_mapping_.add(Direction.DOWN);
-            facing_mapping_.add(Direction.WEST);
+            maps.add(Direction.UP);
+            maps.add(Direction.EAST);
+            maps.add(Direction.DOWN);
+            maps.add(Direction.WEST);
           }
           case EAST -> {
-            facing_mapping_.add(Direction.UP);
-            facing_mapping_.add(Direction.SOUTH);
-            facing_mapping_.add(Direction.DOWN);
-            facing_mapping_.add(Direction.NORTH);
+            maps.add(Direction.UP);
+            maps.add(Direction.SOUTH);
+            maps.add(Direction.DOWN);
+            maps.add(Direction.NORTH);
           }
           case SOUTH -> {
-            facing_mapping_.add(Direction.UP);
-            facing_mapping_.add(Direction.WEST);
-            facing_mapping_.add(Direction.DOWN);
-            facing_mapping_.add(Direction.EAST);
+            maps.add(Direction.UP);
+            maps.add(Direction.WEST);
+            maps.add(Direction.DOWN);
+            maps.add(Direction.EAST);
           }
           case WEST -> {
-            facing_mapping_.add(Direction.UP);
-            facing_mapping_.add(Direction.NORTH);
-            facing_mapping_.add(Direction.DOWN);
-            facing_mapping_.add(Direction.SOUTH);
+            maps.add(Direction.UP);
+            maps.add(Direction.NORTH);
+            maps.add(Direction.DOWN);
+            maps.add(Direction.SOUTH);
           }
         }
       });
+      return maps;
+    }
+
+    private static void fill_state_facing_lookups(ImmutableList<BlockState> states)
+    {
+      if((facing_fwd_state_mapping_[0][0][0] != null) && (facing_rev_state_mapping_[0][0][0] != null)) return;
+      for(BlockState state: states) {
+        for(Direction world_side:Direction.values()) {
+          Direction sm = switch(world_side) {
+            case DOWN -> getDownFacing(state);
+            case UP -> getUpFacing(state);
+            case NORTH -> getFrontFacing(state);
+            case SOUTH -> getBackFacing(state);
+            case WEST -> getLeftFacing(state);
+            case EAST -> getRightFacing(state);
+          };
+          facing_fwd_state_mapping_[state.getValue(FACING).ordinal()][state.getValue(ROTATION)][world_side.ordinal()] = sm;
+          facing_rev_state_mapping_[state.getValue(FACING).ordinal()][state.getValue(ROTATION)][sm.ordinal()] = world_side;
+        }
+      }
     }
 
     protected static VoxelShape mapped_shape(BlockState state, AABB[] aabb)
@@ -160,6 +184,7 @@ public class CircuitComponents
       super(config, builder);
       registerDefaultState(super.defaultBlockState().setValue(FACING, Direction.NORTH).setValue(ROTATION,0).setValue(POWERED,false).setValue(STATE,0));
       stateDefinition.getPossibleStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabbs)));
+      fill_state_facing_lookups(stateDefinition.getPossibleStates());
     }
 
     public DirectedComponentBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
@@ -225,12 +250,12 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return 0; }
 
-    @Deprecated
+    @Override
     @SuppressWarnings("deprecation")
-    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
+    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return 0; }
 
     @Override
@@ -365,24 +390,38 @@ public class CircuitComponents
 
     //------------------------------------------------------------------------------------------------------------------
 
-    protected final Direction getOutputFacing(BlockState state)
-    { return facing_mapping_.get((state.getValue(FACING).get3DDataValue()) * 4 + state.getValue(ROTATION)); }
+    protected static Direction getOutputFacing(BlockState state)
+    { return getFrontFacing(state); }
 
-    protected final Direction getFrontFacing(BlockState state)
+    protected static Direction getFrontFacing(BlockState state)
     { return facing_mapping_.get((state.getValue(FACING).get3DDataValue()) * 4 + (((state.getValue(ROTATION)  )) & 0x3)); }
 
-    protected final Direction getRightFacing(BlockState state)
+    protected static Direction getRightFacing(BlockState state)
     { return facing_mapping_.get((state.getValue(FACING).get3DDataValue()) * 4 + (((state.getValue(ROTATION)+1)) & 0x3)); }
 
-    protected final Direction getBackFacing(BlockState state)
+    protected static Direction getBackFacing(BlockState state)
     { return facing_mapping_.get((state.getValue(FACING).get3DDataValue()) * 4 + (((state.getValue(ROTATION)+2)) & 0x3)); }
 
-    protected final Direction getLeftFacing(BlockState state)
+    protected static Direction getLeftFacing(BlockState state)
     { return facing_mapping_.get((state.getValue(FACING).get3DDataValue()) * 4 + (((state.getValue(ROTATION)+3)) & 0x3)); }
 
+    protected static Direction getUpFacing(BlockState state)
+    { return state.getValue(FACING).getOpposite(); }
+
+    protected static Direction getDownFacing(BlockState state)
+    { return state.getValue(FACING); }
+
+    protected static Direction getForwardStateMappedFacing(BlockState state, Direction internal_side)
+    { return facing_fwd_state_mapping_[state.getValue(FACING).ordinal()][state.getValue(ROTATION)][internal_side.ordinal()]; }
+
+    protected static Direction getReverseStateMappedFacing(BlockState state, Direction world_side)
+    { return facing_rev_state_mapping_[state.getValue(FACING).ordinal()][state.getValue(ROTATION)][world_side.ordinal()]; }
+
     protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos)
+    { notifyOutputNeighbourOfStateChange(state, world, pos, getOutputFacing(state)); }
+
+    protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos, Direction facing)
     {
-      final Direction facing = getOutputFacing(state);
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
@@ -391,7 +430,7 @@ public class CircuitComponents
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        ModRedstonePen.logger().error("Curcuit neighborChanged recursion detected, dropping!");
         Vec3 p = Vec3.atCenterOf(pos);
         world.addFreshEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(this, 1)));
         world.setBlock(pos, world.getBlockState(pos).getFluidState().createLegacyBlock(), 2|16);
@@ -451,13 +490,13 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return ((!state.getValue(POWERED)) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15;}
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return ((!state.getValue(POWERED)) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15;}
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return getSignal(state, world, pos, redsrone_side); }
+    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return getSignal(state, world, pos, redstone_side); }
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
@@ -503,8 +542,8 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return (state.getValue(POWERED) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return (state.getValue(POWERED) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
@@ -548,8 +587,8 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return ((state.getValue(STATE) == 0) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
@@ -584,8 +623,8 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return ((state.getValue(STATE) == 0) || (redsrone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
@@ -659,8 +698,6 @@ public class CircuitComponents
           }
         }
         if((--power_update_recursion_level_) < 0) power_update_recursion_level_ = 0;
-      } else {
-        System.out.println("recursion");
       }
       return p;
     }
@@ -696,15 +733,14 @@ public class CircuitComponents
         } else {
           p = Math.max(0, Math.max(getInputPower((ServerLevel)world, pos, left), getInputPower((ServerLevel)world, pos, right)));
         }
-        //System.out.println("p@" + redstone_side.getOpposite() + ":" + p);
       }
       return p;
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redsrone_side)
-    { return getSignal(state, world, pos, redsrone_side); }
+    public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
+    { return getSignal(state, world, pos, redstone_side); }
 
     @Override
     public BlockState update(BlockState state, Level world, BlockPos pos, @Nullable BlockPos fromPos)
@@ -737,7 +773,6 @@ public class CircuitComponents
           int pr = getSignal(state, world, pos, right);
           int pl = getSignal(state, world, pos, left);
           final boolean track_powered = (pr>0) || (pl>0);
-          //System.out.println("u->" + dir + " track_powered:" + track_powered);
           if(track_powered != (state.getValue(STATE)==1)) world.setBlock(pos, (state=state.setValue(STATE, track_powered?1:0)), 2|15);
           world.neighborChanged(pos.relative(dir), this, pos);
           lock_update = false;

@@ -4,9 +4,11 @@
 ----
 ## Version history
 
-    ~ v1.0.9-b3   [F] Relay placement preview added.
+    - v1.0.9-b3   [A] Added Redstone Logic Control.
+                  [A] Added relay placement preview.
                   [A] Added language support for Português (PR#2, faelBrunnoS).
                   [A] Added Pen crafting advancement.
+                  [A] Added language es_es (PR#3, hacheraw).
 
     - v1.0.9-b2   [R] Fixed regression issue related to #1.
 
