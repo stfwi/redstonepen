@@ -4,8 +4,6 @@
 A [Minecraft](https://minecraft.net) (Java Edition) mod adding a pen to draw
 Redstone tracks more accurately. Inspired by the Redstone Paste mod.
 
-***Note for coders/modders: Please take a look into the MC version branches to view/clone the source code.***
-
 ### Distribution file download
 
 Main distribution channel for this mod is CurseForge:

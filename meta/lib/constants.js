@@ -4,11 +4,11 @@
   c.modid = "redstonepen";
   c.mod_registry_name = function() { return c.modid; }
   c.local_assets_root = function() { return "src/main/resources/assets/" + c.mod_registry_name(); }
-  c.reference_repository = function() { return "git@github.com:stfwi/engineers-tools.git"; }
+  c.reference_repository = function() { return "https://github.com/stfwi/redstonepen.git"; }
   c.gradle_property_modversion = function() { return "version_redstonepen"; }
   c.gradle_property_version_minecraft = function() { return "version_minecraft"; }
   c.gradle_property_version_forge = function() { return "version_forge_minecraft"; }
-  c.project_download_inet_page = function() { return "https://www.curseforge.com/minecraft/mc-mods/engineers-tools/"; }
+  c.project_download_inet_page = function() { return "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/"; }
   c.options = {
     without_ref_repository_check: true
   };
