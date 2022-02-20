@@ -5,6 +5,8 @@
 ## Version history
 
     ~ v1.0.9      [R] Release build.
+                  [A] Added counter documentation.
+                  [A] Added TICKRATE variable.
 
     - v1.0.9-b3   [A] Added Redstone Logic Control.
                   [A] Added relay placement preview.

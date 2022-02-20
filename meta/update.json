@@ -1,7 +1,6 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.18.1": {
-  "1.0.9": "[R] Release build.",
   "1.0.9-b3": "[A] Added Redstone Logic Control.\n[A] Added relay placement preview.\n[A] Added language support for Português (PR#2, faelBrunnoS).\n[A] Added Pen crafting advancement.\n[A] Added language es_es (PR#3, hacheraw).",
   "1.0.9-b2": "[R] Fixed regression issue related to #1.",
   "1.0.9-b1": "[F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).\n[M] Creative mode pen handling edited.\n[F] Relay occlusion/shadow fixed.",
@@ -22,7 +21,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.18.1-recommended": "1.0.9",
-  "1.18.1-latest": "1.0.9"
+  "1.18.1-recommended": "1.0.8",
+  "1.18.1-latest": "1.0.9-b3"
  }
 }
