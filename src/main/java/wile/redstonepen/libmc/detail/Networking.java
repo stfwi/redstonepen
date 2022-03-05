@@ -20,12 +20,15 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -45,6 +48,8 @@ public class Networking
     DEFAULT_CHANNEL.registerMessage(++discr, PacketTileNotifyServerToClient.class, PacketTileNotifyServerToClient::compose, PacketTileNotifyServerToClient::parse, PacketTileNotifyServerToClient.Handler::handle);
     DEFAULT_CHANNEL.registerMessage(++discr, PacketContainerSyncClientToServer.class, PacketContainerSyncClientToServer::compose, PacketContainerSyncClientToServer::parse, PacketContainerSyncClientToServer.Handler::handle);
     DEFAULT_CHANNEL.registerMessage(++discr, PacketContainerSyncServerToClient.class, PacketContainerSyncServerToClient::compose, PacketContainerSyncServerToClient::parse, PacketContainerSyncServerToClient.Handler::handle);
+    DEFAULT_CHANNEL.registerMessage(++discr, PacketNbtNotifyClientToServer.class, PacketNbtNotifyClientToServer::compose, PacketNbtNotifyClientToServer::parse, PacketNbtNotifyClientToServer.Handler::handle);
+    DEFAULT_CHANNEL.registerMessage(++discr, PacketNbtNotifyServerToClient.class, PacketNbtNotifyServerToClient::compose, PacketNbtNotifyServerToClient::parse, PacketNbtNotifyServerToClient.Handler::handle);
     DEFAULT_CHANNEL.registerMessage(++discr, OverlayTextMessage.class, OverlayTextMessage::compose, OverlayTextMessage::parse, OverlayTextMessage.Handler::handle);
   }
 
@@ -244,6 +249,80 @@ public class Networking
           if((player==null) || !(player.containerMenu instanceof INetworkSynchronisableContainer)) return;
           if(player.containerMenu.containerId != pkt.id) return;
           ((INetworkSynchronisableContainer)player.containerMenu).onServerPacketReceived(pkt.id,pkt.nbt);
+        });
+        ctx.get().setPacketHandled(true);
+      }
+    }
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // World notifications
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public static class PacketNbtNotifyClientToServer
+  {
+    public static final Map<String, BiConsumer<Player, CompoundTag>> handlers = new HashMap<>();
+    final CompoundTag nbt;
+
+    public static void sendToServer(CompoundTag nbt)
+    { if(nbt!=null) DEFAULT_CHANNEL.sendToServer(new PacketNbtNotifyClientToServer(nbt)); }
+
+    public PacketNbtNotifyClientToServer(CompoundTag nbt)
+    { this.nbt = nbt; }
+
+    public static PacketNbtNotifyClientToServer parse(final FriendlyByteBuf buf)
+    { return new PacketNbtNotifyClientToServer(buf.readNbt()); }
+
+    public static void compose(final PacketNbtNotifyClientToServer pkt, final FriendlyByteBuf buf)
+    { buf.writeNbt(pkt.nbt); }
+
+    public static class Handler
+    {
+      public static void handle(final PacketNbtNotifyClientToServer pkt, final Supplier<NetworkEvent.Context> ctx)
+      {
+        ctx.get().enqueueWork(() -> {
+          final ServerPlayer player = ctx.get().getSender();
+          if(player==null) return;
+          final String hnd = pkt.nbt.getString("hnd");
+          if(hnd.isEmpty()) return;
+          if(handlers.containsKey(hnd)) handlers.get(hnd).accept(player, pkt.nbt);
+        });
+        ctx.get().setPacketHandled(true);
+      }
+    }
+  }
+
+  public static class PacketNbtNotifyServerToClient
+  {
+    public static final Map<String, Consumer<CompoundTag>> handlers = new HashMap<>();
+    final CompoundTag nbt;
+
+    public static void sendToPlayer(Player player, CompoundTag nbt)
+    {
+      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || (nbt==null)) return;
+      DEFAULT_CHANNEL.sendTo(new PacketNbtNotifyServerToClient(nbt), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+    }
+
+    public static void sendToPlayers(Level world, CompoundTag nbt)
+    { for(Player player: world.players()) sendToPlayer(player, nbt); }
+
+    public PacketNbtNotifyServerToClient(CompoundTag nbt)
+    { this.nbt = nbt; }
+
+    public static PacketNbtNotifyServerToClient parse(final FriendlyByteBuf buf)
+    { return new PacketNbtNotifyServerToClient(buf.readNbt()); }
+
+    public static void compose(final PacketNbtNotifyServerToClient pkt, final FriendlyByteBuf buf)
+    { buf.writeNbt(pkt.nbt); }
+
+    public static class Handler
+    {
+      public static void handle(final PacketNbtNotifyServerToClient pkt, final Supplier<NetworkEvent.Context> ctx)
+      {
+        ctx.get().enqueueWork(() -> {
+          final String hnd = pkt.nbt.getString("hnd");
+          if(hnd.isEmpty()) return;
+          if(handlers.containsKey(hnd)) handlers.get(hnd).accept(pkt.nbt);
         });
         ctx.get().setPacketHandled(true);
       }

@@ -18,6 +18,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -26,6 +28,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import wile.redstonepen.detail.RcaSync;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Overlay;
 
@@ -46,6 +49,7 @@ public class ModRedstonePen
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
+    MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ForgeEvents::onPlayerTickEvent);
   }
 
   public static Logger logger() { return LOGGER; }
@@ -58,6 +62,7 @@ public class ModRedstonePen
   {
     wile.redstonepen.libmc.detail.Networking.init(MODID);
     ModConfig.apply();
+    RcaSync.CommonRca.init();
   }
 
   private void onClientSetup(final FMLClientSetupEvent event)
@@ -73,6 +78,7 @@ public class ModRedstonePen
       0x55333333,
       0x55444444
     );
+    RcaSync.ClientRca.init();
   }
 
   @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
@@ -102,18 +108,13 @@ public class ModRedstonePen
     public static void onRecipeRegistry(final RegistryEvent.Register<RecipeSerializer<?>> event)
     { event.getRegistry().register(wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER); }
 
-//    public static void onConfigLoad(net.minecraftforge.fml.config.ModConfig.Loading configEvent)
-//    { ModConfig.apply(); }
-//
-//    public static void onConfigReload(net.minecraftforge.fml.config.ModConfig.Reloading configEvent)
-//    {
-//      try {
-//        logger().info("Config file changed {}", configEvent.getConfig().getFileName());
-//        ModConfig.apply();
-//      } catch(Throwable e) {
-//        logger().error("Failed to load changed config: " + e.getMessage());
-//      }
-//    }
+    public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
+    {
+      if((event.phase != TickEvent.Phase.END) || (!event.player.level.isClientSide)) return;
+      if((event.player.level.getGameTime() & 0x1) != 0) return;
+      wile.redstonepen.detail.RcaSync.ClientRca.tick();
+    }
+
   }
 
   // -------------------------------------------------------------------------------------------------------------------
