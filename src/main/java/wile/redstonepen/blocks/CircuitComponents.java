@@ -60,7 +60,7 @@ public class CircuitComponents
   // DirectedComponentBlock
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable
+  public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable implements StandardBlocks.IBlockItemFactory
   {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final IntegerProperty ROTATION = IntegerProperty.create("rotation", 0, 3);
@@ -193,6 +193,10 @@ public class CircuitComponents
     //------------------------------------------------------------------------------------------------------------------
 
     @Override
+    public BlockItem getBlockItem(Block block, Item.Properties builder)
+    { return new DirectedComponentBlockItem(block, builder); }
+
+    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
     { super.createBlockStateDefinition(builder); builder.add(FACING, ROTATION, POWERED, STATE); }
 
@@ -259,6 +263,7 @@ public class CircuitComponents
     { return 0; }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
     {}
 
@@ -677,9 +682,9 @@ public class CircuitComponents
         ++power_update_recursion_level_;
         if(state.is(Blocks.REDSTONE_WIRE)) {
           p = Math.max(0, state.getValue(RedStoneWireBlock.POWER)-2);
-        } else if(state.is(ModContent.TRACK_BLOCK)) {
+        } else if(state.is(ModContent.references.TRACK_BLOCK)) {
           p = Math.max(0, RedstoneTrack.RedstoneTrackBlock.tile(world, pos).map((te->te.getRedstonePower(side, true))).orElse(0)-2);
-        } else if(state.is(ModContent.BRIDGE_RELAY_BLOCK)) {
+        } else if(state.is(ModContent.references.BRIDGE_RELAY_BLOCK)) {
           if(state.getValue(FACING) != world.getBlockState(relay_pos).getValue(FACING)) {
             p = 0;
           } else if((state.getValue(ROTATION) & 0x1) != (world.getBlockState(relay_pos).getValue(ROTATION) & 0x1)) {
@@ -706,7 +711,7 @@ public class CircuitComponents
     {
       final BlockPos pos = relay_pos.relative(side);
       final BlockState state = world.getBlockState(pos);
-      return state.is(Blocks.REDSTONE_WIRE) || state.is(ModContent.TRACK_BLOCK);
+      return state.is(Blocks.REDSTONE_WIRE) || state.is(ModContent.references.TRACK_BLOCK);
     }
 
     protected boolean isSidePowered(Level world, BlockPos pos, Direction side)

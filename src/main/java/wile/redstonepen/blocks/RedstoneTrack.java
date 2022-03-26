@@ -476,6 +476,7 @@ public class RedstoneTrack
     { return false; }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
@@ -512,6 +513,7 @@ public class RedstoneTrack
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -722,7 +724,7 @@ public class RedstoneTrack
     private boolean trace_ = false;
 
     public TrackTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_TRACK, pos, state); }
+    { super(ModContent.getBlockEntityTypeOfBlock(state.getBlock().getRegistryName().getPath()), pos, state); }
 
     public CompoundTag readnbt(CompoundTag nbt)
     {
@@ -821,8 +823,8 @@ public class RedstoneTrack
     {
       if(level.isClientSide()) return true;
       setChanged();
-      if(schedule && (!getLevel().getBlockTicks().hasScheduledTick(getBlockPos(), ModContent.TRACK_BLOCK))) {
-        getLevel().scheduleTick(getBlockPos(), ModContent.TRACK_BLOCK, 1);
+      if(schedule && (!getLevel().getBlockTicks().hasScheduledTick(getBlockPos(), ModContent.references.TRACK_BLOCK))) {
+        getLevel().scheduleTick(getBlockPos(), ModContent.references.TRACK_BLOCK, 1);
       } else {
         Networking.PacketTileNotifyServerToClient.sendToPlayers(this, writenbt(new CompoundTag(), true));
       }
@@ -1045,7 +1047,7 @@ public class RedstoneTrack
     }
 
     private RedstoneTrackBlock getBlock()
-    { return ModContent.TRACK_BLOCK; }
+    { return ModContent.references.TRACK_BLOCK; }
 
     public boolean handlePostPlacement(Direction facing, BlockState facingState, BlockPos fromPos)
     {

@@ -6,15 +6,16 @@
  */
 package wile.redstonepen.libmc.detail;
 
-import com.google.common.collect.Lists;
-import com.google.gson.*;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
@@ -22,11 +23,12 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.tags.ITag;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ExtendedShapelessRecipe extends ShapelessRecipe implements CraftingRecipe
@@ -236,13 +238,15 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       if(res.has("tag")) {
         // Tag based item picking
         ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
-        final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
-        if(tag==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag does not exist: #" + rl);
-        if(tag.getValues().isEmpty()) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag has no items: #" + rl);
+        // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
+        final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
+        if(key==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag does not exist: #" + rl);
+        final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
+        final @Nullable Item item = tag.stream().findFirst().orElse(null);
+        if(item==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
-        List<Item> lst = Lists.newArrayList(tag.getValues());
-        res.addProperty("item", lst.get(0).getRegistryName().toString());
+        res.addProperty("item", item.getRegistryName().toString());
       }
       ItemStack result_stack = ShapedRecipe.itemStackFromJson(res);
       return new ExtendedShapelessRecipe(recipeId, group, result_stack, list, aspects_nbt, resultTag);

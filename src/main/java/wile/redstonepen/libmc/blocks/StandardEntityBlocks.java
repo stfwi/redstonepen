@@ -7,8 +7,10 @@
  * Common functionality class for blocks with block entities.
  */
 package wile.redstonepen.libmc.blocks;
+import wile.redstonepen.libmc.detail.Registries;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
@@ -28,8 +30,8 @@ public class StandardEntityBlocks
 {
   public interface IStandardEntityBlock<ET extends StandardBlockEntity> extends EntityBlock
   {
-    @Nullable
-    BlockEntityType<ET> getBlockEntityType();
+
+    ResourceLocation getBlockRegistryName();
 
     default boolean isBlockEntityTicking(Level world, BlockState state)
     { return false; }
@@ -46,7 +48,10 @@ public class StandardEntityBlocks
     @Override
     @Nullable
     default BlockEntity newBlockEntity(BlockPos pos, BlockState state)
-    { return (getBlockEntityType()==null) ? null : getBlockEntityType().create(pos, state); }
+    {
+      BlockEntityType<?> tet = Registries.getBlockEntityTypeOfBlock(getBlockRegistryName().getPath());
+      return (tet==null) ? null : tet.create(pos, state);
+    }
 
     @Override
     @Nullable

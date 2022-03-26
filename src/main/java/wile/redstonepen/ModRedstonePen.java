@@ -7,14 +7,10 @@
 package wile.redstonepen;
 
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
@@ -28,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Overlay;
+import wile.redstonepen.libmc.detail.Registries;
 
 
 @Mod("redstonepen")
@@ -42,6 +39,8 @@ public class ModRedstonePen
   {
     Auxiliaries.init(MODID, LOGGER, ModConfig::getServerConfig);
     Auxiliaries.logGitVersion(MODNAME);
+    Registries.init(MODID, "quill");
+    ModContent.init(MODID);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
@@ -63,8 +62,8 @@ public class ModRedstonePen
   private void onClientSetup(final FMLClientSetupEvent event)
   {
     Overlay.register();
-    ModContent.registerTileEntityRenderers(event);
-    ModContent.registerContainerGuis(event);
+    ModContent.registerBlockEntityRenderers(event);
+    ModContent.registerMenuGuis(event);
     ModContent.processContentClientSide();
     Overlay.TextOverlayGui.on_config(
       0.75,
@@ -79,20 +78,20 @@ public class ModRedstonePen
   public static final class ForgeEvents
   {
     @SubscribeEvent
-    public static void onBlocksRegistry(final RegistryEvent.Register<Block> event)
-    { ModContent.allBlocks().forEach(e->event.getRegistry().register(e)); }
+    public static void onBlockRegistry(final RegistryEvent.Register<Block> event)
+    { Registries.onBlockRegistry((rl, block)->event.getRegistry().register(block)); }
 
     @SubscribeEvent
     public static void onItemRegistry(final RegistryEvent.Register<Item> event)
-    { ModContent.allItems().forEach(e->event.getRegistry().register(e)); }
+    { Registries.onItemRegistry((rl, item)->event.getRegistry().register(item)); }
 
     @SubscribeEvent
-    public static void onTileEntityRegistry(final RegistryEvent.Register<BlockEntityType<?>> event)
-    { ModContent.allTileEntityTypes().forEach(e->event.getRegistry().register(e)); }
+    public static void onBlockEntityRegistry(final RegistryEvent.Register<BlockEntityType<?>> event)
+    { Registries.onBlockEntityRegistry((rl, tet)->event.getRegistry().register(tet)); }
 
     @SubscribeEvent
-    public static void onRegisterContainerTypes(final RegistryEvent.Register<MenuType<?>> event)
-    { ModContent.allMenuTypes().forEach(e->event.getRegistry().register(e)); }
+    public static void onRegisterMenuTypes(final RegistryEvent.Register<MenuType<?>> event)
+    { Registries.onMenuTypeRegistry((rl, ct)->event.getRegistry().register(ct)); }
 
     @SubscribeEvent
     public static void onRegisterModels(final ModelRegistryEvent event)
@@ -102,27 +101,5 @@ public class ModRedstonePen
     public static void onRecipeRegistry(final RegistryEvent.Register<RecipeSerializer<?>> event)
     { event.getRegistry().register(wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER); }
 
-//    public static void onConfigLoad(net.minecraftforge.fml.config.ModConfig.Loading configEvent)
-//    { ModConfig.apply(); }
-//
-//    public static void onConfigReload(net.minecraftforge.fml.config.ModConfig.Reloading configEvent)
-//    {
-//      try {
-//        logger().info("Config file changed {}", configEvent.getConfig().getFileName());
-//        ModConfig.apply();
-//      } catch(Throwable e) {
-//        logger().error("Failed to load changed config: " + e.getMessage());
-//      }
-//    }
   }
-
-  // -------------------------------------------------------------------------------------------------------------------
-  // Item group / creative tab
-  // -------------------------------------------------------------------------------------------------------------------
-
-  public static final CreativeModeTab ITEMGROUP = (new CreativeModeTab("tab" + MODID) {
-    @OnlyIn(Dist.CLIENT)
-    public ItemStack makeIcon()
-    { return new ItemStack(ModContent.QUILL_ITEM); }
-  });
 }

@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.10-b1  [U] Updated to 1.18.2.
+
     - v1.0.9      [R] Release build.
                   [A] Added RLC counter documentation.
                   [A] Added RLC TICKRATE variable.

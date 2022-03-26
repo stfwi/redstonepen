@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
- "1.18.1": {
+ "1.18.2": {
+  "1.0.10-b1": "[U] Updated to 1.18.2.",
   "1.0.9": "[R] Release build.\n[A] Added RLC counter documentation.\n[A] Added RLC TICKRATE variable.\n[M] Pen recipe advancement edited.",
   "1.0.9-b3": "[A] Added Redstone Logic Control.\n[A] Added relay placement preview.\n[A] Added language support for Português (PR#2, faelBrunnoS).\n[A] Added Pen crafting advancement.\n[A] Added language es_es (PR#3, hacheraw).",
   "1.0.9-b2": "[R] Fixed regression issue related to #1.",
@@ -22,7 +23,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.18.1-recommended": "1.0.9",
-  "1.18.1-latest": "1.0.9"
+  "1.18.2-recommended": "1.0.9",
+  "1.18.2-latest": "1.0.10-b1"
  }
 }

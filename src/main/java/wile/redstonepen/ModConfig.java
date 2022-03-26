@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang3.tuple.Pair;
+import wile.redstonepen.libmc.detail.Registries;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -157,7 +158,7 @@ public class ModConfig
     if(!includes.isEmpty()) log("Config pattern includes: '" + String.join(",", includes) + "'");
     {
       HashSet<String> optouts = new HashSet<>();
-      ModContent.getRegisteredItems().stream().filter((Item item) -> {
+      Registries.getRegisteredItems().stream().filter((Item item) -> {
         if(item==null) return true;
         try {
           final String rn = item.getRegistryName().getPath();
@@ -182,7 +183,7 @@ public class ModConfig
         }
         return false;
       }).forEach(e -> optouts.add(e.getRegistryName().getPath()));
-      ModContent.getRegisteredBlocks().stream().filter(e->(e==null)||isOptedOut(e.asItem())).forEach(e->optouts.add(e.getRegistryName().getPath()));
+      Registries.getRegisteredBlocks().stream().filter(e->(e==null)||isOptedOut(e.asItem())).forEach(e->optouts.add(e.getRegistryName().getPath()));
       optouts_ = optouts;
     }
     {

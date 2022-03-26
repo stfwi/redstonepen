@@ -15,6 +15,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.*;
@@ -29,7 +30,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -40,6 +40,7 @@ import wile.redstonepen.ModContent;
 import wile.redstonepen.libmc.blocks.StandardEntityBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Networking;
+import wile.redstonepen.libmc.detail.Registries;
 import wile.redstonepen.libmc.detail.SidedProxy;
 import wile.redstonepen.libmc.ui.GuiTextEditing;
 import wile.redstonepen.libmc.ui.Guis;
@@ -72,6 +73,10 @@ public class ControlBox
     { super(config, builder, aabb); }
 
     @Override
+    public ResourceLocation getBlockRegistryName()
+    { return getRegistryName(); }
+
+    @Override
     public List<ItemStack> dropList(BlockState state, Level world, @Nullable BlockEntity te, boolean explosion)
     {
       final ItemStack stack = new ItemStack(this.asItem());
@@ -84,11 +89,6 @@ public class ControlBox
       }
       return Collections.singletonList(stack);
     }
-
-    @Nullable
-    @Override
-    public BlockEntityType<ControlBoxBlockEntity> getBlockEntityType()
-    { return ModContent.TET_CONTROLBOX; }
 
     @Override
     public boolean isBlockEntityTicking(Level world, BlockState state)
@@ -176,7 +176,7 @@ public class ControlBox
     private int tick_interval_ = TICK_INTERVAL;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_CONTROLBOX, pos, state); }
+    { super(Registries.getBlockEntityTypeOfBlock(state.getBlock().getRegistryName().getPath()), pos, state); }
 
     public void readnbt(CompoundTag nbt)
     {
@@ -400,7 +400,7 @@ public class ControlBox
 
     private ControlBoxUiContainer(int cid, Inventory player_inventory, Container block_inventory, ContainerLevelAccess wpc, ContainerData fields)
     {
-      super(ModContent.CT_CONTROLBOX, cid);
+      super(ModContent.getMenuTypeOfBlock("control_box"), cid);
       player_ = player_inventory.player;
       inventory_ = block_inventory;
       wpc_ = wpc;
@@ -512,7 +512,7 @@ public class ControlBox
   @OnlyIn(Dist.CLIENT)
   public static class ControlBoxGui extends Guis.ContainerGui<ControlBoxUiContainer>
   {
-    private final String tooltip_prefix = ModContent.CONTROLBOX_BLOCK.getDescriptionId() + "";
+    private final String tooltip_prefix = ModContent.references.CONTROLBOX_BLOCK.getDescriptionId() + "";
     private final GuiTextEditing.MultiLineTextBox textbox;
     private final Guis.CheckBox start_stop;
     private final Guis.ImageButton cb_copy_all;

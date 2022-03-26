@@ -41,6 +41,7 @@ import wile.redstonepen.blocks.RedstoneTrack.TrackTileEntity;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Inventories;
 import wile.redstonepen.libmc.detail.Overlay;
+import wile.redstonepen.libmc.detail.Registries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
 public class RedstonePenItem extends Item
 {
   public RedstonePenItem(Item.Properties properties)
-  { super(properties.tab(ModRedstonePen.ITEMGROUP).setNoRepair()); }
+  { super(properties.setNoRepair()); }
 
   //------------------------------------------------------------------------------------------------------------------
 
@@ -71,7 +72,7 @@ public class RedstonePenItem extends Item
 
   @Override
   public Collection<CreativeModeTab> getCreativeTabs()
-  { return (Collections.singletonList(ModRedstonePen.ITEMGROUP)); }
+  { return (Collections.singletonList(Registries.getCreativeModeTab())); }
 
   @Override
   public int getEnchantmentValue()
@@ -121,7 +122,7 @@ public class RedstonePenItem extends Item
       world.removeBlock(pos, false);
       return true;
     }
-    if(state.is(ModContent.TRACK_BLOCK)) {
+    if(state.is(ModContent.references.TRACK_BLOCK)) {
       HitResult rt = player.pick(10.0, 0f, false);
       if(rt.getType() != HitResult.Type.BLOCK) return false;
       InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
@@ -170,7 +171,7 @@ public class RedstonePenItem extends Item
     } else {
       final BlockHitResult rtr = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), target_pos, context.isInside());
       final BlockPlaceContext ctx = new BlockPlaceContext(context.getPlayer(), context.getHand(), new ItemStack(Items.REDSTONE), rtr);
-      final BlockState rs_state = ModContent.TRACK_BLOCK.getStateForPlacement(ctx);
+      final BlockState rs_state = ModContent.references.TRACK_BLOCK.getStateForPlacement(ctx);
       if(rs_state==null) return InteractionResult.FAIL;
       if(!state.getBlock().canBeReplaced(target_state, ctx)) return InteractionResult.FAIL;
       if(!world.setBlock(target_pos, rs_state, 1|2)) return InteractionResult.FAIL;
@@ -201,7 +202,7 @@ public class RedstonePenItem extends Item
     TranslatableComponent tc = null;
     if(block == Blocks.REDSTONE_WIRE) {
       tc = Auxiliaries.localizable("overlay.wire_power", powerFormatted(state.getValue(RedStoneWireBlock.POWER)));
-    } else if(block == ModContent.TRACK_BLOCK) {
+    } else if(block == ModContent.references.TRACK_BLOCK) {
       TrackTileEntity te = RedstoneTrack.RedstoneTrackBlock.tile(world, pos).orElse(null);
       if(te==null) return;
       tc = Auxiliaries.localizable("overlay.track_power", powerFormatted(te.getSidePower(rs_side)));
@@ -269,7 +270,7 @@ public class RedstonePenItem extends Item
       return;
     } else if(isPen(stack)) {
       if(!stack.isDamageableItem()) {
-        ItemStack remaining = Inventories.insert(player, new ItemStack(Items.REDSTONE, amount), false);
+        ItemStack remaining = Inventories.insert(Inventories.itemhandler(player), new ItemStack(Items.REDSTONE, amount), false);
         if(!remaining.isEmpty()) Inventories.give(player, remaining); // also drops, but with sound.
       } else if(stack.getDamageValue() >= amount) {
         stack.setDamageValue(stack.getDamageValue()-amount);
@@ -304,7 +305,7 @@ public class RedstonePenItem extends Item
           stack.setDamageValue(dmg);
         }
       } else {
-        amount = Inventories.extract(player, Items.REDSTONE, amount, false).getCount();
+        amount = Inventories.extract(Inventories.itemhandler(player), new ItemStack(Items.REDSTONE), amount, false).getCount();
       }
     } else if(stack.getItem() == Items.REDSTONE) {
       if(stack.getCount() <= amount) {
@@ -324,7 +325,7 @@ public class RedstonePenItem extends Item
       if(stack.isDamageableItem()) {
         return stack.getDamageValue() < (stack.getMaxDamage()-amount);
       } else {
-        return Inventories.extract(player, Items.REDSTONE, amount, true).getCount() >= amount;
+        return Inventories.extract(Inventories.itemhandler(player), new ItemStack(Items.REDSTONE), amount, true).getCount() >= amount;
       }
     } else if(stack.getItem() == Items.REDSTONE) {
       return (stack.getCount() >= amount);
