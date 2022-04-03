@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
- "1.18.2": {
+ "1.19": {
+  "1.0.11": "[U] Initial 1.19 port.",
   "1.0.10": "[R] Release build.\n[F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).",
   "1.0.10-b3": "[F] Fixed RCA indicator in the RLC GUI.",
   "1.0.10-b2": "[A] Added basic mmap based approach for the Redstone Client Adapter (interfacing Arduino & Co).",
@@ -26,7 +27,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.18.2-recommended": "1.0.10",
-  "1.18.2-latest": "1.0.10"
+  "1.19-recommended": "1.0.11",
+  "1.19-latest": "1.0.11"
  }
 }
