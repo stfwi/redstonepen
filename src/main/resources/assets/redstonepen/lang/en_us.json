@@ -32,6 +32,7 @@
   "block.redstonepen.control_box.help.9": "§nFunction Reference§r\n§7IF(X,A,B)   # A if X>0 else B\n§7INV(X)   # Redstone invert: 15-X, result 0..15.\n§7MAX(A,B,...), MIN(...), MEAN(...)   # Min, max, average\n§7LIM(X), LIM(X,B), LIM(X,A,B)   # Limit 0..15, 0..B, A..B\n§7TIME(), CLOCK()    # Day time, game time\n§7RND()   # Random 0..15",
   "block.redstonepen.control_box.tooltips.copyall": "Copy code to clipboard",
   "block.redstonepen.control_box.tooltips.pasteall": "Paste code from clipboard",
+  "block.redstonepen.control_box.tooltips.rcaplayer": "RCA connection to player %1$s",
   "block.redstonepen.control_box.tooltips.runstop": "RUN/STOP",
   "block.redstonepen.inverted_relay": "Inverted Redstone Relay",
   "block.redstonepen.inverted_relay.help": "Re-lays incoming signals from the back and the sides to the front with output power 15. The output is inverted (0 if there is an input signal, 15 if not). The switch-off delay is one redstone tick, switches on immediately.\nAlso accepts indirect input power from Tracks (connected to a block that propagates redstone signals).",

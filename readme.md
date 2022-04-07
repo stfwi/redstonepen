@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.10-b2  [A] Added basic mmap based approach for the Redstone
+                      Client Adapter (interfacing Arduino & Co).
+
     - v1.0.10-b1  [U] Updated to 1.18.2.
 
     - v1.0.9      [R] Release build.

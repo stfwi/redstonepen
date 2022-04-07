@@ -37,6 +37,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
+import wile.redstonepen.detail.RcaSync;
 import wile.redstonepen.libmc.blocks.StandardEntityBlocks;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Networking;
@@ -169,6 +170,7 @@ public class ControlBox
     private final Container block_inventory_ = new SimpleContainer(1);
     private final ContainerData container_fields_ = new SimpleContainerData(ControlBoxUiContainer.NUM_OF_FIELDS);
     private final ControlBoxLogic.Logic logic_ = new ControlBoxLogic.Logic();
+    private UUID activating_player_ = null;
     private Component custom_name_ = null;
     private boolean trace_ = false;
     private int tick_timer_ = 0;
@@ -188,6 +190,7 @@ public class ControlBox
       final CompoundTag logic_symbols = logic_data.contains("symbols", Tag.TAG_COMPOUND) ? logic_data.getCompound("symbols") : new CompoundTag();
       logic_.symbols_.clear();
       logic_symbols.getAllKeys().forEach(k->logic_.symbols_.put(k, logic_symbols.getInt(k)));
+      activating_player_ = nbt.hasUUID("player") ? nbt.getUUID("player") : null;
     }
 
     private void writenbt(CompoundTag nbt)
@@ -201,6 +204,7 @@ public class ControlBox
       for(var e:logic_.symbols_.entrySet()) logic_symbols.putInt(e.getKey(), e.getValue());
       logic_data.put("symbols", logic_symbols);
       nbt.put("logic", logic_data);
+      if(activating_player_ != null) nbt.putUUID("player", activating_player_);
     }
 
     // BlockEntity/MenuProvider -------------------------------------------------------
@@ -260,6 +264,7 @@ public class ControlBox
       final Set<String> esyms = logic_.expressions().symbols;
       final int last_output_data = logic_.output_data;
       final int last_input_data = logic_.input_data;
+      final RcaSync.RcaData rca_data = RcaSync.CommonRca.ofPlayer(((logic_.rca_input_mask|logic_.rca_output_mask)!=0) ? activating_player_ : null);
       try {
         // Input fetching
         {
@@ -286,6 +291,9 @@ public class ControlBox
               }
             }
           }
+          if(logic_.rca_input_mask != 0) {
+            logic_.rca_input_data = (rca_data.client_inputs & logic_.rca_input_mask);
+          }
         }
         // Logic processing
         {
@@ -307,6 +315,7 @@ public class ControlBox
               device_block.notifyOutputNeighbourOfStateChange(device_state, world, device_pos, world_dir);
             }
           }
+          rca_data.server_outputs = (device_enabled && (logic_.rca_output_mask != 0)) ? (logic_.rca_output_data & logic_.rca_output_mask) : (0);
           container_fields_.set(0, logic_.input_data|logic_.output_data);
           if((logic_.output_data != last_output_data) || (logic_.input_data != last_input_data)) world.blockEntityChanged(device_pos);
         }
@@ -338,8 +347,11 @@ public class ControlBox
     {
       if(en == getEnabled()) return;
       getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.STATE, en?1:0), 1|16);
-      if(!en) logic_.symbols_.clear();
+      if(!en) { logic_.symbols_.clear(); }
     }
+
+    public void setRcaPlayerUUID(@Nullable UUID puid)
+    {  activating_player_ = (puid==null) ? (null) : (UUID.fromString(puid.toString())); }
 
     public String getCode()
     { return logic_.code(); }
@@ -462,6 +474,10 @@ public class ControlBox
       if(!full) return nbt;
       nbt.putBoolean("debug", te.trace_enabled());
       nbt.putString("code", te.getCode());
+      if(te().activating_player_ != null) {
+        final Player run_player = world().getPlayerByUUID(te().activating_player_);
+        nbt.putString("player", (run_player == null) ? "" : run_player.getScoreboardName());
+      }
       return nbt;
     }
 
@@ -487,10 +503,14 @@ public class ControlBox
       if(te==null) return;
       int sync = 0;
       switch(nbt.getString("action")) {
-        case "enabled" -> { te.setEnabled(!te.getEnabled()); sync = 1; }
         case "codeupdate" -> { te.setCode(nbt.getString("code")); }
         case "serverdata" -> { sync = 2; }
         case "servervalues" -> { sync = 1; }
+        case "enabled" -> {
+          te.setEnabled(!te.getEnabled());
+          te.setRcaPlayerUUID(player.getUUID());
+          sync = 1;
+        }
         default -> {
           final int slotId = nbt.contains("slot") ? nbt.getInt("slot") : -1;
           //switch(nbt.getString("action")) { default -> {} }
@@ -518,6 +538,7 @@ public class ControlBox
     private final Guis.ImageButton cb_copy_all;
     private final Guis.ImageButton cb_paste_all;
     private final Guis.Image cb_error_indicator;
+    private final Guis.Image rca_enabled_indicator;
     private final List<Guis.TextBox> port_stati;
     private final List<Guis.Image> port_stati_i_indicators;
     private final List<Guis.Image> port_stati_o_indicators;
@@ -528,6 +549,7 @@ public class ControlBox
     private boolean focus_editor_ = false;
     private boolean debug_enabled_ = false;
     private boolean code_requested_ = false;
+    private Component activating_player_ = TextComponent.EMPTY;
 
     public ControlBoxGui(ControlBoxUiContainer container, Inventory player_inventory, Component title)
     {
@@ -537,6 +559,7 @@ public class ControlBox
       cb_copy_all = new Guis.ImageButton(getBackgroundImage(), 12, 12, Guis.Coord2d.of(41,213));
       cb_paste_all = new Guis.ImageButton(getBackgroundImage(), 12, 12, Guis.Coord2d.of(54,213));
       cb_error_indicator = new Guis.Image(getBackgroundImage(), 5, 2, Guis.Coord2d.of(68,213));
+      rca_enabled_indicator = new Guis.Image(getBackgroundImage(), 7, 7, Guis.Coord2d.of(90,215));
       textbox = new GuiTextEditing.MultiLineTextBox(29, 12, 156, 170, new TextComponent("Code"));
       port_stati = new ArrayList<>();
       port_stati_i_indicators = new ArrayList<>();
@@ -564,6 +587,10 @@ public class ControlBox
         cb_error_indicator.init(this, Guis.Coord2d.of(230, 14));
         cb_error_indicator.visible = false;
         addRenderableWidget(cb_error_indicator);
+        rca_enabled_indicator.init(this, Guis.Coord2d.of(194, 40));
+        rca_enabled_indicator.visible = false;
+        rca_enabled_indicator.tooltip((rcae)->Auxiliaries.localizable(tooltip_prefix+".tooltips.rcaplayer", activating_player_));
+        addRenderableWidget(rca_enabled_indicator);
       }
       {
         int ygap=12, x0=getGuiLeft()+205, y0=getGuiTop()+56;
@@ -696,6 +723,18 @@ public class ControlBox
               cb_error_indicator.y = exy.y+8;
             }
           }
+          if(nbt.contains("player", Tag.TAG_STRING)) {
+            final String player_name = nbt.getString("player");
+            if(player_name.isEmpty()) {
+              activating_player_ = TextComponent.EMPTY;
+              rca_enabled_indicator.visible = false;
+              rca_enabled_indicator.active = false;
+            } else {
+              activating_player_ = new TextComponent(player_name);
+              rca_enabled_indicator.visible = true;
+              rca_enabled_indicator.active = true;
+            }
+          }
         } else if(--update_counter_ <= 0) {
           update_counter_ = 4;
           if(!code_requested_) {
@@ -753,12 +792,16 @@ public class ControlBox
   {
     private static class Logic
     {
-      public int input_mask  = 0x00000000; // 24bit, direction ordinal nibbles
+      public int input_mask  = 0x00000000;  // 24bit, direction ordinal nibbles
       public int input_data  = 0x00000000;
       public int output_mask = 0x00000000;
       public int output_data = 0x00000000;
-      public int intr_redges = 0x00000000; // Rising edges seen between logic ticks
-      public int intr_fedges = 0x00000000; // Falling edges seen between logic ticks
+      public int intr_redges = 0x00000000;  // Rising edges seen between logic ticks
+      public int intr_fedges = 0x00000000;  // Falling edges seen between logic ticks
+      public long rca_input_mask  = 0;      // 64bit, direction ordinal nibbles
+      public long rca_input_data  = 0;
+      public long rca_output_mask = 0;
+      public long rca_output_data = 0;
 
       private static int counter_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
       {
@@ -957,6 +1000,8 @@ public class ControlBox
         expressions_ = MultiLineMathExpr.of(code_, "", functions_);
         input_mask = 0;
         output_mask = 0;
+        rca_input_mask = 0;
+        rca_output_mask = 0;
         symbols_.clear();
         final String[] suffixes = {"", ".re", ".fe", ".co", ".co.re", ".co.fe"};
         for(int i=0; i<Defs.PORT_NAMES.size(); ++i ) {
@@ -970,6 +1015,19 @@ public class ControlBox
             input_mask |= 0xf<<(4*i);
           }
         }
+        expressions_.symbols.forEach((esym)->{
+          if(esym.matches("d[io][1]?[\\d]")) {
+            final int channel = Integer.parseInt(esym.substring(2));
+            if(channel > 15) return;
+            if(esym.charAt(1) == 'i') {
+              rca_input_mask |= 0xfL<<(channel*4);
+            } else {
+              rca_output_mask |= 0xfL<<(channel*4);
+            }
+          }
+        });
+        rca_input_data &= rca_input_mask;
+        rca_output_data &= rca_output_mask;
         output_data &= output_mask;
         return expressions_.invalid_entries.isEmpty();
       }
@@ -979,6 +1037,11 @@ public class ControlBox
         // Input symbols
         for(int i=0; i<Defs.PORT_NAMES.size(); ++i ) {
           if((input_mask & (0xf<<(4*i))) != 0) symbol(Defs.PORT_NAMES.get(i), (input_data>>(4*i)) & 0xf);
+        }
+        if(rca_input_mask != 0) {
+          for(int i=0; i<16; ++i) {
+            if((rca_input_mask & (0xfL<<(4*i))) != 0) symbol("di"+i, (int)((rca_input_data>>(4*i)) & 0xfL));
+          }
         }
         // Edge detection
         expressions_.symbols.forEach((esym)->{
@@ -1019,6 +1082,14 @@ public class ControlBox
         output_data = 0;
         for(int i=0; i<Defs.PORT_NAMES.size(); ++i) output_data |= (symbol(Defs.PORT_NAMES.get(i))& 0xf)<<(4*i);
         output_data &= output_mask;
+        if(rca_output_mask != 0) {
+          rca_output_data = 0;
+          for(int i=0; i<16; ++i) {
+            if((rca_output_mask & (0xfL<<(4*i))) != 0) {
+              rca_output_data |= ((long)Math.min(15, Math.max(0, symbol("do"+i))))<<(4*i);
+            }
+          }
+        }
       }
     }
 

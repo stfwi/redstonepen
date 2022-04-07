@@ -32,6 +32,7 @@
   "block.redstonepen.control_box.help.9": "§nFunction Reference§r\n§7IF(X,A,B)   # A if X>0 else B\n§7INV(X)   # Redstone invert: 15-X, result 0..15.\n§7MAX(A,B,...), MIN(...), MEAN(...)   # Min, max, average\n§7LIM(X), LIM(X,B), LIM(X,A,B)   # Limit 0..15, 0..B, A..B\n§7TIME(), CLOCK()    # Day time, game time\n§7RND()   # Random 0..15",
   "block.redstonepen.control_box.tooltips.copyall": "Copy code to clipboard",
   "block.redstonepen.control_box.tooltips.pasteall": "Paste code from clipboard",
+  "block.redstonepen.control_box.tooltips.rcaplayer": "RCA connection to player %1$s",
   "block.redstonepen.control_box.tooltips.runstop": "RUN/STOP",
   "block.redstonepen.inverted_relay": "Relé de Redstone invertido",
   "block.redstonepen.inverted_relay.help": "Reenvía las señales entrantes desde la parte trasera y los laterales hacia la parte delantera con una potencia de salida de 15. La salida se invierte (0 si hay señal de entrada, 15 si no). El retardo de desconexión es de un tick de Redstone, se enciende inmediatamente.\nTambién acepta la potencia de entrada indirecta de Pistas (conectado a un bloque que propague señales de Redstone).",

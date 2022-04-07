@@ -14,6 +14,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -57,6 +59,7 @@ public class ModRedstonePen
   {
     wile.redstonepen.libmc.detail.Networking.init(MODID);
     ModConfig.apply();
+    wile.redstonepen.detail.RcaSync.CommonRca.init();
   }
 
   private void onClientSetup(final FMLClientSetupEvent event)
@@ -72,6 +75,8 @@ public class ModRedstonePen
       0x55333333,
       0x55444444
     );
+    wile.redstonepen.detail.RcaSync.ClientRca.init();
+    MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ForgeEvents::onPlayerTickEvent);
   }
 
   @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
@@ -101,5 +106,11 @@ public class ModRedstonePen
     public static void onRecipeRegistry(final RegistryEvent.Register<RecipeSerializer<?>> event)
     { event.getRegistry().register(wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER); }
 
+    public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
+    {
+      if((event.phase != TickEvent.Phase.END) || (!event.player.level.isClientSide)) return;
+      if((event.player.level.getGameTime() & 0x1) != 0) return;
+      wile.redstonepen.detail.RcaSync.ClientRca.tick();
+    }
   }
 }
