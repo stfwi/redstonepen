@@ -28,6 +28,8 @@
 /tmp
 /versions
 /meta
+/rca
+/redstone-client-adapter
 bin
 build
 desktop.ini

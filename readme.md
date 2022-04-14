@@ -1,10 +1,10 @@
 
-## Redstone Pen
+# Redstone Pen
 
 A [Minecraft](https://minecraft.net) (Java Edition) mod adding a pen to draw
 Redstone tracks more accurately. Inspired by the Redstone Paste mod.
 
-### Distribution file download
+## Distribution file download
 
 Main distribution channel for this mod is CurseForge:
 
@@ -12,13 +12,13 @@ Main distribution channel for this mod is CurseForge:
 
   - All versions: https://minecraft.curseforge.com/projects/redstone-pen/files
 
-### Description
+## Description
 
 Adds "one pen to draw them all" - and helps with simpler Redstone handling.
 
 ![](documentation/pentracks.png)
 
-#### Redstone Quill and Pen Items
+### Redstone Quill and Pen Items
 
 Craft and use them to draw or remove thin Redstone Tracks. Multiple independent tracks through one block
 space are possible. There are two versions:
@@ -34,7 +34,7 @@ space are possible. There are two versions:
 - Both do not destroy blocks when left-clicking, except blocks with no hardness (like grass, repeaters,
   or comparators).
 
-#### Block Signal Connectors
+### Block Signal Connectors
 
 Especially for compact wiring it is desirable to decide weather a Track shall power the block underneath
 or not. Therefore the Pen-Tracks do normally NOT connect to the block they are drawn on. To change this,
@@ -44,7 +44,7 @@ said blocks from independent routes without interferences:
 
 ![](documentation/rspen-connector.png)
 
-#### Redstone Relays
+### Redstone Relays
 
 Relays are like redstone powered "solenoids" that move builtin Redstone Torches back or forth, so that they
 re-power ("re-lay") Redstone signals to 15. They can be placed on solid faces in all directions. Output is
@@ -71,7 +71,17 @@ blocks.
 
 ![](documentation/bridging-relay.png)
 
-#### Recipes
+
+### Redstone Logic Control
+
+Simplified PLC-like, text code based signal controller. Details
+are in a in the [documentation here](documentation/redstone-logic-control/readme.md);
+
+![](documentation/redstone-logic-control-1.png)
+![](documentation/redstone-logic-control-2.png)
+
+
+### Recipes
 
 ![](documentation/rspen-quill-recipe.png)
 ![](documentation/rspen-penrecipe.png)
