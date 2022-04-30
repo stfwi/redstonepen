@@ -75,8 +75,9 @@ public class ModRedstonePen
       0x55333333,
       0x55444444
     );
-    wile.redstonepen.detail.RcaSync.ClientRca.init();
-    MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ForgeEvents::onPlayerTickEvent);
+    if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
+      MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ForgeEvents::onPlayerTickEvent);
+    }
   }
 
   @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)

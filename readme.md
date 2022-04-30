@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.10-b3  [F] Fixed RCA indicator in the RLC GUI.
+
     - v1.0.10-b2  [A] Added basic mmap based approach for the Redstone
                       Client Adapter (interfacing Arduino & Co).
 

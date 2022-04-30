@@ -120,7 +120,7 @@ public interface RedstoneClientAdapter
    * @param value Input channel value 0..15
    */
   default void setInputChannel(int channel, int value)
-  { setInputs((getInputs() & (~((long)0xf)<<(4*channel))) | ((long)(Math.min(15, Math.max(0, value)) & 0xf))<<(4*channel)); }
+  { setInputs((getInputs() & (~((long)0xf)<<(4*channel))) | ((long)(value & 0xf))<<(4*channel)); }
 
   /**
    * RAM cached channel access: Output value assignment for
@@ -129,6 +129,6 @@ public interface RedstoneClientAdapter
    * @param value Output channel value 0..15
    */
   default void setOutputChannel(int channel, int value)
-  { setOutputs((getOutputs() & (~((long)0xf)<<(4*channel))) | ((long)(Math.min(15, Math.max(0, value)) & 0xf))<<(4*channel)); }
+  { setOutputs((getOutputs() & (~((long)0xf)<<(4*channel))) | ((long)(value & 0xf))<<(4*channel)); }
 
 }

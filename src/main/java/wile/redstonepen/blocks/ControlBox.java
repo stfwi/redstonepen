@@ -168,7 +168,6 @@ public class ControlBox
   {
     public static final int TICK_INTERVAL = 4;
     private final Container block_inventory_ = new SimpleContainer(1);
-    private final ContainerData container_fields_ = new SimpleContainerData(ControlBoxUiContainer.NUM_OF_FIELDS);
     private final ControlBoxLogic.Logic logic_ = new ControlBoxLogic.Logic();
     private UUID activating_player_ = null;
     private Component custom_name_ = null;
@@ -248,7 +247,7 @@ public class ControlBox
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player)
-    { return new ControlBoxUiContainer(id, inventory, block_inventory_, ContainerLevelAccess.create(level, worldPosition), container_fields_); }
+    { return new ControlBoxUiContainer(id, inventory, block_inventory_, ContainerLevelAccess.create(level, worldPosition), new SimpleContainerData(1)); }
 
     @Override
     public void tick()
@@ -264,7 +263,7 @@ public class ControlBox
       final Set<String> esyms = logic_.expressions().symbols;
       final int last_output_data = logic_.output_data;
       final int last_input_data = logic_.input_data;
-      final RcaSync.RcaData rca_data = RcaSync.CommonRca.ofPlayer(((logic_.rca_input_mask|logic_.rca_output_mask)!=0) ? activating_player_ : null);
+      final RcaSync.RcaData rca_data = (((logic_.rca_input_mask|logic_.rca_output_mask)==0) ? (RcaSync.CommonRca.EMPTY) : RcaSync.CommonRca.ofPlayer(activating_player_, false));
       try {
         // Input fetching
         {
@@ -291,9 +290,7 @@ public class ControlBox
               }
             }
           }
-          if(logic_.rca_input_mask != 0) {
-            logic_.rca_input_data = (rca_data.client_inputs & logic_.rca_input_mask);
-          }
+          if((logic_.rca_input_mask != 0) && (rca_data != RcaSync.CommonRca.EMPTY)) logic_.rca_input_data = (rca_data.client_inputs() & logic_.rca_input_mask);
         }
         // Logic processing
         {
@@ -304,6 +301,7 @@ public class ControlBox
             logic_.symbol(".clock", (int)(world.getGameTime() & 0x7fffffffL)); // wraps over in >3years
             logic_.symbol(".time", (int)(world.getDayTime() % 24000));
             logic_.tick();
+            if((logic_.rca_output_mask != 0) && (rca_data != RcaSync.CommonRca.EMPTY)) rca_data.server_outputs(logic_.rca_output_data);
           }
         }
         // Output setting
@@ -315,8 +313,6 @@ public class ControlBox
               device_block.notifyOutputNeighbourOfStateChange(device_state, world, device_pos, world_dir);
             }
           }
-          rca_data.server_outputs = (device_enabled && (logic_.rca_output_mask != 0)) ? (logic_.rca_output_data & logic_.rca_output_mask) : (0);
-          container_fields_.set(0, logic_.input_data|logic_.output_data);
           if((logic_.output_data != last_output_data) || (logic_.input_data != last_input_data)) world.blockEntityChanged(device_pos);
         }
       } catch(Throwable ex) {
@@ -347,7 +343,11 @@ public class ControlBox
     {
       if(en == getEnabled()) return;
       getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.STATE, en?1:0), 1|16);
-      if(!en) { logic_.symbols_.clear(); }
+      if(!en) {
+        logic_.symbols_.clear();
+        final RcaSync.RcaData rca_data = ((logic_.rca_output_mask)==0) ? (RcaSync.CommonRca.EMPTY) : RcaSync.CommonRca.ofPlayer(activating_player_, false);
+        if(rca_data != RcaSync.CommonRca.EMPTY) rca_data.server_outputs(0);
+      }
     }
 
     public void setRcaPlayerUUID(@Nullable UUID puid)
@@ -393,7 +393,6 @@ public class ControlBox
   public static class ControlBoxUiContainer extends AbstractContainerMenu implements Networking.INetworkSynchronisableContainer
   {
     protected static final int NUM_OF_SLOTS = 1;
-    protected static final int NUM_OF_FIELDS = 1;
     protected final Player player_;
     protected final Container inventory_;
     protected final ContainerLevelAccess wpc_;
@@ -408,7 +407,7 @@ public class ControlBox
     //------------------------------------------------------------------------------------------------------------------
 
     public ControlBoxUiContainer(int cid, Inventory player_inventory)
-    { this(cid, player_inventory, new SimpleContainer(ControlBoxUiContainer.NUM_OF_SLOTS), ContainerLevelAccess.NULL, new SimpleContainerData(ControlBoxUiContainer.NUM_OF_FIELDS)); }
+    { this(cid, player_inventory, new SimpleContainer(ControlBoxUiContainer.NUM_OF_SLOTS), ContainerLevelAccess.NULL, new SimpleContainerData(1)); }
 
     private ControlBoxUiContainer(int cid, Inventory player_inventory, Container block_inventory, ContainerLevelAccess wpc, ContainerData fields)
     {
@@ -459,6 +458,7 @@ public class ControlBox
       nbt.putBoolean("enabled", te.getEnabled());
       nbt.putInt("inputs", logic.input_mask);
       nbt.putInt("outputs", logic.output_mask);
+      nbt.putInt("ports", (logic.input_data & logic.input_mask)|(logic.output_data & logic.output_mask));
       if(!logic.symbols().isEmpty()) {
         final CompoundTag sym_nbt = new CompoundTag();
         logic.symbols().forEach(sym_nbt::putInt);
@@ -508,8 +508,8 @@ public class ControlBox
         case "servervalues" -> { sync = 1; }
         case "enabled" -> {
           te.setEnabled(!te.getEnabled());
-          te.setRcaPlayerUUID(player.getUUID());
-          sync = 1;
+          te.setRcaPlayerUUID((te.getEnabled() && nbt.getBoolean("withrca")) ? player.getUUID() : null);
+          sync = 2;
         }
         default -> {
           final int slotId = nbt.contains("slot") ? nbt.getInt("slot") : -1;
@@ -532,6 +532,7 @@ public class ControlBox
   @OnlyIn(Dist.CLIENT)
   public static class ControlBoxGui extends Guis.ContainerGui<ControlBoxUiContainer>
   {
+    private final int VALUE_UPDATE_INTERVAL = 2;
     private final String tooltip_prefix = ModContent.references.CONTROLBOX_BLOCK.getDescriptionId() + "";
     private final GuiTextEditing.MultiLineTextBox textbox;
     private final Guis.CheckBox start_stop;
@@ -544,7 +545,6 @@ public class ControlBox
     private final List<Guis.Image> port_stati_o_indicators;
     private final Map<String, Integer> symbols_ = new HashMap<>();
     private final List<Tuple<Integer, String>> errors_ = new ArrayList<>();
-    private int last_port_data_ = 0;
     private int update_counter_ = 0;
     private boolean focus_editor_ = false;
     private boolean debug_enabled_ = false;
@@ -574,7 +574,15 @@ public class ControlBox
         textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
-        start_stop.onclick((cb)->{getMenu().onGuiAction("enabled"); focus_editor_=true; });
+        start_stop.onclick((cb)->{
+          final CompoundTag nbt = new CompoundTag();
+          {
+            final wile.api.rca.RedstoneClientAdapter rca = wile.api.rca.FmmRedstoneClientAdapter.Adapter.instance();
+            if(rca != null && rca.isOpen()) nbt.putBoolean("withrca", true);
+          }
+          getMenu().onGuiAction("enabled", nbt);
+          focus_editor_=true;
+        });
         addRenderableWidget(start_stop);
         cb_copy_all.init(this, Guis.Coord2d.of(212, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.copyall"));
         cb_copy_all.onclick((cb)->{SidedProxy.setClipboard(textbox.getValue()); focus_editor_=true; });
@@ -661,21 +669,18 @@ public class ControlBox
     @Override
     protected void containerTick()
     {
-      // IO update.
-      {
-        int io = getMenu().field(0);
-        if(last_port_data_ != io) {
-          last_port_data_ = io;
-          for(int i=0; i<port_stati.size(); ++i) {
-            port_stati.get(i).setValue(String.format("%1s=%02d", Defs.PORT_NAMES.get(i).toUpperCase(), io & 0xf));
-            io >>= 4;
-          }
-        }
-      }
       // Received server data.
       {
         final CompoundTag nbt = getMenu().fetchReceivedServerData();
         if(!nbt.isEmpty()) {
+          if(nbt.contains("ports")) {
+            final int mask = (nbt.getInt("inputs")|nbt.getInt("outputs"));
+            final int io = nbt.getInt("ports");
+            for(int i=0; i<Defs.PORT_NAMES.size(); ++i) {
+              if((mask & (0xf<<(4*i))) == 0) continue;
+              port_stati.get(i).setValue(String.format("%1s=%02d", Defs.PORT_NAMES.get(i).toUpperCase(), (io>>(4*i)) & 0xf));
+            }
+          }
           if(nbt.contains("code")) {
             textbox.setValue(nbt.getString("code"));
             focus_editor_ = true;
@@ -736,7 +741,7 @@ public class ControlBox
             }
           }
         } else if(--update_counter_ <= 0) {
-          update_counter_ = 4;
+          update_counter_ = VALUE_UPDATE_INTERVAL;
           if(!code_requested_) {
             code_requested_ = true;
             getMenu().onGuiAction("serverdata");
@@ -1016,7 +1021,7 @@ public class ControlBox
           }
         }
         expressions_.symbols.forEach((esym)->{
-          if(esym.matches("d[io][1]?[\\d]")) {
+          if(esym.matches("^d[io][1]?[\\d][\\d]?$")) {
             final int channel = Integer.parseInt(esym.substring(2));
             if(channel > 15) return;
             if(esym.charAt(1) == 'i') {
@@ -1029,6 +1034,7 @@ public class ControlBox
         rca_input_data &= rca_input_mask;
         rca_output_data &= rca_output_mask;
         output_data &= output_mask;
+        input_data &= input_mask;
         return expressions_.invalid_entries.isEmpty();
       }
 
@@ -1080,7 +1086,7 @@ public class ControlBox
         // Assign outputs and update mem.
         assigned.forEach(this::symbol);
         output_data = 0;
-        for(int i=0; i<Defs.PORT_NAMES.size(); ++i) output_data |= (symbol(Defs.PORT_NAMES.get(i))& 0xf)<<(4*i);
+        for(int i=0; i<Defs.PORT_NAMES.size(); ++i) output_data |= (symbol(Defs.PORT_NAMES.get(i)) & 0xf)<<(4*i);
         output_data &= output_mask;
         if(rca_output_mask != 0) {
           rca_output_data = 0;
@@ -1090,6 +1096,7 @@ public class ControlBox
             }
           }
         }
+        rca_output_data &= rca_output_mask;
       }
     }
 

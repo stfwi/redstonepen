@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.18.2": {
+  "1.0.10-b3": "[F] Fixed RCA indicator in the RLC GUI.",
   "1.0.10-b2": "[A] Added basic mmap based approach for the Redstone Client Adapter (interfacing Arduino & Co).",
   "1.0.10-b1": "[U] Updated to 1.18.2.",
   "1.0.9": "[R] Release build.\n[A] Added RLC counter documentation.\n[A] Added RLC TICKRATE variable.\n[M] Pen recipe advancement edited.",
@@ -25,6 +26,6 @@
  },
  "promos": {
   "1.18.2-recommended": "1.0.9",
-  "1.18.2-latest": "1.0.10-b2"
+  "1.18.2-latest": "1.0.10-b3"
  }
 }
