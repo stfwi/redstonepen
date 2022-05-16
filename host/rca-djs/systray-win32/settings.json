@@ -1,0 +1,8 @@
+{
+ "port": "VCP0",
+ "baud": 115200,
+ "port_settings": "n81",
+ "log_file": "rca.log",
+ "log_file_max_size": 1024,
+ "log_verbosity": 3
+}
