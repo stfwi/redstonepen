@@ -1,7 +1,8 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.16.5": {
-  "1.0.8-b3": "[A] Added RLC counter documentation.\n[A] Added RLC TICKRATE variable.",
+  "1.0.8": "[R] Release build.\n[F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).",
+  "1.0.8-b3": "[A] Added RLC counter documentation.\n[A] Added RLC TICKRATE variable.\n[F] Deferred Crafting Advancement (issue #10, thx NillerMedDild).",
   "1.0.8-b2": "[A] Added Redstone Logic Control.\n[A] Added relay placement preview.\n[A] Added language support for Português (PR#2, faelBrunnoS).\n[A] Added language es_es (PR#3, hacheraw).",
   "1.0.8-b1": "[F] Fixed missing notification recursion level (regression related to #1 fix).",
   "1.0.7": "[R] Release build v1.0.7.\n[F] Fixed diagonal placement RS notification (issue #1, ty iris-xii, rodg).\n[M] Creative mode pen handling edited.\n[U] Forge/gradle update.",
@@ -18,7 +19,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.16.5-recommended": "1.0.7",
-  "1.16.5-latest": "1.0.8-b3"
+  "1.16.5-recommended": "1.0.8",
+  "1.16.5-latest": "1.0.8"
  }
 }

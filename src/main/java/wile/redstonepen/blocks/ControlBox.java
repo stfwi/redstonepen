@@ -17,6 +17,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.container.ClickType;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.inventory.container.Slot;
@@ -745,6 +746,10 @@ public class ControlBox
       font.draw(mx, title, (float)titleLabelX+1, (float)titleLabelY+1, 0x303030);
       font.draw(mx, title, (float)titleLabelX, (float)titleLabelY, 0x707070);
     }
+
+    @Override
+    protected void slotClicked(Slot hoveredSlot, int hoveredIndex, int no, ClickType clickType)
+    {}
 
     private void push_code(String text)
     {

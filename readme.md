@@ -4,8 +4,12 @@
 ----
 ## Version history
 
+    - v1.0.8      [R] Release build.
+                  [F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).
+
     - v1.0.8-b3   [A] Added RLC counter documentation.
                   [A] Added RLC TICKRATE variable.
+                  [F] Deferred Crafting Advancement (issue #10, thx NillerMedDild).
 
     - v1.0.8-b2   [A] Added Redstone Logic Control.
                   [A] Added relay placement preview.
