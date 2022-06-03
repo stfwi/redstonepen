@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.10     [R] Release build.
+                  [F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).
+
     - v1.0.10-b3  [F] Fixed RCA indicator in the RLC GUI.
 
     - v1.0.10-b2  [A] Added basic mmap based approach for the Redstone

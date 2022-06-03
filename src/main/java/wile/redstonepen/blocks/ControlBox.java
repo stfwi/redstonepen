@@ -780,6 +780,10 @@ public class ControlBox
       font.draw(mx, title, (float)titleLabelX, (float)titleLabelY, 0x707070);
     }
 
+    @Override
+    protected void slotClicked(Slot hoveredSlot, int hoveredIndex, int no, ClickType clickType)
+    {}
+
     private void push_code(String text)
     {
       final CompoundTag nbt = new CompoundTag();
