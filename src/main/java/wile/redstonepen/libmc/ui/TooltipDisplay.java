@@ -12,7 +12,6 @@ package wile.redstonepen.libmc.ui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -107,7 +106,7 @@ public class TooltipDisplay
           if(!text.contains("\n")) {
             gui.renderTooltip(mx, tip_component, x, y);
           } else {
-            gui.renderComponentTooltip(mx, Arrays.stream(text.split("\\n")).map(s->new TextComponent(s.trim())).collect(Collectors.toList()), x, y);
+            gui.renderComponentTooltip(mx, Arrays.stream(text.split("\\n")).map(s->Component.literal(s.trim())).collect(Collectors.toList()), x, y);
           }
         } catch(Exception ex) {
           had_render_exception = true;

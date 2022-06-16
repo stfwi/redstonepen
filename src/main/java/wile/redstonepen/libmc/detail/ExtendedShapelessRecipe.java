@@ -11,6 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
@@ -24,7 +25,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 import net.minecraftforge.registries.tags.ITag;
 
 import javax.annotation.Nullable;
@@ -40,9 +40,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static final ExtendedShapelessRecipe.Serializer SERIALIZER = ((ExtendedShapelessRecipe.Serializer)(
-    (new ExtendedShapelessRecipe.Serializer()).setRegistryName(Auxiliaries.modid(), "crafting_extended_shapeless")
-  ));
+  public static final ExtendedShapelessRecipe.Serializer SERIALIZER = new ExtendedShapelessRecipe.Serializer();
 
   //--------------------------------------------------------------------------------------------------------------------
 
@@ -75,7 +73,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       final ItemStack stack = inv.getItem(i);
       if(stack.isEmpty()) {
         continue;
-      } else if(stack.getItem().getRegistryName().toString().equals(tool_name)) {
+      } else if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) {
         tool_item = stack.copy();
       } else {
         remaining.set(i, stack.copy());
@@ -85,7 +83,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
     if(tool_item.isEmpty()) {
       return new Tuple<>(ItemStack.EMPTY, remaining);
     } else if(!tool_item.isDamageableItem()) {
-      Auxiliaries.logWarn("Repairing '"+tool_item.getItem().getRegistryName().toString()+"' can't work, the item is not damageable.");
+      Auxiliaries.logWarn("Repairing '" +  Auxiliaries.getResourceLocation(tool_item.getItem()) +"' can't work, the item is not damageable.");
       return new Tuple<>(ItemStack.EMPTY, remaining);
     } else {
       final int dmg = tool_item.getDamageValue();
@@ -103,7 +101,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       for(int i=0; i<remaining.size(); ++i) {
         ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
-        if(stack.getItem().getRegistryName().toString().equals(tool_name)) continue;
+        if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) continue;
         remaining.set(i, stack.hasContainerItem() ? stack.getContainerItem() : stack.copy());
       }
       for(int i=0; i<remaining.size(); ++i) {
@@ -155,7 +153,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = inv.getItem(i);
-        if(stack.getItem().getRegistryName().toString().equals(tool_name)) {
+        if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) {
           if(!stack.isDamageableItem()) {
             remaining.set(i, stack);
           } else { // implicitly !repair
@@ -199,7 +197,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class Serializer extends ForgeRegistryEntry<RecipeSerializer<?>> implements RecipeSerializer<ExtendedShapelessRecipe>
+  public static class Serializer implements RecipeSerializer<ExtendedShapelessRecipe>
   {
     private static final int MAX_WIDTH = 3;
     private static final int MAX_HEIGHT = 3;
@@ -208,6 +206,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
     {}
 
     @Override
+    @SuppressWarnings("deprecation")
     public ExtendedShapelessRecipe fromJson(ResourceLocation recipeId, JsonObject json)
     {
       ResourceLocation resultTag = new ResourceLocation("libmc", "none"); // just no null
@@ -219,7 +218,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         Ingredient ingredient = Ingredient.fromJson(ingredients.get(i));
         if (!ingredient.isEmpty()) list.add(ingredient);
       }
-      if(list.isEmpty()) throw new JsonParseException("No ingredients for "+this.getRegistryName().getPath()+" recipe");
+      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + Registry.RECIPE_SERIALIZER.getKey(this).getPath() + " recipe");
       if(list.size() > MAX_WIDTH * MAX_HEIGHT) throw new JsonParseException("Too many ingredients for crafting_tool_shapeless recipe the max is " + (MAX_WIDTH * MAX_HEIGHT));
       // Extended recipe aspects
       CompoundTag aspects_nbt = new CompoundTag();
@@ -229,7 +228,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
           try {
             aspects_nbt = TagParser.parseTag( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
           } catch(Exception ex) {
-            throw new JsonParseException(this.getRegistryName().getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
+            throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
           }
         }
       }
@@ -240,13 +239,13 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
         // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
         final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
-        if(key==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag does not exist: #" + rl);
+        if(key==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag does not exist: #" + rl);
         final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
         final @Nullable Item item = tag.stream().findFirst().orElse(null);
-        if(item==null) throw new JsonParseException(this.getRegistryName().getPath() + ": Result tag has no items: #" + rl);
+        if(item==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
-        res.addProperty("item", item.getRegistryName().toString());
+        res.addProperty("item", Auxiliaries.getResourceLocation(item).toString());
       }
       ItemStack result_stack = ShapedRecipe.itemStackFromJson(res);
       return new ExtendedShapelessRecipe(recipeId, group, result_stack, list, aspects_nbt, resultTag);

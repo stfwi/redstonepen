@@ -103,12 +103,6 @@ public class StandardBlocks
     }
   }
 
-  public interface IBlockItemFactory
-  {
-    // BlockItem factory for item registry. Only invoked once.
-    BlockItem getBlockItem(Block block, Item.Properties builder);
-  }
-
   public static class BaseBlock extends Block implements IStandardBlock, SimpleWaterloggedBlock
   {
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;

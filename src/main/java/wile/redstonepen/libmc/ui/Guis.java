@@ -20,7 +20,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
@@ -148,7 +147,7 @@ public class Guis
   @OnlyIn(Dist.CLIENT)
   public static class UiWidget extends net.minecraft.client.gui.components.AbstractWidget
   {
-    protected static final Component EMPTY_TEXT = new TextComponent("");
+    protected static final Component EMPTY_TEXT = Component.literal("");
     protected static final Function<UiWidget,Component> NO_TOOLTIP = (uiw)->EMPTY_TEXT;
 
     private final Minecraft mc_;
@@ -366,7 +365,7 @@ public class Guis
 
     public ImageButton(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position)
     {
-      super(0, 0, width, height, TextComponent.EMPTY);
+      super(0, 0, width, height, Component.empty());
       texture_position_ = atlas_texture_position;
       atlas_ = atlas;
     }
@@ -401,7 +400,7 @@ public class Guis
 
     public Image(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position)
     {
-      super(0, 0, width, height, TextComponent.EMPTY);
+      super(0, 0, width, height, Component.empty());
       texture_position_ = atlas_texture_position;
       atlas_ = atlas;
     }

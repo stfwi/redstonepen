@@ -21,6 +21,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -345,8 +346,8 @@ public class RedstoneTrack
     public RedstoneTrackBlock(long config, BlockBehaviour.Properties builder)
     { super(config, builder); }
 
-    public static Optional<TrackTileEntity> tile(BlockGetter world, BlockPos pos)
-    { final BlockEntity te=world.getBlockEntity(pos); return (((te instanceof TrackTileEntity) && (!te.isRemoved())) ? Optional.of((TrackTileEntity)te) : Optional.empty()); }
+    public static Optional<TrackBlockEntity> tile(BlockGetter world, BlockPos pos)
+    { final BlockEntity te=world.getBlockEntity(pos); return (((te instanceof TrackBlockEntity) && (!te.isRemoved())) ? Optional.of((TrackBlockEntity)te) : Optional.empty()); }
 
     public static boolean canBePlacedOnFace(BlockState state, Level world, BlockPos pos, Direction face)
     {
@@ -369,7 +370,7 @@ public class RedstoneTrack
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state)
-    { return new RedstoneTrack.TrackTileEntity(pos, state); }
+    { return new RedstoneTrack.TrackBlockEntity(pos, state); }
 
     @Override
     public boolean hasDynamicDropList()
@@ -378,8 +379,8 @@ public class RedstoneTrack
     @Override
     public List<ItemStack> dropList(BlockState state, Level world, @Nullable BlockEntity te, boolean explosion)
     {
-      if(!(te instanceof TrackTileEntity)) return Collections.emptyList();
-      int num_connections = ((TrackTileEntity)te).getRedstoneDustCount();
+      if(!(te instanceof TrackBlockEntity)) return Collections.emptyList();
+      int num_connections = ((TrackBlockEntity)te).getRedstoneDustCount();
       if(num_connections <= 0) return Collections.emptyList();
       return Collections.singletonList(new ItemStack(Items.REDSTONE, num_connections));
     }
@@ -400,7 +401,7 @@ public class RedstoneTrack
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context)
     {
-      final int wires = tile(world, pos).map(TrackTileEntity::getWireFlags).orElse(0);
+      final int wires = tile(world, pos).map(TrackBlockEntity::getWireFlags).orElse(0);
       final int faces = (((wires & 0x00000f) != 0) ? 0x01 : 0)
         | (((wires & 0x0000f0) != 0) ? 0x02 : 0)
         | (((wires & 0x000f00) != 0) ? 0x04 : 0)
@@ -477,7 +478,7 @@ public class RedstoneTrack
 
     @Override
     @SuppressWarnings("deprecation")
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
     @Override
@@ -498,7 +499,7 @@ public class RedstoneTrack
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving)
     {
       if(oldState.is(state.getBlock()) || world.isClientSide()) return;
-      tile(world,pos).ifPresent(TrackTileEntity::updateConnections);
+      tile(world,pos).ifPresent(TrackBlockEntity::updateConnections);
       updateNeighbourShapes(state, world, pos);
       notifyAdjacent(world, pos);
     }
@@ -518,7 +519,7 @@ public class RedstoneTrack
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
         if(world.isClientSide) return InteractionResult.SUCCESS;
-        if(world.getBlockEntity(pos) instanceof TrackTileEntity te) te.toggle_trace(player);
+        if(world.getBlockEntity(pos) instanceof TrackBlockEntity te) te.toggle_trace(player);
         return InteractionResult.CONSUME;
       } else {
         return onBlockActivated(state, world, pos, player, hand, rtr, false);
@@ -541,7 +542,7 @@ public class RedstoneTrack
       }
       if(world.isClientSide()) return InteractionResult.SUCCESS;
       if(!RedstonePenItem.hasEnoughRedstone(player.getItemInHand(hand), 1, player)) remove_only = true;
-      TrackTileEntity te = tile(world, pos).orElse(null);
+      TrackBlockEntity te = tile(world, pos).orElse(null);
       if(te==null) return InteractionResult.FAIL;
       int redstone_use = te.handleActivation(pos, player, hand, rtr.getDirection(), rtr.getLocation(), remove_only);
       if(redstone_use == 0) {
@@ -580,7 +581,7 @@ public class RedstoneTrack
         }
       } catch(Throwable ex) {
         ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
-        final int num_redstone = tile(world, pos).map(TrackTileEntity::getRedstoneDustCount).orElse(0);
+        final int num_redstone = tile(world, pos).map(TrackBlockEntity::getRedstoneDustCount).orElse(0);
         if(num_redstone > 0) {
           Vec3 p = Vec3.atCenterOf(pos);
           world.addFreshEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(Items.REDSTONE, num_redstone)));
@@ -595,7 +596,7 @@ public class RedstoneTrack
     {}
 
     @OnlyIn(Dist.CLIENT)
-    private void spawnPoweredParticle(Level world, Random rand, BlockPos pos, Vec3 color, Direction from, Direction to, float minChance, float maxChance) {
+    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction from, Direction to, float minChance, float maxChance) {
       float f = maxChance - minChance;
       if(rand.nextFloat() < 0.3f * f) {
         double c1 = 0.4375;
@@ -609,10 +610,10 @@ public class RedstoneTrack
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void animateTick(BlockState state, Level world, BlockPos pos, Random rand)
+    public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand)
     {
       if(rand.nextFloat() > 0.4) return;
-      final TrackTileEntity te = tile(world,pos).orElse(null);
+      final TrackBlockEntity te = tile(world,pos).orElse(null);
       if((te == null) || ((te.getStateFlags() & defs.STATE_FLAG_PWR_MASK) == 0)) return;
       final Vec3 color = new Vec3(0.6f,0,0);
       for(Direction side: Direction.values()) {
@@ -629,7 +630,7 @@ public class RedstoneTrack
       if(world.isClientSide()) return;
       final ItemStack pen = player.getItemInHand(hand);
       if(!RedstonePenItem.hasEnoughRedstone(pen, 2, player)) return;
-      final TrackTileEntity te = tile(world,pos).orElse(null);
+      final TrackBlockEntity te = tile(world,pos).orElse(null);
       if(te == null) return;
       final Tuple<Direction,Direction> side_dir = defs.connections.getWireBitSideAndDirection(te.getWireFlags());
       final Direction face = side_dir.getA();
@@ -642,7 +643,7 @@ public class RedstoneTrack
         if((d==face) || (d==face.getOpposite()) || (d==dir)) continue;
         final BlockState ostate = world.getBlockState(pos.relative(d));
         if(ostate.is(this)) {
-          final TrackTileEntity ote = tile(world, pos.relative(d)).orElse(null);
+          final TrackBlockEntity ote = tile(world, pos.relative(d)).orElse(null);
           if(ote != null) {
             final int oflags = ote.getWireFlags();
             if((defs.connections.getWireBit(face, d.getOpposite()) & oflags) != 0) {
@@ -701,7 +702,7 @@ public class RedstoneTrack
   // Tile entity
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class TrackTileEntity extends BlockEntity implements Networking.IPacketTileNotifyReceiver
+  public static class TrackBlockEntity extends BlockEntity implements Networking.IPacketTileNotifyReceiver
   {
     public static class TrackNet
     {
@@ -723,8 +724,8 @@ public class RedstoneTrack
     private final Block[] block_change_tracking_ = {Blocks.AIR,Blocks.AIR,Blocks.AIR,Blocks.AIR,Blocks.AIR,Blocks.AIR};
     private boolean trace_ = false;
 
-    public TrackTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.getBlockEntityTypeOfBlock(state.getBlock().getRegistryName().getPath()), pos, state); }
+    public TrackBlockEntity(BlockPos pos, BlockState state)
+    { super(ModContent.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
     public CompoundTag readnbt(CompoundTag nbt)
     {
@@ -917,6 +918,7 @@ public class RedstoneTrack
     public void toggle_trace(@Nullable Player player)
     { trace_ = !trace_; if(player!=null) Auxiliaries.playerChatMessage(player, "Trace: " + trace_); }
 
+    @SuppressWarnings("deprecation")
     public int handleActivation(BlockPos pos, Player player, InteractionHand hand, Direction clicked_face, Vec3 hitvec, boolean remove_only)
     {
       final ItemStack used_stack = player.getItemInHand(hand);
@@ -1004,11 +1006,11 @@ public class RedstoneTrack
           disconnected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
             getLevel().getBlockState(p).neighborChanged(getLevel(), p, getBlock(), pos, false);
-            if(te instanceof TrackTileEntity) ((TrackTileEntity)te).updateConnections(1);
+            if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
           });
           connected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
-            if(te instanceof TrackTileEntity) ((TrackTileEntity)te).updateConnections(1);
+            if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
             getLevel().getBlockState(p).neighborChanged(getLevel(), p, getBlock(), pos, false);
             getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), p, false);
           });
@@ -1056,7 +1058,7 @@ public class RedstoneTrack
         final long new_flags = (state_flags_ & ~to_remove);
         boolean update_connections = false;
         if(new_flags != state_flags_) {
-          //if(trace_) Auxiliaries.logWarn(String.format("PPLC: %s (<-%s.%s)", posstr(getPos()), posstr(fromPos), facingState.getBlock().getRegistryName().getPath()));
+          //if(trace_) Auxiliaries.logWarn(String.format("PPLC: %s (<-%s.%s)", posstr(getPos()), posstr(fromPos), facingState.getBlock().getDescriptionId().getPath()));
           int count = getRedstoneDustCount();
           state_flags_ = new_flags;
           count -= getRedstoneDustCount();
@@ -1177,7 +1179,7 @@ public class RedstoneTrack
       nets_.forEach((net)->net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power));
       if(trace_) Auxiliaries.logWarn(String.format("UCON %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
       nets_.clear();
-      final Set<TrackTileEntity> track_connection_updates = new HashSet<>();
+      final Set<TrackBlockEntity> track_connection_updates = new HashSet<>();
       final long[] internal_connected_sides = {0,0,0,0,0,0};
       final long[] external_connected_routes = {0,0,0,0,0,0};
       // Own internal and external connections.
@@ -1257,7 +1259,7 @@ public class RedstoneTrack
                 if(wire_state.is(getBlock())) {
                   // adjacent track
                   long adjacent_mask = defs.connections.getWireBit(tsid, tdir.getOpposite());
-                  TrackTileEntity adj_te = RedstoneTrackBlock.tile(getLevel(), wire_pos).orElse(null);
+                  TrackBlockEntity adj_te = RedstoneTrackBlock.tile(getLevel(), wire_pos).orElse(null);
                   if((adj_te==null) || (adj_te.getStateFlags() & adjacent_mask) != adjacent_mask) {
                     diagonal_check = true;
                   } else {
@@ -1297,7 +1299,7 @@ public class RedstoneTrack
                   final BlockState track_state = getLevel().getBlockState(track_pos);
                   if(track_state.is(getBlock())) {
                     long adjacent_mask = defs.connections.getWireBit(tdir.getOpposite(), tsid.getOpposite());
-                    TrackTileEntity adj_te = RedstoneTrackBlock.tile(getLevel(), track_pos).orElse(null);
+                    TrackBlockEntity adj_te = RedstoneTrackBlock.tile(getLevel(), track_pos).orElse(null);
                     if((adj_te==null) || (adj_te.getStateFlags() & adjacent_mask) != adjacent_mask) continue;
                     block_positions.add(track_pos);
                     block_sides.add(tdir.getOpposite());
@@ -1350,7 +1352,7 @@ public class RedstoneTrack
         }
       }
       if(recursion_left > 0) {
-        for(TrackTileEntity te:track_connection_updates) {
+        for(TrackBlockEntity te:track_connection_updates) {
           if(trace_) Auxiliaries.logWarn(String.format("UCON %s: UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
           te.updateConnections(recursion_left-1);
         }

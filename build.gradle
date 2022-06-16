@@ -1,17 +1,10 @@
 // @file build.gradle
-// Redstone Pen mod gradle build relay (mc1.18.x)
-buildscript {
-  repositories {
-    maven { url = 'https://maven.minecraftforge.net' }
-    mavenCentral()
-  }
-  dependencies {
-    classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
-  }
+// Redstone Pen mod gradle build relay (mc1.19.x)
+plugins {
+  id 'eclipse'
+  id 'maven-publish'
+  id 'net.minecraftforge.gradle' version '5.1.+'
 }
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'eclipse'
-apply plugin: 'maven-publish'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 //-----------------------------------------------------------------------------
 version = "${version_redstonepen}"
@@ -84,4 +77,8 @@ project.afterEvaluate {
     }
   }
   reobfJar.finalizedBy('signJar')
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.encoding = 'UTF-8'
 }

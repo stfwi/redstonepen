@@ -7,10 +7,9 @@
  * Common functionality class for blocks with block entities.
  */
 package wile.redstonepen.libmc.blocks;
-import wile.redstonepen.libmc.detail.Registries;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
@@ -22,6 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEventListener;
 import net.minecraftforge.common.util.FakePlayer;
+import wile.redstonepen.libmc.detail.Registries;
 
 import javax.annotation.Nullable;
 
@@ -30,8 +30,6 @@ public class StandardEntityBlocks
 {
   public interface IStandardEntityBlock<ET extends StandardBlockEntity> extends EntityBlock
   {
-
-    ResourceLocation getBlockRegistryName();
 
     default boolean isBlockEntityTicking(Level world, BlockState state)
     { return false; }
@@ -49,7 +47,7 @@ public class StandardEntityBlocks
     @Nullable
     default BlockEntity newBlockEntity(BlockPos pos, BlockState state)
     {
-      BlockEntityType<?> tet = Registries.getBlockEntityTypeOfBlock(getBlockRegistryName().getPath());
+      BlockEntityType<?> tet = Registries.getBlockEntityTypeOfBlock(state.getBlock());
       return (tet==null) ? null : tet.create(pos, state);
     }
 
@@ -60,7 +58,7 @@ public class StandardEntityBlocks
 
     @Override
     @Nullable
-    default <T extends BlockEntity> GameEventListener getListener(Level world, T te)
+    default <T extends BlockEntity> GameEventListener getListener(ServerLevel world, T te)
     { return null; }
   }
 

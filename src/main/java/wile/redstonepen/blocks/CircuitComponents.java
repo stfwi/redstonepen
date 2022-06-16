@@ -13,6 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -60,7 +61,7 @@ public class CircuitComponents
   // DirectedComponentBlock
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable implements StandardBlocks.IBlockItemFactory
+  public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable
   {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final IntegerProperty ROTATION = IntegerProperty.create("rotation", 0, 3);
@@ -193,10 +194,6 @@ public class CircuitComponents
     //------------------------------------------------------------------------------------------------------------------
 
     @Override
-    public BlockItem getBlockItem(Block block, Item.Properties builder)
-    { return new DirectedComponentBlockItem(block, builder); }
-
-    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
     { super.createBlockStateDefinition(builder); builder.add(FACING, ROTATION, POWERED, STATE); }
 
@@ -264,7 +261,7 @@ public class CircuitComponents
 
     @Override
     @SuppressWarnings("deprecation")
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {}
 
     @Override
@@ -373,7 +370,7 @@ public class CircuitComponents
     { update(state, world, pos, fromPos); }
 
     @OnlyIn(Dist.CLIENT)
-    private void spawnPoweredParticle(Level world, Random rand, BlockPos pos, Vec3 color, Direction side, float chance) {
+    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction side, float chance) {
       if(rand.nextFloat() < chance) {
         double c2 = chance * rand.nextFloat();
         double p0 = 0.5 + (side.getStepX()*0.4) + (c2*.1);
@@ -385,7 +382,7 @@ public class CircuitComponents
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void animateTick(BlockState state, Level world, BlockPos pos, Random rand)
+    public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand)
     {
       if(!state.getValue(POWERED) || (rand.nextFloat() > 0.4)) return;
       final Vec3 color = new Vec3(0.6f,0,0);
@@ -425,6 +422,7 @@ public class CircuitComponents
     protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos)
     { notifyOutputNeighbourOfStateChange(state, world, pos, getOutputFacing(state)); }
 
+    @SuppressWarnings("deprecation")
     protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos, Direction facing)
     {
       final BlockPos adjacent_pos = pos.relative(facing);
@@ -504,7 +502,7 @@ public class CircuitComponents
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {
       final boolean powered = isPowered(state, world, pos);
       if(powered == state.getValue(POWERED)) return;
@@ -551,7 +549,7 @@ public class CircuitComponents
     { return (state.getValue(POWERED) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {
       final boolean powered = isPowered(state, world, pos);
       if(powered == state.getValue(POWERED)) return;
@@ -596,7 +594,7 @@ public class CircuitComponents
     { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {}
 
     @Override
@@ -632,7 +630,7 @@ public class CircuitComponents
     { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random rnd)
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {
       if(state.getValue(STATE) == 0) return;
       state = state.setValue(STATE, 0);

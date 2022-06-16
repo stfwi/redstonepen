@@ -10,8 +10,7 @@ package wile.redstonepen.items;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -37,7 +36,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack;
-import wile.redstonepen.blocks.RedstoneTrack.TrackTileEntity;
+import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Inventories;
 import wile.redstonepen.libmc.detail.Overlay;
@@ -199,16 +198,16 @@ public class RedstonePenItem extends Item
     final BlockState state = world.getBlockState(pos);
     final Block block = state.getBlock();
     final Direction rs_side = brtr.getDirection().getOpposite();
-    TranslatableComponent tc = null;
+    MutableComponent tc = Component.empty();
     if(block == Blocks.REDSTONE_WIRE) {
       tc = Auxiliaries.localizable("overlay.wire_power", powerFormatted(state.getValue(RedStoneWireBlock.POWER)));
     } else if(block == ModContent.references.TRACK_BLOCK) {
-      TrackTileEntity te = RedstoneTrack.RedstoneTrackBlock.tile(world, pos).orElse(null);
+      TrackBlockEntity te = RedstoneTrack.RedstoneTrackBlock.tile(world, pos).orElse(null);
       if(te==null) return;
       tc = Auxiliaries.localizable("overlay.track_power", powerFormatted(te.getSidePower(rs_side)));
       if(Auxiliaries.isDevelopmentMode()) {
-        tc.append(new TextComponent(String.format(" | %016x | ", te.getStateFlags())));
-        tc.append(new TextComponent(Arrays.stream(Direction.values()).map(side->side.toString().substring(0,1) + te.getRedstonePower(side.getOpposite(), false)).collect(Collectors.joining(","))));
+        tc.append(Component.literal(String.format(" | %016x | ", te.getStateFlags())));
+        tc.append(Component.literal(Arrays.stream(Direction.values()).map(side->side.toString().substring(0,1) + te.getRedstonePower(side.getOpposite(), false)).collect(Collectors.joining(","))));
       }
     } else if(state.is(Blocks.REPEATER)) {
       tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(state.getValue(RepeaterBlock.POWERED) ? 15 : 0));
@@ -253,7 +252,7 @@ public class RedstonePenItem extends Item
       }
       if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side);
     }
-    if(tc!=null) Overlay.show((ServerPlayer)entity, tc, 400);
+    Overlay.show((ServerPlayer)entity, tc, 400);
   }
 
   //------------------------------------------------------------------------------------------------------------------

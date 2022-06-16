@@ -13,9 +13,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.*;
@@ -28,7 +25,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -74,10 +70,6 @@ public class ControlBox
     { super(config, builder, aabb); }
 
     @Override
-    public ResourceLocation getBlockRegistryName()
-    { return getRegistryName(); }
-
-    @Override
     public List<ItemStack> dropList(BlockState state, Level world, @Nullable BlockEntity te, boolean explosion)
     {
       final ItemStack stack = new ItemStack(this.asItem());
@@ -104,7 +96,7 @@ public class ControlBox
       Arrays.stream(stack.getTag().getCompound("tedata").getCompound("logic").getString("code").split("\\n"))
         .map(s->s.replaceAll("#.*$", "").trim())
         .filter(s->!s.isEmpty())
-        .map(s->(new TextComponent(s)).withStyle(ChatFormatting.DARK_GREEN))
+        .map(s->(Component.literal(s).withStyle(ChatFormatting.DARK_GREEN)))
         .forEach(tooltip::add);
     }
 
@@ -177,7 +169,7 @@ public class ControlBox
     private int tick_interval_ = TICK_INTERVAL;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
-    { super(Registries.getBlockEntityTypeOfBlock(state.getBlock().getRegistryName().getPath()), pos, state); }
+    { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
     public void readnbt(CompoundTag nbt)
     {
@@ -224,9 +216,7 @@ public class ControlBox
     public Component getName()
     {
       if(custom_name_ != null) return custom_name_;
-      final Block block = getBlockState().getBlock();
-      if(block!=null) return new TranslatableComponent(block.getDescriptionId());
-      return new TextComponent("Labeled Crate");
+      return Component.translatable(getBlockState().getBlock().getDescriptionId());
     }
 
     @Override
@@ -437,6 +427,10 @@ public class ControlBox
       Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te(), true));
     }
 
+    @Override
+    public ItemStack quickMoveStack(Player player, int slot)
+    { return ItemStack.EMPTY; }
+
     // Container client/server synchronisation --------------------------------------------------
 
     @OnlyIn(Dist.CLIENT)
@@ -549,7 +543,7 @@ public class ControlBox
     private boolean focus_editor_ = false;
     private boolean debug_enabled_ = false;
     private boolean code_requested_ = false;
-    private Component activating_player_ = TextComponent.EMPTY;
+    private Component activating_player_ = Component.empty();
 
     public ControlBoxGui(ControlBoxUiContainer container, Inventory player_inventory, Component title)
     {
@@ -560,7 +554,7 @@ public class ControlBox
       cb_paste_all = new Guis.ImageButton(getBackgroundImage(), 12, 12, Guis.Coord2d.of(54,213));
       cb_error_indicator = new Guis.Image(getBackgroundImage(), 5, 2, Guis.Coord2d.of(68,213));
       rca_enabled_indicator = new Guis.Image(getBackgroundImage(), 7, 7, Guis.Coord2d.of(90,215));
-      textbox = new GuiTextEditing.MultiLineTextBox(29, 12, 156, 170, new TextComponent("Code"));
+      textbox = new GuiTextEditing.MultiLineTextBox(29, 12, 156, 170, Component.literal("Code"));
       port_stati = new ArrayList<>();
       port_stati_i_indicators = new ArrayList<>();
       port_stati_o_indicators = new ArrayList<>();
@@ -606,12 +600,12 @@ public class ControlBox
         port_stati.clear();
         port_stati_i_indicators.clear();
         port_stati_o_indicators.clear();
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[0], 30,10, new TextComponent("down"), font));   // DOWN
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[1], 30,10, new TextComponent("up"), font));     // UP
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[2], 30,10, new TextComponent("red"), font));    // NORTH
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[3], 30,10, new TextComponent("yellow"), font)); // SOUTH
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[4], 30,10, new TextComponent("green"), font));  // WEST
-        port_stati.add(new Guis.TextBox(x0, y0+liney_map[5], 30,10, new TextComponent("blue"), font));   // EAST
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[0], 30,10, Component.literal("down"), font));   // DOWN
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[1], 30,10, Component.literal("up"), font));     // UP
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[2], 30,10, Component.literal("red"), font));    // NORTH
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[3], 30,10, Component.literal("yellow"), font)); // SOUTH
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[4], 30,10, Component.literal("green"), font));  // WEST
+        port_stati.add(new Guis.TextBox(x0, y0+liney_map[5], 30,10, Component.literal("blue"), font));   // EAST
         for(int i=0; i<port_stati.size(); ++i) {
           {
             final Guis.TextBox tb = port_stati.get(i);
@@ -639,16 +633,16 @@ public class ControlBox
       {
         final List<TooltipDisplay.TipRange> tooltips = new ArrayList<>();
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+200,getGuiTop()+36, 36, 16, ()->{
-          final Component c = new TextComponent("");
+          final Component c = Component.literal("");
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(new TextComponent(String.format("%s = %d\n", k.toUpperCase(), kv.getValue())));
+            c.getSiblings().add(Component.literal(String.format("%s = %d\n", k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+196,getGuiTop()+14, 16, 16, ()->
-          (errors_.isEmpty()) ? (TextComponent.EMPTY) : (Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()))
+          (errors_.isEmpty()) ? (Component.empty()) : (Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()))
         ));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+12, 5, 8, Auxiliaries.localizable(tooltip_prefix+".help.1")));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+22, 5, 3, Auxiliaries.localizable(tooltip_prefix+".help.2")));
@@ -719,7 +713,7 @@ public class ControlBox
               cb_error_indicator.visible = false;
               cb_error_indicator.x = 0;
               cb_error_indicator.y = 0;
-              cb_error_indicator.tooltip(TextComponent.EMPTY);
+              cb_error_indicator.tooltip(Component.empty());
             } else {
               Guis.Coord2d exy = textbox.getPositionAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
@@ -731,11 +725,11 @@ public class ControlBox
           if(nbt.contains("player", Tag.TAG_STRING)) {
             final String player_name = nbt.getString("player");
             if(player_name.isEmpty()) {
-              activating_player_ = TextComponent.EMPTY;
+              activating_player_ = Component.empty();
               rca_enabled_indicator.visible = false;
               rca_enabled_indicator.active = false;
             } else {
-              activating_player_ = new TextComponent(player_name);
+              activating_player_ = Component.literal(player_name);
               rca_enabled_indicator.visible = true;
               rca_enabled_indicator.active = true;
             }

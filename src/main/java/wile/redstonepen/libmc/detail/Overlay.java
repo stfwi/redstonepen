@@ -20,7 +20,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.Player;
@@ -70,7 +69,7 @@ public class Overlay
   @OnlyIn(Dist.CLIENT)
   public static class TextOverlayGui extends Screen
   {
-    private static final Component EMPTY_TEXT = new TextComponent("");
+    private static final Component EMPTY_TEXT = Component.literal("");
     private static final BlockState EMPTY_STATE = null;
     private static double overlay_y_ = 0.75;
     private static int text_color_ = 0x00ffaa00;
@@ -109,7 +108,7 @@ public class Overlay
     { text_ = (s==null)?(EMPTY_TEXT):(s.copy()); text_deadline_ = System.currentTimeMillis() + displayTimeoutMs; }
 
     public static synchronized void show(String s, int displayTimeoutMs)
-    { text_ = ((s==null)||(s.isEmpty()))?(EMPTY_TEXT):(new TextComponent(s)); text_deadline_ = System.currentTimeMillis() + displayTimeoutMs; }
+    { text_ = ((s==null)||(s.isEmpty()))?(EMPTY_TEXT):(Component.literal(s)); text_deadline_ = System.currentTimeMillis() + displayTimeoutMs; }
 
     public static synchronized void show(BlockState state, BlockPos pos, int displayTimeoutMs)
     { pos_ = new BlockPos(pos); state_ = state; state_deadline_ = System.currentTimeMillis() + displayTimeoutMs; }
@@ -118,7 +117,7 @@ public class Overlay
     { return ((state_deadline_ < System.currentTimeMillis()) || (state_==EMPTY_STATE)) ? Optional.empty() : Optional.of(new Tuple<>(state_, pos_)); }
 
     TextOverlayGui()
-    { super(new TextComponent("")); mc = SidedProxy.mc(); }
+    { super(Component.literal("")); mc = SidedProxy.mc(); }
 
     @SubscribeEvent
     public void onRenderGui(RenderGameOverlayEvent.Post event)
@@ -128,7 +127,7 @@ public class Overlay
       if(text()==EMPTY_TEXT) return;
       String txt = text().getString();
       if(txt.isEmpty()) return;
-      PoseStack mxs = event.getMatrixStack();
+      PoseStack mxs = event.getPoseStack();
       final Window win = mc.getWindow();
       final Font fr = mc.font;
       final boolean was_unicode = fr.isBidirectional();

@@ -27,7 +27,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -476,7 +475,7 @@ public class GuiTextEditing
       final int y;
 
       public LineInfo(Style fs, String s, int x0, int y0)
-      { style = fs; contents = s; x = x0; y = y0; asComponent = (new TextComponent(contents)).setStyle(style); }
+      { style = fs; contents = s; x = x0; y = y0; asComponent = (Component.literal(contents)).setStyle(style); }
     }
 
   }

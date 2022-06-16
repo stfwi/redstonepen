@@ -26,12 +26,13 @@ import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class ModRenderers
 {
   @OnlyIn(Dist.CLIENT)
-  public static class TrackTer implements BlockEntityRenderer<RedstoneTrack.TrackTileEntity>
+  public static class TrackTer implements BlockEntityRenderer<RedstoneTrack.TrackBlockEntity>
   {
     private static final ModelResourceLocation[] model_rls  = new ModelResourceLocation[RedstoneTrack.defs.STATE_FLAG_WIR_COUNT];
     private static final ModelResourceLocation[] modelm_rls = new ModelResourceLocation[RedstoneTrack.defs.STATE_FLAG_CON_COUNT];
@@ -99,7 +100,7 @@ public class ModRenderers
 
     @Override
     @SuppressWarnings("deprecation")
-    public void render(final RedstoneTrack.TrackTileEntity te, float unused1, PoseStack mxs, MultiBufferSource buf, int combinedLightIn, int combinedOverlayIn)
+    public void render(final RedstoneTrack.TrackBlockEntity te, float unused1, PoseStack mxs, MultiBufferSource buf, int combinedLightIn, int combinedOverlayIn)
     {
       if(tesr_error_counter <= 0) return;
       try {
@@ -155,7 +156,7 @@ public class ModRenderers
       } catch(Throwable e) {
         if(--tesr_error_counter<=0) {
           ModRedstonePen.logger().error("TER was disabled because broken, exception was: " + e.getMessage());
-          ModRedstonePen.logger().error(e.getStackTrace());
+          ModRedstonePen.logger().error(String.join("\n", Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).toList()));
         }
       }
     }

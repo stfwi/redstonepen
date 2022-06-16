@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
@@ -41,6 +42,7 @@ public class ModContent
     detail.MODID = modid;
     initBlocks();
     initItems();
+    Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER);
   }
 
   public static void initBlocks()
@@ -50,42 +52,47 @@ public class ModContent
         StandardBlocks.CFG_DEFAULT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak().dynamicShape().randomTicks()
       ),
-      RedstoneTrack.TrackTileEntity::new
+      RedstoneTrack.TrackBlockEntity::new
     );
     Registries.addBlock("relay",
       ()->new CircuitComponents.RelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
-      )
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("inverted_relay",
       ()->new CircuitComponents.InvertedRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
-      )
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("bistable_relay",
       ()->new CircuitComponents.BistableRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
-      )
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("pulse_relay",
       ()->new CircuitComponents.PulseRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
-      )
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("bridge_relay",
       ()->new CircuitComponents.BridgeRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
-      )
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("control_box",
       ()->new ControlBox.ControlBoxBlock(
@@ -96,6 +103,7 @@ public class ModContent
           Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
         }
       ),
+      CircuitComponents.DirectedComponentBlockItem::new,
       ControlBox.ControlBoxBlockEntity::new,
       ControlBox.ControlBoxUiContainer::new
     );
@@ -118,11 +126,13 @@ public class ModContent
   @OnlyIn(Dist.CLIENT)
   @SuppressWarnings("unchecked")
   public static void registerMenuGuis(final FMLClientSetupEvent event)
-  { MenuScreens.register((MenuType<ControlBox.ControlBoxUiContainer>)Registries.getMenuTypeOfBlock("control_box"), ControlBox.ControlBoxGui::new); }
+  {
+    MenuScreens.register((MenuType<ControlBox.ControlBoxUiContainer>)Registries.getMenuTypeOfBlock("control_box"), ControlBox.ControlBoxGui::new);
+  }
 
   @OnlyIn(Dist.CLIENT)
   public static void processContentClientSide()
-  { ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track")  , RenderType.cutout()); }
+  { ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track"), RenderType.cutout()); }
 
   @OnlyIn(Dist.CLIENT)
   public static void registerModels()
@@ -130,10 +140,10 @@ public class ModContent
 
   @OnlyIn(Dist.CLIENT)
   @SuppressWarnings("unchecked")
-  public static void registerBlockEntityRenderers(final FMLClientSetupEvent event)
+  public static void registerBlockEntityRenderers()
   {
     BlockEntityRenderers.register(
-      (BlockEntityType<RedstoneTrack.TrackTileEntity>)Registries.getBlockEntityTypeOfBlock("track"),
+      (BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"),
       wile.redstonepen.detail.ModRenderers.TrackTer::new
     );
   }
@@ -145,19 +155,20 @@ public class ModContent
   public static MenuType<?> getMenuTypeOfBlock(String block_name)
   { return Registries.getMenuTypeOfBlock(block_name); }
 
+  public static MenuType<?> getMenuTypeOfBlock(Block block)
+  { return Registries.getMenuTypeOfBlock(block); }
+
   public static BlockEntityType<?> getBlockEntityTypeOfBlock(String block_name)
   { return Registries.getBlockEntityTypeOfBlock(block_name); }
 
+  public static BlockEntityType<?> getBlockEntityTypeOfBlock(Block block)
+  { return Registries.getBlockEntityTypeOfBlock(block); }
+
   public static final class references
   {
-    @ObjectHolder("redstonepen:track") public static final RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
-    @ObjectHolder("redstonepen:bridge_relay") public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
-    @ObjectHolder("redstonepen:control_box") public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
-
-
-
-
-
+    @ObjectHolder(registryName="block", value="redstonepen:track") public static final RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
+    @ObjectHolder(registryName="block", value="redstonepen:bridge_relay") public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
+    @ObjectHolder(registryName="block", value="redstonepen:control_box") public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
   }
 
 }

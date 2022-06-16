@@ -6,14 +6,8 @@
  */
 package wile.redstonepen;
 
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,8 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import wile.redstonepen.libmc.detail.Auxiliaries;
 import wile.redstonepen.libmc.detail.Overlay;
 import wile.redstonepen.libmc.detail.Registries;
@@ -34,14 +27,14 @@ public class ModRedstonePen
 {
   public static final String MODID = "redstonepen";
   public static final String MODNAME = "Redstone Pen";
-  public static final Logger LOGGER = LogManager.getLogger();
+  public static final Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   public static final boolean USE_CONFIG = false;
 
   public ModRedstonePen()
   {
     Auxiliaries.init(MODID, LOGGER, ModConfig::getServerConfig);
     Auxiliaries.logGitVersion(MODNAME);
-    Registries.init(MODID, "quill");
+    Registries.init(MODID, "quill", (reg)->reg.register(FMLJavaModLoadingContext.get().getModEventBus()));
     ModContent.init(MODID);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
@@ -65,8 +58,8 @@ public class ModRedstonePen
   private void onClientSetup(final FMLClientSetupEvent event)
   {
     Overlay.register();
-    ModContent.registerBlockEntityRenderers(event);
     ModContent.registerMenuGuis(event);
+    ModContent.registerBlockEntityRenderers();
     ModContent.processContentClientSide();
     Overlay.TextOverlayGui.on_config(
       0.75,
@@ -84,28 +77,8 @@ public class ModRedstonePen
   public static final class ForgeEvents
   {
     @SubscribeEvent
-    public static void onBlockRegistry(final RegistryEvent.Register<Block> event)
-    { Registries.onBlockRegistry((rl, block)->event.getRegistry().register(block)); }
-
-    @SubscribeEvent
-    public static void onItemRegistry(final RegistryEvent.Register<Item> event)
-    { Registries.onItemRegistry((rl, item)->event.getRegistry().register(item)); }
-
-    @SubscribeEvent
-    public static void onBlockEntityRegistry(final RegistryEvent.Register<BlockEntityType<?>> event)
-    { Registries.onBlockEntityRegistry((rl, tet)->event.getRegistry().register(tet)); }
-
-    @SubscribeEvent
-    public static void onRegisterMenuTypes(final RegistryEvent.Register<MenuType<?>> event)
-    { Registries.onMenuTypeRegistry((rl, ct)->event.getRegistry().register(ct)); }
-
-    @SubscribeEvent
     public static void onRegisterModels(final ModelRegistryEvent event)
     { ModContent.registerModels(); }
-
-    @SubscribeEvent
-    public static void onRecipeRegistry(final RegistryEvent.Register<RecipeSerializer<?>> event)
-    { event.getRegistry().register(wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER); }
 
     public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
     {

@@ -12,7 +12,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -347,12 +346,12 @@ public class Networking
 
     public static void sendToPlayer(Player player, Component message, int delay)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer)) return;
+      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || Auxiliaries.isEmpty(message)) return;
       DEFAULT_CHANNEL.sendTo(new OverlayTextMessage(message, delay), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public OverlayTextMessage()
-    { data_ = new TranslatableComponent("[unset]"); }
+    { data_ = Component.translatable("[unset]"); }
 
     public OverlayTextMessage(final Component tct, int delay)
     { data_ = tct.copy(); delay_ = delay; }
@@ -362,7 +361,7 @@ public class Networking
       try {
         return new OverlayTextMessage(buf.readComponent(), DISPLAY_TIME_MS);
       } catch(Throwable e) {
-        return new OverlayTextMessage(new TranslatableComponent("[incorrect translation]"), DISPLAY_TIME_MS);
+        return new OverlayTextMessage(Component.translatable("[incorrect translation]"), DISPLAY_TIME_MS);
       }
     }
 
