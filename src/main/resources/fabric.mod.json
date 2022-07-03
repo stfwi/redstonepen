@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "redstonepen",
+  "version": "${version}",
+
+  "name": "Redstone Pen",
+  "description": "Adds a pen to draw detailed Redstone tracks.",
+  "authors": [ "wilechaote" ],
+  "contact": {
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen",
+    "sources": "https://github.com/stfwi/redstonepen"
+  },
+  "license": "MIT",
+  "icon": "assets/redstonepen/logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "wile.redstonepen.ModRedstonePen"
+    ],
+    "client": [
+      "wile.redstonepen.ModRedstonePenClient"
+    ]
+  },
+  "mixins": [
+    "redstonepen.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

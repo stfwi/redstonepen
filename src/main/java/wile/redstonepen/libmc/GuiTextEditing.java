@@ -6,7 +6,7 @@
  *
  * Text Editing Widgets. Derived form Book-And-Quill.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -14,6 +14,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -28,12 +30,9 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
-import wile.redstonepen.libmc.ui.Guis.Coord2d;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -42,14 +41,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiTextEditing
 {
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class MultiLineTextBox extends Guis.UiWidget implements GuiEventListener
   {
     private static final Consumer<MultiLineTextBox> ON_CHANGE_IGNORED = (tb)->{};
-    private static final BiConsumer<MultiLineTextBox, Coord2d> ON_MOUSEMOVE_IGNORED = (xy,tb)->{};
+    private static final BiConsumer<MultiLineTextBox, Guis.Coord2d> ON_MOUSEMOVE_IGNORED = (xy,tb)->{};
     private int frame_tick_;
     private long last_clicked_ = 0;
     private int last_index_ = -1;
@@ -60,7 +59,7 @@ public class GuiTextEditing
     private int font_color_ = 0xff000000;
     private int cursor_color_ = 0xff000000;
     private Consumer<MultiLineTextBox> on_changed_ = ON_CHANGE_IGNORED;
-    private BiConsumer<MultiLineTextBox, Coord2d> on_mouse_move_ = ON_MOUSEMOVE_IGNORED;
+    private BiConsumer<MultiLineTextBox, Guis.Coord2d> on_mouse_move_ = ON_MOUSEMOVE_IGNORED;
 
     public MultiLineTextBox(int x, int y, int width, int height, Component title)
     {
@@ -129,38 +128,38 @@ public class GuiTextEditing
     public MultiLineTextBox onValueChanged(Consumer<MultiLineTextBox> cb)
     { on_changed_ = cb; return this; }
 
-    public MultiLineTextBox onMouseMove(BiConsumer<MultiLineTextBox, Coord2d> cb)
+    public MultiLineTextBox onMouseMove(BiConsumer<MultiLineTextBox, Guis.Coord2d> cb)
     { on_mouse_move_ = cb; return this; }
 
     public int getIndexUnderMouse(double mouseX, double mouseY)
-    { return (font_ == null) ? 0 : (getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Coord2d.of((int)mouseX, (int)mouseY), false))); }
+    { return (font_ == null) ? 0 : (getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)mouseX, (int)mouseY), false))); }
 
-    public Coord2d getPositionAtIndex(int textIndex)
+    public Guis.Coord2d getPositionAtIndex(int textIndex)
     {
-      if(font_ == null) return Coord2d.ORIGIN;
+      if(font_ == null) return Guis.Coord2d.ORIGIN;
       textIndex = Mth.clamp(textIndex, 0, getDisplayCache().fullText.length());
       final int lindex = findLineFromPos(getDisplayCache().lineStarts, textIndex);
-      if(lindex < 0 || lindex >= getDisplayCache().lineStarts.length) return Coord2d.ORIGIN;
+      if(lindex < 0 || lindex >= getDisplayCache().lineStarts.length) return Guis.Coord2d.ORIGIN;
       final LineInfo li = getDisplayCache().lines[lindex];
       textIndex = Mth.clamp(textIndex + lindex - getDisplayCache().lineStarts[lindex], 0, li.contents.length());
       final int ox = (int)font_.getSplitter().stringWidth(li.contents.substring(0, textIndex));
-      return Coord2d.of(li.x+ox, li.y);
+      return Guis.Coord2d.of(li.x+ox, li.y);
     }
 
-    public String getWordAtPosition(Coord2d xy)
+    public String getWordAtPosition(Guis.Coord2d xy)
     { return ""; } // implement
 
     //---------------------------------------------------------------------------------
 
     @Override
     public MultiLineTextBox init(Screen parent)
-    { return init(parent, Coord2d.of(x,y)); }
+    { return init(parent, Guis.Coord2d.of(x,y)); }
 
     @Override
-    public MultiLineTextBox init(Screen parent, Coord2d position)
+    public MultiLineTextBox init(Screen parent, Guis.Coord2d position)
     {
       super.init(parent, position);
-      font_ = parent.getMinecraft().font;
+      font_ = Minecraft.getInstance().font;
       font_color_ = 0xff000000;
       cursor_color_ = 0xff000000;
       clearDisplayCache();
@@ -176,7 +175,7 @@ public class GuiTextEditing
     {
       if((!active) || (!visible) || (x<this.x) || (y<this.y) || (x>this.x+this.width) || (y>this.y+this.height)) return false;
       if(button != 0) return true;
-      final int index = getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Coord2d.of((int)x, (int)y), false));
+      final int index = getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false));
       if(index >= 0) {
         if((index==last_index_) && ((Util.getMillis()-last_clicked_)<250)) {
           if(edit_.isSelecting()) {
@@ -201,7 +200,7 @@ public class GuiTextEditing
     {
       if(super.mouseDragged(x, y, button, dx, dy) || (button != 0)) return true;
       if((!active) || (!visible)) return false;
-      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, screenCoordinates(new Coord2d((int)x, (int)y), false)), true);
+      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, screenCoordinates(new Guis.Coord2d((int)x, (int)y), false)), true);
       clearDisplayCache();
       return true;
     }
@@ -248,7 +247,7 @@ public class GuiTextEditing
       this.renderHighlight(cache.selection);
       this.renderCursor(mxs, cache.cursor, cache.cursorAtEnd);
       {
-        Coord2d xy = getMousePosition();
+        Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
       }
     }
@@ -295,7 +294,7 @@ public class GuiTextEditing
     private void changeLine(int incr)
     { edit_.setCursorPos(getDisplayCache().changeLine(edit_.getCursorPos(), incr), Screen.hasShiftDown()); }
 
-    private void renderCursor(PoseStack mxs, Coord2d pos, boolean at_end)
+    private void renderCursor(PoseStack mxs, Guis.Coord2d pos, boolean at_end)
     {
       if(!active || !visible) frame_tick_ = 0;
       if((++frame_tick_ & 0x3f) < 0x20) return;
@@ -356,18 +355,18 @@ public class GuiTextEditing
         line_terminated.setValue(full_line.endsWith("\n"));
         final String line = StringUtils.stripEnd(full_line, " \n");
         lsp.add(spos);
-        final Coord2d pxy = screenCoordinates(new Coord2d(0, line_no.getAndIncrement() * 9), true);
+        final Guis.Coord2d pxy = screenCoordinates(new Guis.Coord2d(0, line_no.getAndIncrement() * 9), true);
         line_infos.add(new LineInfo(text, line, pxy.x, pxy.y));
       });
       final int[] line_starts = lsp.toIntArray();
       final boolean cur_at_eos = (cur_pos==full_text.length());
-      Coord2d ppos;
+      Guis.Coord2d ppos;
       if(cur_at_eos && line_terminated.isTrue()) {
-        ppos = new Coord2d(0, line_infos.size() * 9);
+        ppos = new Guis.Coord2d(0, line_infos.size() * 9);
       } else {
         final int lno = findLineFromPos(line_starts, cur_pos);
         final int lpx = font_.width(full_text.substring(line_starts[lno], cur_pos));
-        ppos = new Coord2d(lpx, lno * 9); // line height==9
+        ppos = new Guis.Coord2d(lpx, lno * 9); // line height==9
       }
       List<Rect2i> selection_blocks = Lists.newArrayList();
       if(cur_pos != sel_pos) {
@@ -386,7 +385,7 @@ public class GuiTextEditing
             int j2 = j3 * 9;
             String s1 = full_text.substring(line_starts[j3], line_starts[j3 + 1]);
             int k2 = (int)ssp.stringWidth(s1);
-            selection_blocks.add(createSelection(new Coord2d(0, j2), new Coord2d(k2, j2 + 9)));
+            selection_blocks.add(createSelection(new Guis.Coord2d(0, j2), new Guis.Coord2d(k2, j2 + 9)));
           }
           selection_blocks.add(createPartialLineSelection(full_text, ssp, line_starts[k1], i1, k1 * 9, line_starts[k1]));
         }
@@ -401,13 +400,13 @@ public class GuiTextEditing
     {
       final String s0 = text.substring(line_start_pos, spos);
       final String s1 = text.substring(line_start_pos, epos);
-      return createSelection(new Coord2d((int)ssp.stringWidth(s0), liney), new Coord2d((int)ssp.stringWidth(s1), liney + 9));
+      return createSelection(new Guis.Coord2d((int)ssp.stringWidth(s0), liney), new Guis.Coord2d((int)ssp.stringWidth(s1), liney + 9));
     }
 
-    private Rect2i createSelection(Coord2d pos1, Coord2d pos2)
+    private Rect2i createSelection(Guis.Coord2d pos1, Guis.Coord2d pos2)
     {
-      final Coord2d cd1 = screenCoordinates(pos1, true);
-      final Coord2d cd2 = screenCoordinates(pos2, true);
+      final Guis.Coord2d cd1 = screenCoordinates(pos1, true);
+      final Guis.Coord2d cd2 = screenCoordinates(pos2, true);
       final int x0 = Math.min(cd1.x, cd2.x);
       final int x1 = Math.max(cd1.x, cd2.x);
       final int y0 = Math.min(cd1.y, cd2.y);
@@ -415,21 +414,21 @@ public class GuiTextEditing
       return new Rect2i(x0, y0, x1-x0, y1-y0);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     static class DisplayCache
     {
-      static final DisplayCache EMPTY = new DisplayCache("", new Coord2d(0, 0), true, new int[]{0}, new LineInfo[]{new LineInfo(Style.EMPTY, "", 0, 0)}, new Rect2i[0]);
+      static final DisplayCache EMPTY = new DisplayCache("", new Guis.Coord2d(0, 0), true, new int[]{0}, new LineInfo[]{new LineInfo(Style.EMPTY, "", 0, 0)}, new Rect2i[0]);
       private final String fullText;
-      final Coord2d cursor;
+      final Guis.Coord2d cursor;
       final boolean cursorAtEnd;
       private final int[] lineStarts;
       final LineInfo[] lines;
       final Rect2i[] selection;
 
-      public DisplayCache(String text, Coord2d cur, boolean at_end, int[] line_starts, LineInfo[] line_data, Rect2i[] sel)
+      public DisplayCache(String text, Guis.Coord2d cur, boolean at_end, int[] line_starts, LineInfo[] line_data, Rect2i[] sel)
       { fullText = text; cursor = cur; cursorAtEnd = at_end; lineStarts = line_starts; lines = line_data; selection = sel; }
 
-      public int getIndexAtPosition(Font font, Coord2d pos)
+      public int getIndexAtPosition(Font font, Guis.Coord2d pos)
       {
         int i = pos.y / 9;
         if(i < 0) return 0;
@@ -465,7 +464,7 @@ public class GuiTextEditing
       }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     static class LineInfo
     {
       final Style style;

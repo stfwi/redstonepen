@@ -9,8 +9,9 @@
 package wile.redstonepen.detail;
 
 import net.minecraft.nbt.CompoundTag;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Networking;
+import wile.redstonepen.libmc.NetworkingClient;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -113,7 +114,7 @@ public class RcaSync
       CompoundTag nbt = new CompoundTag();
       nbt.putString("hnd", MESSAGE_HANDLER_ID);
       nbt.putLong("i", rca.getInputs());
-      Networking.PacketNbtNotifyClientToServer.sendToServer(nbt);
+      NetworkingClient.PacketNbtNotifyClientToServer.sendToServer(nbt);
       rca.setInputsChanged(false);
     }
   }

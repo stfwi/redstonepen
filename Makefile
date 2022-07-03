@@ -57,6 +57,7 @@ clean-all:
 	@rm -rf logs/
 	@rm -rf run/logs/
 	@rm -rf run/crash-reports/
+	@rm -rf remappedSrc
 	@$(GRADLE) clean
 
 mrproper: clean-all
@@ -67,31 +68,24 @@ mrproper: clean-all
 
 init:
 	@echo "[1.19] Initialising eclipse workspace using gradle ..."
-	@$(GRADLE) genIntellijRuns
-	-@$(GRADLE) hideOfficialWarningUntilChanged
+	@$(GRADLE) genSources
 
 sanitize:
 	@echo "[1.19] Running sanitising tasks ..."
 	@$(TASK) sanitize
-	@$(TASK) sync-languages
 	@$(TASK) version-check
 	@$(TASK) update-json
 	@git status -s .
-
-install: $(MOD_JAR) |
-	@$(TASK) install
-
-start-server: install
-	@$(TASK) start-server
 
 dist-check:
 	@echo "[1.19] Running dist checks ..."
 	@$(TASK) dist-check
 
-dist-files: clean-all init mod
+dist-files: clean init mod
 	@echo "[1.19] Distribution files ..."
 	@mkdir -p dist
 	@cp build/libs/$(MOD_JAR_PREFIX)* dist/
+	@rm -f dist/*-sources.jar
 	@$(TASK) dist
 
 dist: sanitize dist-check dist-files

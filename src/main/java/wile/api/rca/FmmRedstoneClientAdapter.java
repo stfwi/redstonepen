@@ -147,7 +147,7 @@ public class FmmRedstoneClientAdapter
      * @return System formatted IPC file path string representation.
      */
     public static String ipcIoPath(boolean mcSideOutput)
-    { return Path.of(System.getProperty("java.io.tmpdir"), "redstonepen").toString() + "." + (mcSideOutput ? 'o' : 'i') +".mmap"; }
+    { return Path.of(System.getProperty("java.io.tmpdir"), "redstonepen") + "." + (mcSideOutput ? 'o' : 'i') +".mmap"; }
 
     /**
      * Returns true if the feature is enabled. Initialized after

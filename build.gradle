@@ -1,84 +1,41 @@
-// @file build.gradle
-// Redstone Pen mod gradle build relay (mc1.19.x)
 plugins {
-  id 'eclipse'
-  id 'maven-publish'
-  id 'net.minecraftforge.gradle' version '5.1.+'
-}
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-//-----------------------------------------------------------------------------
-version = "${version_redstonepen}"
-group = "wile.redstonepen"
-archivesBaseName = "redstonepen-${version_minecraft}"
-
-repositories {
-  maven { name = "Progwml6 maven"; url = "https://dvs1.progwml6.com/files/maven/" } // JEI files
-  maven { name = "ModMaven"; url = "modmaven.k-4u.nl" } // JEI files, fallback
-  flatDir { dir 'libs' } // Mod jar dependencies in ./libs
+	id 'fabric-loom' version '0.12-SNAPSHOT'
+	id 'maven-publish'
 }
 
-minecraft {
-  mappings channel: "official", version: "${version_minecraft}"
-  // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-  runs {
-    client {
-      workingDirectory project.file('run')
-      property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
-      property 'forge.logging.console.level', 'info'
-      mods { redstonepen { source sourceSets.main } } }
-    server {
-      workingDirectory project.file('run')
-      property 'forge.logging.markers', '' // SCAN,REGISTRIES,REGISTRYDUMP
-      property 'forge.logging.console.level', 'info'
-      mods { redstonepen { source sourceSets.main } }
-    }
-  }
-}
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+archivesBaseName = "${project.meta_modid}-${project.minecraft_version}-fabric"
+version = project.mod_version
+group = "wile.${meta_modid}"
+
+repositories {}
 
 dependencies {
-  minecraft "net.minecraftforge:forge:${version_forge_minecraft}"
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+  mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {
-  outputs.upToDateWhen { false }
-  doLast { file("${sourceSets.main.output.resourcesDir}/.gitversion-redstonepen").text = 'git log "-1" "--format=%h"'.execute().in.text.trim() }
-}
-
-jar {
-  manifest {
-    attributes([
-      "Specification-Title": "redstonepen",
-      "Specification-Vendor": "wilechaote",
-      "Specification-Version": "1", // We are version 1 of ourselves
-      "Implementation-Title": project.name,
-      "Implementation-Version": "${version_redstonepen}",
-      "Implementation-Vendor" :"wilechaote",
-      "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-    ])
-  }
-}
-
-jar.finalizedBy('reobfJar')
-
-// Signing
-import net.minecraftforge.gradle.common.tasks.SignJar
-project.afterEvaluate {
-  task signJar(type: SignJar, dependsOn: jar) {
-    onlyIf { project.hasProperty("keystore_file") }
-    if(project.hasProperty("keystore_file")) {
-      keyStore = project.getProperty("keystore_file")
-      alias = project.getProperty("keystore_alias")
-      storePass = project.getProperty("keystore_pass")
-      keyPass = project.getProperty("keystore_keypass")
-      inputFile = jar.archiveFile
-      outputFile = jar.archiveFile
-    } else {
-      logger.warn("[WARNING] Signing skipped.")
-    }
-  }
-  reobfJar.finalizedBy('signJar')
+	inputs.property "version", project.version
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-  options.encoding = 'UTF-8'
+	it.options.release = 17
+}
+
+java {
+	withSourcesJar()
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.archivesBaseName}"}
+	}
 }

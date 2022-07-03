@@ -18,6 +18,7 @@ eclipse
 run
 tests
 /dist
+/remappedSrc
 signing.*
 src/main/java/archive
 src/main/resources/assets/minecraft
@@ -35,7 +36,7 @@ desktop.ini
 Thumbs.db
 forge*changelog.txt
 /*.txt
-
+/meta
 ## Initial testing:
 # RedstoneTrack.java
 # ControlBox.java

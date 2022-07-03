@@ -7,25 +7,23 @@
  * Delayed tooltip for a selected area. Constructed with a
  * GUI, invoked in `render()`.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.*;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class TooltipDisplay
 {
   private static long default_delay = 450;
@@ -49,7 +47,6 @@ public class TooltipDisplay
 
     public TipRange(int x, int y, int w, int h, Supplier<Component> text)
     { this.text=text; this.x0=x; this.y0=y; this.x1=x0+w-1; this.y1=y0+h-1; }
-
   }
 
   // ---------------------------------------------------------------------------------------------------
@@ -99,15 +96,12 @@ public class TooltipDisplay
     } else if(ranges.stream().noneMatch(
       (tip)->{
         if((x<tip.x0) || (x>tip.x1) || (y<tip.y0) || (y>tip.y1)) return false;
-        Component tip_component = tip.text.get();
-        final String text = tip_component.getString();
-        if(text.isEmpty()) return false;
+        final Component tip_component = tip.text.get();
+        if(tip_component.getString().isEmpty()) return false;
         try {
-          if(!text.contains("\n")) {
-            gui.renderTooltip(mx, tip_component, x, y);
-          } else {
-            gui.renderComponentTooltip(mx, Arrays.stream(text.split("\\n")).map(s->Component.literal(s.trim())).collect(Collectors.toList()), x, y);
-          }
+          //List<Component> lines = Minecraft.getInstance().font.getSplitter().splitLines(tip_component, gui.width * 3/2, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
+          List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
+          gui.renderComponentTooltip(mx, lines, x, y);
         } catch(Exception ex) {
           had_render_exception = true;
           Auxiliaries.logError("Tooltip rendering disabled due to exception: '" + ex.getMessage() + "'");

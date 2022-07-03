@@ -6,11 +6,13 @@
  *
  * Gui Wrappers and Widgets.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -26,9 +28,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -41,7 +40,7 @@ public class Guis
   // Gui base
   // -------------------------------------------------------------------------------------------------------------------
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static abstract class ContainerGui<T extends AbstractContainerMenu> extends AbstractContainerScreen<T>
   {
     protected final ResourceLocation background_image_;
@@ -87,7 +86,6 @@ public class Guis
     {}
 
     @Override
-    @SuppressWarnings("deprecation")
     protected final void renderBg(PoseStack mx, float partialTicks, int mouseX, int mouseY)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -102,6 +100,12 @@ public class Guis
 
     public final ResourceLocation getBackgroundImage()
     { return background_image_; }
+
+    public final int getGuiLeft()
+    { return leftPos; }
+
+    public final int getGuiTop()
+    { return topPos; }
 
     protected void renderBgWidgets(PoseStack mx, float partialTicks, int mouseX, int mouseY)
     {}
@@ -134,7 +138,7 @@ public class Guis
   // Gui elements
   // -------------------------------------------------------------------------------------------------------------------
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class Coord2d
   {
     public static final Coord2d ORIGIN = new Coord2d(0,0);
@@ -144,7 +148,7 @@ public class Guis
     public String toString() { return "["+x+","+y+"]"; }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class UiWidget extends net.minecraft.client.gui.components.AbstractWidget
   {
     protected static final Component EMPTY_TEXT = Component.literal("");
@@ -160,16 +164,16 @@ public class Guis
     public UiWidget init(Screen parent)
     {
       this.parent_ = parent;
-      this.x += ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiLeft() : 0);
-      this.y += ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiTop() : 0);
+      this.x += ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0);
+      this.y += ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0);
       return this;
     }
 
     public UiWidget init(Screen parent, Coord2d position)
     {
       this.parent_ = parent;
-      this.x = position.x + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiLeft() : 0);
-      this.y = position.y + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiTop() : 0);
+      this.x = position.x + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0);
+      this.y = position.y + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0);
       return this;
     }
 
@@ -225,7 +229,7 @@ public class Guis
     {}
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class HorizontalProgressBar extends UiWidget
   {
     private final Coord2d texture_position_base_;
@@ -285,7 +289,7 @@ public class Guis
     }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class BackgroundImage extends UiWidget
   {
     private final ResourceLocation atlas_;
@@ -310,7 +314,7 @@ public class Guis
     }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class CheckBox extends UiWidget
   {
     private final Coord2d texture_position_off_;
@@ -355,7 +359,7 @@ public class Guis
     }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class ImageButton extends UiWidget
   {
     private final Coord2d texture_position_;
@@ -392,7 +396,7 @@ public class Guis
     }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class Image extends UiWidget
   {
     private final Coord2d texture_position_;
@@ -424,7 +428,7 @@ public class Guis
     }
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class TextBox extends net.minecraft.client.gui.components.EditBox
   {
     public TextBox(int x, int y, int width, int height, Component title, Font font) { super(font, x, y, width, height, title); setBordered(false); }

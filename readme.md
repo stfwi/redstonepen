@@ -1,10 +1,10 @@
 
-## Redstone Pen (MC1.18.x)
+## Redstone Pen (MC1.19.x)
 
 ----
 ## Version history
 
-    - v1.0.11     [U] Initial 1.19 port.
+    - v1.0.11     [U] Initial 1.19 Fabric port.
 
     - v1.0.10     [R] Release build.
                   [F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).

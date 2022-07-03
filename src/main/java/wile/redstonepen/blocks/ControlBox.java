@@ -7,6 +7,8 @@
 package wile.redstonepen.blocks;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -30,18 +32,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
-import wile.redstonepen.libmc.blocks.StandardEntityBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
-import wile.redstonepen.libmc.detail.Registries;
-import wile.redstonepen.libmc.detail.SidedProxy;
-import wile.redstonepen.libmc.ui.GuiTextEditing;
-import wile.redstonepen.libmc.ui.Guis;
-import wile.redstonepen.libmc.ui.TooltipDisplay;
+import wile.redstonepen.libmc.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -88,7 +81,7 @@ public class ControlBox
     { return true; }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter world, List<Component> tooltip, TooltipFlag flag)
     {
       if(Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true)) return;
@@ -107,7 +100,7 @@ public class ControlBox
       final BlockEntity te = world.getBlockEntity(pos);
       if(!(te instanceof ControlBoxBlockEntity cbe)) return;
       final CompoundTag nbt = stack.getTag();
-      if(nbt.contains("tedata")) {
+      if(nbt!=null && nbt.contains("tedata")) {
         CompoundTag te_nbt = nbt.getCompound("tedata");
         if(!te_nbt.isEmpty()) cbe.readnbt(te_nbt);
       }
@@ -147,7 +140,7 @@ public class ControlBox
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
       Direction world_side = Direction.fromNormal(fromPos.subtract(pos));
-      cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
+      if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
   }
@@ -361,7 +354,7 @@ public class ControlBox
       if((signal_intr!=0) && (signal_data==0)) {
         logic_.intr_redges |= mask;
         tick_timer_ = 0;
-      } else if((signal_intr==0) && (signal_data!=0)) {
+      } else if(signal_intr==0) {
         logic_.intr_fedges |= mask;
         tick_timer_ = 0;
       }
@@ -401,7 +394,7 @@ public class ControlBox
 
     private ControlBoxUiContainer(int cid, Inventory player_inventory, Container block_inventory, ContainerLevelAccess wpc, ContainerData fields)
     {
-      super(ModContent.getMenuTypeOfBlock("control_box"), cid);
+      super(Registries.getMenuTypeOfBlock("control_box"), cid);
       player_ = player_inventory.player;
       inventory_ = block_inventory;
       wpc_ = wpc;
@@ -433,15 +426,15 @@ public class ControlBox
 
     // Container client/server synchronisation --------------------------------------------------
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public void onGuiAction(String message)
     { onGuiAction(message, new CompoundTag()); }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public void onGuiAction(String message, CompoundTag nbt)
     {
       nbt.putString("action", message);
-      Networking.PacketContainerSyncClientToServer.sendToServer(containerId, nbt);
+      NetworkingClient.PacketContainerSyncClientToServer.sendToServer(containerId, nbt);
     }
 
     public CompoundTag composeServerData(ControlBoxBlockEntity te, boolean full)
@@ -523,7 +516,7 @@ public class ControlBox
   // GUI
   //--------------------------------------------------------------------------------------------------------------------
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static class ControlBoxGui extends Guis.ContainerGui<ControlBoxUiContainer>
   {
     private final int VALUE_UPDATE_INTERVAL = 2;
@@ -579,11 +572,11 @@ public class ControlBox
         });
         addRenderableWidget(start_stop);
         cb_copy_all.init(this, Guis.Coord2d.of(212, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.copyall"));
-        cb_copy_all.onclick((cb)->{SidedProxy.setClipboard(textbox.getValue()); focus_editor_=true; });
+        cb_copy_all.onclick((cb)->{Auxiliaries.setClipboard(textbox.getValue()); focus_editor_=true; });
         cb_copy_all.visible = false;
         addRenderableWidget(cb_copy_all);
         cb_paste_all.init(this, Guis.Coord2d.of(212, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.pasteall"));
-        cb_paste_all.onclick((cb)->{textbox.setValue(SidedProxy.getClipboard().orElse("")); push_code(textbox.getValue()); focus_editor_=true; });
+        cb_paste_all.onclick((cb)->{textbox.setValue(Auxiliaries.getClipboard().orElse("")); push_code(textbox.getValue()); focus_editor_=true; });
         cb_paste_all.visible = false;
         addRenderableWidget(cb_paste_all);
         cb_error_indicator.init(this, Guis.Coord2d.of(230, 14));
@@ -843,7 +836,7 @@ public class ControlBox
           return MathExpr.Expr.bool_false();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);
@@ -879,7 +872,7 @@ public class ControlBox
           return MathExpr.Expr.bool_true();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);

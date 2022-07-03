@@ -6,43 +6,27 @@
  */
 package wile.redstonepen;
 
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ObjectHolder;
 import wile.redstonepen.blocks.CircuitComponents;
 import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.items.RedstonePenItem;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Registries;
+import wile.redstonepen.libmc.StandardBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Registries;
 
 
 public class ModContent
 {
-  private static class detail {
-    public static String MODID = "";
-  }
-
   public static void init(String modid)
   {
-    detail.MODID = modid;
     initBlocks();
     initItems();
-    Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER);
+    Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.ExtendedShapelessRecipe.SERIALIZER);
   }
 
   public static void initBlocks()
@@ -119,56 +103,23 @@ public class ModContent
     ));
   }
 
-  //--------------------------------------------------------------------------------------------------------------------
-  // Initialisation events
-  //--------------------------------------------------------------------------------------------------------------------
-
-  @OnlyIn(Dist.CLIENT)
-  @SuppressWarnings("unchecked")
-  public static void registerMenuGuis(final FMLClientSetupEvent event)
+  public static void initReferences()
   {
-    MenuScreens.register((MenuType<ControlBox.ControlBoxUiContainer>)Registries.getMenuTypeOfBlock("control_box"), ControlBox.ControlBoxGui::new);
-  }
-
-  @OnlyIn(Dist.CLIENT)
-  public static void processContentClientSide()
-  { ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track"), RenderType.cutout()); }
-
-  @OnlyIn(Dist.CLIENT)
-  public static void registerModels()
-  { wile.redstonepen.detail.ModRenderers.TrackTer.registerModels(); }
-
-  @OnlyIn(Dist.CLIENT)
-  @SuppressWarnings("unchecked")
-  public static void registerBlockEntityRenderers()
-  {
-    BlockEntityRenderers.register(
-      (BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"),
-      wile.redstonepen.detail.ModRenderers.TrackTer::new
-    );
+    Registries.instantiateAll();
+    references.TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)Registries.getBlock("track");
+    references.BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)Registries.getBlock("bridge_relay");
+    references.CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)Registries.getBlock("control_box");
   }
 
   //--------------------------------------------------------------------------------------------------------------------
   // Accessors
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static MenuType<?> getMenuTypeOfBlock(String block_name)
-  { return Registries.getMenuTypeOfBlock(block_name); }
-
-  public static MenuType<?> getMenuTypeOfBlock(Block block)
-  { return Registries.getMenuTypeOfBlock(block); }
-
-  public static BlockEntityType<?> getBlockEntityTypeOfBlock(String block_name)
-  { return Registries.getBlockEntityTypeOfBlock(block_name); }
-
-  public static BlockEntityType<?> getBlockEntityTypeOfBlock(Block block)
-  { return Registries.getBlockEntityTypeOfBlock(block); }
-
   public static final class references
   {
-    @ObjectHolder(registryName="block", value="redstonepen:track") public static final RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
-    @ObjectHolder(registryName="block", value="redstonepen:bridge_relay") public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
-    @ObjectHolder(registryName="block", value="redstonepen:control_box") public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
+    public static RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
+    public static CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
+    public static ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
   }
 
 }

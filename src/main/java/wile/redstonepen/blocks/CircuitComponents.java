@@ -8,6 +8,8 @@ package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.math.Vector3f;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -43,13 +45,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Overlay;
+import wile.redstonepen.libmc.StandardBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Overlay;
+import wile.redstonepen.libmc.RsSignals;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -269,7 +269,7 @@ public class CircuitComponents
     public BlockState getStateForPlacement(BlockPlaceContext context)
     {
       BlockState state = super.getStateForPlacement(context);
-      if(state==null) return state;
+      if(state==null) return null;
       final Direction face = context.getClickedFace().getOpposite();
       final Vec3 hit_r = context.getClickLocation().subtract(Vec3.atCenterOf(context.getClickedPos()));
       final Vec3 hit = switch(face) {
@@ -369,7 +369,7 @@ public class CircuitComponents
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     { update(state, world, pos, fromPos); }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction side, float chance) {
       if(rand.nextFloat() < chance) {
         double c2 = chance * rand.nextFloat();
@@ -380,7 +380,7 @@ public class CircuitComponents
       }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     @Override
     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand)
     {
@@ -429,11 +429,11 @@ public class CircuitComponents
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
         adjacent_state.neighborChanged(world, adjacent_pos, this, pos, false);
-        if(adjacent_state.shouldCheckWeakPower(world, adjacent_pos, facing)) {
+        if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Curcuit neighborChanged recursion detected, dropping!");
+        Auxiliaries.logError("Curcuit neighborChanged recursion detected, dropping!");
         Vec3 p = Vec3.atCenterOf(pos);
         world.addFreshEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(this, 1)));
         world.setBlock(pos, world.getBlockState(pos).getFluidState().createLegacyBlock(), 2|16);
@@ -492,12 +492,10 @@ public class CircuitComponents
     { super(config, builder, aabb); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return ((!state.getValue(POWERED)) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15;}
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return getSignal(state, world, pos, redstone_side); }
 
@@ -544,7 +542,6 @@ public class CircuitComponents
     { super(config, builder, aabb); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return (state.getValue(POWERED) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
@@ -589,7 +586,6 @@ public class CircuitComponents
     { super(config, builder, aabb); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
@@ -625,7 +621,6 @@ public class CircuitComponents
     { super(config, builder, aabb); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return ((state.getValue(STATE) == 0) || (redstone_side != getOutputFacing(state).getOpposite())) ? 0 : 15; }
 
@@ -692,7 +687,7 @@ public class CircuitComponents
           }
         } else {
           p = state.getSignal(world, pos, side);
-          if((p<15) && (!state.isSignalSource()) && (state.shouldCheckWeakPower(world, pos, side))) {
+          if((p<15) && (!state.isSignalSource()) && (RsSignals.canEmitWeakPower(state, world, pos, side))) {
             for(Direction d:Direction.values()) {
               if(d == side.getOpposite()) continue;
               p = Math.max(p, world.getBlockState(pos.relative(d)).getSignal(world, pos.relative(d), d));
@@ -719,7 +714,6 @@ public class CircuitComponents
     { return isSidePowered(world, pos, state.getValue(FACING)) || isSidePowered(world, pos, getOutputFacing(state).getOpposite()); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     {
       if((redstone_side == getOutputFacing(state).getOpposite())) return state.getValue(POWERED) ? 15 : 0;
@@ -741,7 +735,6 @@ public class CircuitComponents
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return getSignal(state, world, pos, redstone_side); }
 

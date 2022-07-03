@@ -4,7 +4,7 @@
  * @copyright (C) 2020 Stefan Wilhelm
  * @license MIT (see https://opensource.org/licenses/MIT)
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -24,8 +24,6 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.tags.ITag;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -102,7 +100,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
         if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) continue;
-        remaining.set(i, stack.hasContainerItem() ? stack.getContainerItem() : stack.copy());
+        remaining.set(i, stack.getItem().hasCraftingRemainingItem() ? new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()) : stack.copy());
       }
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = remaining.get(i);
@@ -163,8 +161,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
               remaining.set(i, rstack);
             }
           }
-        } else if(stack.hasContainerItem()) {
-          remaining.set(i, stack.getContainerItem());
+        } else if(stack.getItem().hasCraftingRemainingItem()) {
+          remaining.set(i, new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()));
         }
       }
       return remaining;
@@ -206,7 +204,6 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
     {}
 
     @Override
-    @SuppressWarnings("deprecation")
     public ExtendedShapelessRecipe fromJson(ResourceLocation recipeId, JsonObject json)
     {
       ResourceLocation resultTag = new ResourceLocation("libmc", "none"); // just no null
@@ -238,10 +235,15 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         // Tag based item picking
         ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
         // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
+
+/* @TODO
         final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
         if(key==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag does not exist: #" + rl);
         final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
         final @Nullable Item item = tag.stream().findFirst().orElse(null);
+*/
+final @Nullable Item item = null;
+
         if(item==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
@@ -257,7 +259,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       String group = pkt.readUtf(0x7fff);
       final int size = pkt.readVarInt();
       NonNullList<Ingredient> list = NonNullList.withSize(size, Ingredient.EMPTY);
-      for(int i=0; i<list.size(); ++i) list.set(i, Ingredient.fromNetwork(pkt));
+      list.replaceAll(ignored -> Ingredient.fromNetwork(pkt));
       ItemStack stack = pkt.readItem();
       CompoundTag aspects = pkt.readNbt();
       ResourceLocation resultTag = pkt.readResourceLocation();

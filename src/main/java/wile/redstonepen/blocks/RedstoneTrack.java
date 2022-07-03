@@ -8,6 +8,8 @@ package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.math.Vector3f;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -51,17 +53,11 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.nbt.Tag;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
-
+import wile.redstonepen.libmc.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -580,7 +576,7 @@ public class RedstoneTrack
           world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        Auxiliaries.logError("Track neighborChanged recursion detected, dropping!");
         final int num_redstone = tile(world, pos).map(TrackBlockEntity::getRedstoneDustCount).orElse(0);
         if(num_redstone > 0) {
           Vec3 p = Vec3.atCenterOf(pos);
@@ -595,7 +591,7 @@ public class RedstoneTrack
     public void updateIndirectNeighbourShapes(BlockState state, LevelAccessor worldIn, BlockPos pos, int flags, int recursionLeft)
     {}
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction from, Direction to, float minChance, float maxChance) {
       float f = maxChance - minChance;
       if(rand.nextFloat() < 0.3f * f) {
@@ -608,7 +604,7 @@ public class RedstoneTrack
       }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     @Override
     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand)
     {
@@ -702,7 +698,7 @@ public class RedstoneTrack
   // Tile entity
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class TrackBlockEntity extends BlockEntity implements Networking.IPacketTileNotifyReceiver
+  public static class TrackBlockEntity extends StandardEntityBlocks.StandardBlockEntity implements Networking.IPacketTileNotifyReceiver
   {
     public static class TrackNet
     {
@@ -725,7 +721,7 @@ public class RedstoneTrack
     private boolean trace_ = false;
 
     public TrackBlockEntity(BlockPos pos, BlockState state)
-    { super(ModContent.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
+    { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
     public CompoundTag readnbt(CompoundTag nbt)
     {
@@ -777,26 +773,15 @@ public class RedstoneTrack
 
     @Override
     public void load(CompoundTag nbt)
-    {
-      super.load(nbt);
-      readnbt(nbt);
-    }
+    { super.load(nbt); readnbt(nbt); }
 
     @Override
     protected void saveAdditional(CompoundTag nbt)
-    {
-      super.saveAdditional(nbt);
-      writenbt(nbt);
-    }
+    { super.saveAdditional(nbt); writenbt(nbt); }
 
     @Override
     public CompoundTag getUpdateTag()
     { CompoundTag nbt = super.getUpdateTag(); writenbt(nbt, true); return nbt; }
-
-    @Override
-    @Nullable
-    public ClientboundBlockEntityDataPacket getUpdatePacket()
-    { return ClientboundBlockEntityDataPacket.create(this); }
 
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) // on client
@@ -814,7 +799,7 @@ public class RedstoneTrack
     public void onClientPacketReceived(Player player, CompoundTag nbt)
     {}
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public double getViewDistance()
     { return 64; }
 
@@ -1083,7 +1068,7 @@ public class RedstoneTrack
       final BlockState state = world.getBlockState(pos);
       int p = (!state.is(Blocks.REDSTONE_WIRE) && (!state.is(getBlock()))) ? state.getSignal(world, pos, redstone_side) : 0;
       //if(trace_) Auxiliaries.logWarn(String.format("GETNWS from [%s @ %s] = %dw", posstr(getPos()), redstone_side, p));
-      if(!state.shouldCheckWeakPower(world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
+      if(!RsSignals.canEmitWeakPower(state, world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
       // According to world.getStrongPower():
       for(Direction rs_side: Direction.values()) {
         final BlockPos side_pos = pos.relative(rs_side);

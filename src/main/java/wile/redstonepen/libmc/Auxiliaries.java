@@ -6,11 +6,14 @@
  *
  * General commonly used functionality.
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
@@ -18,6 +21,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -31,10 +35,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,10 +43,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -61,10 +58,10 @@ public class Auxiliaries
   private static Logger logger;
   private static Supplier<CompoundTag> server_config_supplier = CompoundTag::new;
 
-  public static void init(String modid, Logger logger, Supplier<CompoundTag> server_config_supplier)
+  public static void init(String modid, Supplier<CompoundTag> server_config_supplier)
   {
     Auxiliaries.modid = modid;
-    Auxiliaries.logger = logger;
+    Auxiliaries.logger = com.mojang.logging.LogUtils.getLogger();
     Auxiliaries.server_config_supplier = server_config_supplier;
   }
 
@@ -85,24 +82,34 @@ public class Auxiliaries
   public interface IExperimentalFeature {}
 
   public static boolean isModLoaded(final String registry_name)
-  { return ModList.get().isLoaded(registry_name); }
+  { return false; } // ModList.get().isLoaded(registry_name); }
 
   public static boolean isDevelopmentMode()
   { return SharedConstants.IS_RUNNING_IN_IDE; }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
+  @SuppressWarnings("all")
   public static boolean isShiftDown()
   {
-    return (InputConstants.isKeyDown(SidedProxy.mc().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) ||
-      InputConstants.isKeyDown(SidedProxy.mc().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
+    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) ||
+      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
   }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
+  @SuppressWarnings("all")
   public static boolean isCtrlDown()
   {
-    return (InputConstants.isKeyDown(SidedProxy.mc().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) ||
-      InputConstants.isKeyDown(SidedProxy.mc().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
+    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) ||
+      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
   }
+
+  @Environment(EnvType.CLIENT)
+  public static Optional<String> getClipboard()
+  { return Optional.of(net.minecraft.client.gui.font.TextFieldHelper.getClipboardContents(net.minecraft.client.Minecraft.getInstance())); }
+
+  @Environment(EnvType.CLIENT)
+  public static boolean setClipboard(String text)
+  { net.minecraft.client.gui.font.TextFieldHelper.setClipboardContents(net.minecraft.client.Minecraft.getInstance(), text); return true; }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Logging
@@ -135,18 +142,18 @@ public class Auxiliaries
     return tr;
   }
 
-  public static Component localizable(String modtrkey)
+  public static MutableComponent localizable(String modtrkey)
   { return localizable(modtrkey, new Object[]{}); }
 
-  public static Component localizable_block_key(String blocksubkey)
+  public static MutableComponent localizable_block_key(String blocksubkey)
   { return Component.translatable("block."+modid+"."+blocksubkey); }
 
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static String localize(String translationKey, Object... args)
   {
     Component tr = Component.translatable(translationKey, args);
     tr.getStyle().applyFormat(ChatFormatting.RESET);
-    final String ft = tr.getString();
+    final String ft = tr.getString().trim();
     if(ft.contains("${")) {
       // Non-recursive, non-argument lang file entry cross referencing.
       Pattern pt = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -177,12 +184,16 @@ public class Auxiliaries
     }
   }
 
-  /**
-   * Returns true if a given key is translated for the current language.
-   */
-  @OnlyIn(Dist.CLIENT)
+  @Environment(EnvType.CLIENT)
   public static boolean hasTranslation(String key)
   { return net.minecraft.client.resources.language.I18n.exists(key); }
+
+  @Environment(EnvType.CLIENT)
+  public static List<Component> wrapText(Component text, int max_width_percent)
+  {
+    int max_width = ((Minecraft.getInstance().getWindow().getGuiScaledWidth())-10) * max_width_percent/100;
+    return Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
+  }
 
   public static MutableComponent join(Collection<? extends Component> components, String separator)
   { return ComponentUtils.formatList(components, Component.literal(separator), Function.identity()); }
@@ -195,60 +206,38 @@ public class Auxiliaries
 
   public static final class Tooltip
   {
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static boolean extendedTipCondition()
     { return isShiftDown(); }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static boolean helpCondition()
     { return isShiftDown() && isCtrlDown(); }
 
-    /**
-     * Adds an extended tooltip or help tooltip depending on the key states of CTRL and SHIFT.
-     * Returns true if the localisable help/tip was added, false if not (either not CTL/SHIFT or
-     * no translation found).
-     */
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static boolean addInformation(@Nullable String advancedTooltipTranslationKey, @Nullable String helpTranslationKey, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
     {
       // Note: intentionally not using keybinding here, this must be `control` or `shift`.
       final boolean help_available = (helpTranslationKey != null) && Auxiliaries.hasTranslation(helpTranslationKey + ".help");
       final boolean tip_available = (advancedTooltipTranslationKey != null) && Auxiliaries.hasTranslation(helpTranslationKey + ".tip");
       if((!help_available) && (!tip_available)) return false;
-      String tip_text = "";
+      MutableComponent tip_text = Component.empty();
       if(helpCondition()) {
-        if(help_available) tip_text = localize(helpTranslationKey + ".help");
+        if(help_available) tip_text = Component.literal(localize(helpTranslationKey + ".help"));
       } else if(extendedTipCondition()) {
-        if(tip_available) tip_text = localize(advancedTooltipTranslationKey + ".tip");
+        if(tip_available) tip_text = Component.literal(localize(advancedTooltipTranslationKey + ".tip"));
       } else if(addAdvancedTooltipHints) {
-        if(tip_available) tip_text += localize(modid + ".tooltip.hint.extended") + (help_available ? " " : "");
-        if(help_available) tip_text += localize(modid + ".tooltip.hint.help");
+        if(tip_available) tip_text = Component.literal(localize(modid + ".tooltip.hint.extended") + (help_available ? " " : ""));
+        if(help_available) tip_text.append(Component.literal(localize(modid + ".tooltip.hint.help")));
       }
-      if(tip_text.isEmpty()) return false;
-      String[] tip_list = tip_text.split("\\r?\\n");
-      for(String tip:tip_list) {
-        tooltip.add(Component.literal(tip.replaceAll("\\s+$","").replaceAll("^\\s+", "")).withStyle(ChatFormatting.GRAY));
-      }
+      if(isEmpty(tip_text)) return false;
+      tooltip.addAll(wrapText(tip_text, 50));
       return true;
     }
 
-    /**
-     * Adds an extended tooltip or help tooltip for a given stack depending on the key states of CTRL and SHIFT.
-     * Format in the lang file is (e.g. for items): "item.MODID.REGISTRYNAME.tip" and "item.MODID.REGISTRYNAME.help".
-     * Return value see method pattern above.
-     */
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static boolean addInformation(ItemStack stack, @Nullable BlockGetter world, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
     { return addInformation(stack.getDescriptionId(), stack.getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
-
-    @OnlyIn(Dist.CLIENT)
-    public static boolean addInformation(String translation_key, List<Component> tooltip)
-    {
-      if(!Auxiliaries.hasTranslation(translation_key)) return false;
-      tooltip.add(Component.literal(localize(translation_key).replaceAll("\\s+$","").replaceAll("^\\s+", "")).withStyle(ChatFormatting.GRAY));
-      return true;
-    }
-
   }
 
   @SuppressWarnings("unused")
@@ -265,22 +254,21 @@ public class Auxiliaries
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
 
-  @SuppressWarnings("deprecation")
+/*
   public static boolean isInItemTag(Item item, ResourceLocation tag)
-  { return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item)); }
+  {
+    return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item));
+  }
 
-  @SuppressWarnings("deprecation")
   public static boolean isInBlockTag(Block block, ResourceLocation tag)
   { return ForgeRegistries.BLOCKS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(block)); }
+ */
 
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Item item)
   { return Registry.ITEM.getKey(item); }
 
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Block block)
   { return Registry.BLOCK.getKey(block); }
-
 
   // -------------------------------------------------------------------------------------------------------------------
   // Item NBT data
