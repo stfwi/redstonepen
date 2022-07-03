@@ -1,8 +1,11 @@
 
-## Redstone Pen (MC1.18.x)
+## Redstone Pen (MC1.19.x)
 
 ----
 ## Version history
+
+    - v1.0.12     [F] Minor Track placement fixes.
+                  [M] Library/obsolete MC override cleanups.
 
     - v1.0.11     [U] Initial 1.19 port.
 

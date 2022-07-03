@@ -7,6 +7,7 @@
  * Common functionality class for blocks with block entities.
  */
 package wile.redstonepen.libmc.blocks;
+import wile.redstonepen.libmc.detail.Registries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEventListener;
 import net.minecraftforge.common.util.FakePlayer;
-import wile.redstonepen.libmc.detail.Registries;
 
 import javax.annotation.Nullable;
 

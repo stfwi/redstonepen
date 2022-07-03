@@ -257,7 +257,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       String group = pkt.readUtf(0x7fff);
       final int size = pkt.readVarInt();
       NonNullList<Ingredient> list = NonNullList.withSize(size, Ingredient.EMPTY);
-      for(int i=0; i<list.size(); ++i) list.set(i, Ingredient.fromNetwork(pkt));
+      list.replaceAll(ignored -> Ingredient.fromNetwork(pkt));
       ItemStack stack = pkt.readItem();
       CompoundTag aspects = pkt.readNbt();
       ResourceLocation resultTag = pkt.readResourceLocation();

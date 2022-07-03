@@ -41,12 +41,11 @@ import java.util.Optional;
 
 public class Overlay
 {
+  @OnlyIn(Dist.CLIENT)
   public static void register()
   {
-    if(SidedProxy.mc() != null) {
-      MinecraftForge.EVENT_BUS.register(new TextOverlayGui());
-      Networking.OverlayTextMessage.setHandler(TextOverlayGui::show);
-    }
+    MinecraftForge.EVENT_BUS.register(new TextOverlayGui());
+    Networking.OverlayTextMessage.setHandler(TextOverlayGui::show);
   }
 
   public static void show(Player player, final Component message)

@@ -12,6 +12,7 @@ package wile.redstonepen.libmc.ui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 
 @OnlyIn(Dist.CLIENT)
@@ -103,11 +103,7 @@ public class TooltipDisplay
         final String text = tip_component.getString();
         if(text.isEmpty()) return false;
         try {
-          if(!text.contains("\n")) {
-            gui.renderTooltip(mx, tip_component, x, y);
-          } else {
-            gui.renderComponentTooltip(mx, Arrays.stream(text.split("\\n")).map(s->Component.literal(s.trim())).collect(Collectors.toList()), x, y);
-          }
+          gui.renderComponentTooltip(mx, tip.text.get().toFlatList(Style.EMPTY), x, y);
         } catch(Exception ex) {
           had_render_exception = true;
           Auxiliaries.logError("Tooltip rendering disabled due to exception: '" + ex.getMessage() + "'");

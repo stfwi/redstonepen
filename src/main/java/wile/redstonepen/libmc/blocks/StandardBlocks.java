@@ -5,10 +5,6 @@
  * @license MIT (see https://opensource.org/licenses/MIT)
  *
  * Common functionality class for decor blocks.
- * Mainly needed for:
- * - MC block defaults.
- * - Tooltip functionality
- * - Model initialisation
  */
 package wile.redstonepen.libmc.blocks;
 
@@ -17,10 +13,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -324,14 +316,10 @@ public class StandardBlocks
     }
 
     public Directed(long config, BlockBehaviour.Properties properties, final AABB unrotatedAABB)
-    { this(config, properties, new AABB[]{unrotatedAABB}); }
+    { this(config, properties.isValidSpawn((s,w,p,e)->false), new AABB[]{unrotatedAABB}); }
 
     @Override
     public boolean isPossibleToRespawnInThis()
-    { return false; }
-
-    @Override
-    public boolean isValidSpawn(BlockState state, BlockGetter world, BlockPos pos, SpawnPlacements.Type type, @Nullable EntityType<?> entityType)
     { return false; }
 
     @Override
@@ -376,7 +364,7 @@ public class StandardBlocks
 
     public AxisAligned(long config, BlockBehaviour.Properties properties, final Supplier<ArrayList<VoxelShape>> shape_supplier)
     {
-      super(config, properties);
+      super(config, properties.isValidSpawn((s,w,p,e)->false));
       registerDefaultState(super.defaultBlockState().setValue(AXIS, Direction.Axis.X));
       vshapes = shape_supplier.get();
     }
@@ -396,10 +384,6 @@ public class StandardBlocks
 
     @Override
     public boolean isPossibleToRespawnInThis()
-    { return false; }
-
-    @Override
-    public boolean isValidSpawn(BlockState state, BlockGetter world, BlockPos pos, SpawnPlacements.Type type, @Nullable EntityType<?> entityType)
     { return false; }
 
     @Override

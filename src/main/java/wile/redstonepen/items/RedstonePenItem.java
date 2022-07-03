@@ -172,7 +172,7 @@ public class RedstonePenItem extends Item
       final BlockPlaceContext ctx = new BlockPlaceContext(context.getPlayer(), context.getHand(), new ItemStack(Items.REDSTONE), rtr);
       final BlockState rs_state = ModContent.references.TRACK_BLOCK.getStateForPlacement(ctx);
       if(rs_state==null) return InteractionResult.FAIL;
-      if(!state.getBlock().canBeReplaced(target_state, ctx)) return InteractionResult.FAIL;
+      if(!target_state.getBlock().canBeReplaced(target_state, ctx)) return InteractionResult.FAIL;
       if(!world.setBlock(target_pos, rs_state, 1|2)) return InteractionResult.FAIL;
       final BlockState placed_state = world.getBlockState(target_pos);
       if(!(placed_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock)) {

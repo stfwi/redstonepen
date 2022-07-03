@@ -800,19 +800,12 @@ public class RedstoneTrack
 
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) // on client
-    { readnbt(pkt.getTag()); super.onDataPacket(net, pkt); }
+    { super.onDataPacket(net, pkt); readnbt(pkt.getTag()); }
 
-    @Override
-    public void handleUpdateTag(CompoundTag tag) // on client
-    { load(tag); }
 
     @Override
     public void onServerPacketReceived(CompoundTag nbt)
     { readnbt(nbt); }
-
-    @Override
-    public void onClientPacketReceived(Player player, CompoundTag nbt)
-    {}
 
     @OnlyIn(Dist.CLIENT)
     public double getViewDistance()

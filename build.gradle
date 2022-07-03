@@ -9,7 +9,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 //-----------------------------------------------------------------------------
 version = "${version_redstonepen}"
 group = "wile.redstonepen"
-archivesBaseName = "redstonepen-${version_minecraft}"
+archivesBaseName = "redstonepen-${version_minecraft}-forge"
 
 repositories {
   maven { name = "Progwml6 maven"; url = "https://dvs1.progwml6.com/files/maven/" } // JEI files
