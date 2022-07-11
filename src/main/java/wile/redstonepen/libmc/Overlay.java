@@ -6,10 +6,9 @@
  *
  * Renders status messages in one line.
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
@@ -27,13 +26,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderLevelLastEvent;
-import net.minecraftforge.client.model.data.EmptyModelData;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -41,13 +34,6 @@ import java.util.Optional;
 
 public class Overlay
 {
-  @OnlyIn(Dist.CLIENT)
-  public static void register()
-  {
-    MinecraftForge.EVENT_BUS.register(new TextOverlayGui());
-    Networking.OverlayTextMessage.setHandler(TextOverlayGui::show);
-  }
-
   public static void show(Player player, final Component message)
   { Networking.OverlayTextMessage.sendToPlayer(player, message, 3000); }
 
@@ -64,10 +50,10 @@ public class Overlay
   // Client side handler
   // -----------------------------------------------------------------------------
 
-  @Mod.EventBusSubscriber(Dist.CLIENT)
   @OnlyIn(Dist.CLIENT)
   public static class TextOverlayGui extends Screen
   {
+    public static final TextOverlayGui INSTANCE = new TextOverlayGui();
     private static final Component EMPTY_TEXT = Component.literal("");
     private static final BlockState EMPTY_STATE = null;
     private static double overlay_y_ = 0.75;
@@ -75,18 +61,19 @@ public class Overlay
     private static int border_color_ = 0xaa333333;
     private static int background_color1_ = 0xaa333333;
     private static int background_color2_ = 0xaa444444;
-    private final Minecraft mc;
     private static long text_deadline_ = 0;
     private static Component text_ = EMPTY_TEXT;
     private static long state_deadline_ = 0;
     private static @Nullable BlockState state_ = EMPTY_STATE;
     private static BlockPos pos_ = BlockPos.ZERO;
+    private net.minecraft.client.Minecraft mc;
 
     public static void on_config(double overlay_y)
     { on_config(overlay_y, 0x00ffaa00, 0xaa333333, 0xaa333333, 0xaa444444); }
 
     public static void on_config(double overlay_y, int text_color, int border_color, int background_color1, int background_color2)
     {
+      INSTANCE.mc = net.minecraft.client.Minecraft.getInstance();
       overlay_y_ = overlay_y;
       text_color_ = text_color;
       border_color_ = border_color;
@@ -116,17 +103,14 @@ public class Overlay
     { return ((state_deadline_ < System.currentTimeMillis()) || (state_==EMPTY_STATE)) ? Optional.empty() : Optional.of(new Tuple<>(state_, pos_)); }
 
     TextOverlayGui()
-    { super(Component.literal("")); mc = SidedProxy.mc(); }
+    { super(Component.literal("")); }
 
-    @SubscribeEvent
-    public void onRenderGui(RenderGameOverlayEvent.Post event)
+    public void onRenderGui(final com.mojang.blaze3d.vertex.PoseStack mxs)
     {
-      if(event.getType() != RenderGameOverlayEvent.ElementType.CHAT) return;
       if(deadline() < System.currentTimeMillis()) return;
       if(text()==EMPTY_TEXT) return;
       String txt = text().getString();
       if(txt.isEmpty()) return;
-      PoseStack mxs = event.getPoseStack();
       final Window win = mc.getWindow();
       final Font fr = mc.font;
       final boolean was_unicode = fr.isBidirectional();
@@ -142,8 +126,8 @@ public class Overlay
       drawCenteredString(mxs, fr, text(), cx , cy+1, 0x00ffaa00);
     }
 
-    @SubscribeEvent
-    public void onRenderWorldOverlay(RenderLevelLastEvent event)
+    @SuppressWarnings("deprecation")
+    public void onRenderWorldOverlay(final com.mojang.blaze3d.vertex.PoseStack mxs, final double partialTick)
     {
       final Optional<Tuple<BlockState,BlockPos>> sp = state_pos();
       if(sp.isEmpty()) return;
@@ -152,16 +136,14 @@ public class Overlay
       if((player==null) || (world==null)) return;
       final BlockState state = sp.get().getA();
       final BlockPos pos = sp.get().getB();
-      @SuppressWarnings("deprecation")
       final int light = (world.hasChunkAt(pos)) ? LightTexture.pack(world.getBrightness(LightLayer.BLOCK, pos), world.getBrightness(LightLayer.SKY, pos)) : LightTexture.pack(15, 15);
       final MultiBufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-      final PoseStack mxs = event.getPoseStack();
-      final double px = Mth.lerp(event.getPartialTick(), player.xo, player.getX());
-      final double py = Mth.lerp(event.getPartialTick(), player.yo, player.getY());
-      final double pz = Mth.lerp(event.getPartialTick(), player.zo, player.getZ());
+      final double px = Mth.lerp(partialTick, player.xo, player.getX());
+      final double py = Mth.lerp(partialTick, player.yo, player.getY());
+      final double pz = Mth.lerp(partialTick, player.zo, player.getZ());
       mxs.pushPose();
       mxs.translate((pos.getX()-px), (pos.getY()-py-player.getEyeHeight()), (pos.getZ()-pz));
-      Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, mxs, buffer, light, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
+      Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, mxs, buffer, light, OverlayTexture.NO_OVERLAY);
       mxs.popPose();
     }
 

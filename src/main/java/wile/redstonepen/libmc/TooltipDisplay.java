@@ -7,7 +7,7 @@
  * Delayed tooltip for a selected area. Constructed with a
  * GUI, invoked in `render()`.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -17,7 +17,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +102,7 @@ public class TooltipDisplay
         final String text = tip_component.getString();
         if(text.isEmpty()) return false;
         try {
+          List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
           gui.renderComponentTooltip(mx, tip.text.get().toFlatList(Style.EMPTY), x, y);
         } catch(Exception ex) {
           had_render_exception = true;

@@ -9,8 +9,8 @@
 package wile.redstonepen.detail;
 
 import net.minecraft.nbt.CompoundTag;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Networking;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;

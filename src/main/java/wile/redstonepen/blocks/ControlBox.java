@@ -34,14 +34,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
-import wile.redstonepen.libmc.blocks.StandardEntityBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
-import wile.redstonepen.libmc.detail.Registries;
-import wile.redstonepen.libmc.detail.SidedProxy;
-import wile.redstonepen.libmc.ui.GuiTextEditing;
-import wile.redstonepen.libmc.ui.Guis;
-import wile.redstonepen.libmc.ui.TooltipDisplay;
+import wile.redstonepen.libmc.StandardEntityBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Networking;
+import wile.redstonepen.libmc.Registries;
+import wile.redstonepen.libmc.GuiTextEditing;
+import wile.redstonepen.libmc.Guis;
+import wile.redstonepen.libmc.TooltipDisplay;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -579,11 +578,11 @@ public class ControlBox
         });
         addRenderableWidget(start_stop);
         cb_copy_all.init(this, Guis.Coord2d.of(212, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.copyall"));
-        cb_copy_all.onclick((cb)->{SidedProxy.setClipboard(textbox.getValue()); focus_editor_=true; });
+        cb_copy_all.onclick((cb)->{Auxiliaries.setClipboard(textbox.getValue()); focus_editor_=true; });
         cb_copy_all.visible = false;
         addRenderableWidget(cb_copy_all);
         cb_paste_all.init(this, Guis.Coord2d.of(212, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.pasteall"));
-        cb_paste_all.onclick((cb)->{textbox.setValue(SidedProxy.getClipboard().orElse("")); push_code(textbox.getValue()); focus_editor_=true; });
+        cb_paste_all.onclick((cb)->{textbox.setValue(Auxiliaries.getClipboard().orElse("")); push_code(textbox.getValue()); focus_editor_=true; });
         cb_paste_all.visible = false;
         addRenderableWidget(cb_paste_all);
         cb_error_indicator.init(this, Guis.Coord2d.of(230, 14));
@@ -637,7 +636,7 @@ public class ControlBox
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(Component.literal(String.format("%s = %d\n", k.toUpperCase(), kv.getValue())));
+            c.getSiblings().add(Component.literal(String.format("%s = %d", k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));

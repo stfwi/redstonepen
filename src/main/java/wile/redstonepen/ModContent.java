@@ -7,8 +7,6 @@
 package wile.redstonepen;
 
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
@@ -26,9 +24,9 @@ import wile.redstonepen.blocks.CircuitComponents;
 import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.items.RedstonePenItem;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Registries;
+import wile.redstonepen.libmc.StandardBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Registries;
 
 
 public class ModContent
@@ -42,7 +40,7 @@ public class ModContent
     detail.MODID = modid;
     initBlocks();
     initItems();
-    Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.detail.ExtendedShapelessRecipe.SERIALIZER);
+    Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.ExtendedShapelessRecipe.SERIALIZER);
   }
 
   public static void initBlocks()
@@ -132,11 +130,9 @@ public class ModContent
 
   @OnlyIn(Dist.CLIENT)
   public static void processContentClientSide()
-  { ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track"), RenderType.cutout()); }
-
-  @OnlyIn(Dist.CLIENT)
-  public static void registerModels()
-  { wile.redstonepen.detail.ModRenderers.TrackTer.registerModels(); }
+  {
+    //net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track"), net.minecraft.client.renderer.RenderType.cutout());
+  }
 
   @OnlyIn(Dist.CLIENT)
   @SuppressWarnings("unchecked")

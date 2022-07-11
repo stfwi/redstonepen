@@ -6,8 +6,7 @@
  *
  * Common functionality class for blocks with block entities.
  */
-package wile.redstonepen.libmc.blocks;
-import wile.redstonepen.libmc.detail.Registries;
+package wile.redstonepen.libmc;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

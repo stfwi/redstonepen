@@ -4,7 +4,7 @@
  * @copyright (C) 2020 Stefan Wilhelm
  * @license MIT (see https://opensource.org/licenses/MIT)
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;

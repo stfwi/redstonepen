@@ -47,9 +47,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Overlay;
+import wile.redstonepen.libmc.StandardBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Overlay;
 
 import javax.annotation.Nullable;
 import java.util.*;

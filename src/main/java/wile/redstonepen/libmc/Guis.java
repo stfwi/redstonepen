@@ -6,7 +6,7 @@
  *
  * Gui Wrappers and Widgets.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -28,7 +28,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import wile.redstonepen.libmc.detail.Auxiliaries;
 
 import java.util.Arrays;
 import java.util.function.Consumer;

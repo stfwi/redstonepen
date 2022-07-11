@@ -58,9 +58,9 @@ import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
-import wile.redstonepen.libmc.blocks.StandardBlocks;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Networking;
+import wile.redstonepen.libmc.StandardBlocks;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Networking;
 
 
 import javax.annotation.Nullable;

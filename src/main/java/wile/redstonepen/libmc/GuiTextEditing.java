@@ -6,7 +6,7 @@
  *
  * Text Editing Widgets. Derived form Book-And-Quill.
  */
-package wile.redstonepen.libmc.ui;
+package wile.redstonepen.libmc;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -33,7 +33,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
-import wile.redstonepen.libmc.ui.Guis.Coord2d;
+import wile.redstonepen.libmc.Guis.Coord2d;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;

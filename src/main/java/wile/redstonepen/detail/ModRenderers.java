@@ -24,9 +24,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
+import wile.redstonepen.libmc.Auxiliaries;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 public class ModRenderers
@@ -41,17 +43,19 @@ public class ModRenderers
     private static int tesr_error_counter = 4;
     private final BlockEntityRendererProvider.Context renderer_;
 
-    public static void registerModels()
+    public static List<ModelResourceLocation> registerModels()
     {
+      List<ModelResourceLocation> resources_to_register = new ArrayList<>();
+
       RedstoneTrack.defs.models.STATE_WIRE_MAPPING.entrySet().forEach((kv->{
-        ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
+        final ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_WIR_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_WIR_POS+i))) != 0) {
             model_rls[i] = mrl;
             break;
           }
         }
-        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
+        resources_to_register.add(mrl); //  net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
         ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
@@ -61,7 +65,7 @@ public class ModRenderers
             break;
           }
         }
-        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
+        resources_to_register.add(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CNTWIRE_MAPPING.entrySet().forEach((kv->{
         ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
@@ -71,7 +75,7 @@ public class ModRenderers
             break;
           }
         }
-        net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
+        resources_to_register.add(mrl);
       }));
       power_rgb.clear();
       for(int i = 0; i <= 15; ++i) {
@@ -90,6 +94,7 @@ public class ModRenderers
           ));
         }
       }
+      return resources_to_register;
     }
 
     private static Vec3 getPowerRGB(int p)
@@ -123,8 +128,7 @@ public class ModRenderers
               model,
               (float)rgb.x(), (float)rgb.y(), (float)rgb.z(),
               combinedLightIn,
-              combinedOverlayIn,
-              net.minecraftforge.client.model.data.EmptyModelData.INSTANCE
+              combinedOverlayIn
             );
           }
         }
@@ -147,16 +151,15 @@ public class ModRenderers
               model,
               (float)rgb.x(), (float)rgb.y(), (float)rgb.z(),
               combinedLightIn,
-              combinedOverlayIn,
-              net.minecraftforge.client.model.data.EmptyModelData.INSTANCE
+              combinedOverlayIn
             );
           }
         }
         mxs.popPose();
       } catch(Throwable e) {
         if(--tesr_error_counter<=0) {
-          ModRedstonePen.logger().error("TER was disabled because broken, exception was: " + e.getMessage());
-          ModRedstonePen.logger().error(String.join("\n", Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).toList()));
+          Auxiliaries.logError("TER was disabled because broken, exception was: " + e.getMessage());
+          Auxiliaries.logError(String.join("\n", Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).toList()));
         }
       }
     }

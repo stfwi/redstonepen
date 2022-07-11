@@ -6,7 +6,11 @@
  */
 package wile.redstonepen;
 
-import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.event.RenderLevelLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -17,9 +21,10 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Overlay;
-import wile.redstonepen.libmc.detail.Registries;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Networking;
+import wile.redstonepen.libmc.Overlay;
+import wile.redstonepen.libmc.Registries;
 
 
 @Mod("redstonepen")
@@ -38,6 +43,7 @@ public class ModRedstonePen
     ModContent.init(MODID);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
+    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onRegisterModels);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
   }
@@ -50,14 +56,14 @@ public class ModRedstonePen
 
   private void onSetup(final FMLCommonSetupEvent event)
   {
-    wile.redstonepen.libmc.detail.Networking.init(MODID);
+    wile.redstonepen.libmc.Networking.init(MODID);
     ModConfig.apply();
     wile.redstonepen.detail.RcaSync.CommonRca.init();
   }
 
   private void onClientSetup(final FMLClientSetupEvent event)
   {
-    Overlay.register();
+    Networking.OverlayTextMessage.setHandler(Overlay.TextOverlayGui::show);
     ModContent.registerMenuGuis(event);
     ModContent.registerBlockEntityRenderers();
     ModContent.processContentClientSide();
@@ -69,22 +75,36 @@ public class ModRedstonePen
       0x55444444
     );
     if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
-      MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ForgeEvents::onPlayerTickEvent);
+      MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ModRedstonePen::onPlayerTickEvent);
     }
   }
 
-  @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
-  public static final class ForgeEvents
+  private void onRegisterModels(final ModelEvent.RegisterAdditional event)
+  {
+    wile.redstonepen.detail.ModRenderers.TrackTer.registerModels().forEach(event::register);
+  }
+
+  public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
+  {
+    if((event.phase != TickEvent.Phase.END) || (!event.player.level.isClientSide)) return;
+    if((event.player.level.getGameTime() & 0x1) != 0) return;
+    wile.redstonepen.detail.RcaSync.ClientRca.tick();
+  }
+
+  @OnlyIn(Dist.CLIENT)
+  @Mod.EventBusSubscriber(Dist.CLIENT)
+  public static class ForgeClientEvents
   {
     @SubscribeEvent
-    public static void onRegisterModels(final ModelRegistryEvent event)
-    { ModContent.registerModels(); }
+    @OnlyIn(Dist.CLIENT)
+    public static void onRenderGui(RenderGuiOverlayEvent.Post event)
+    { Overlay.TextOverlayGui.INSTANCE.onRenderGui(event.getPoseStack()); }
 
-    public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
-    {
-      if((event.phase != TickEvent.Phase.END) || (!event.player.level.isClientSide)) return;
-      if((event.player.level.getGameTime() & 0x1) != 0) return;
-      wile.redstonepen.detail.RcaSync.ClientRca.tick();
-    }
+    @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
+    @SuppressWarnings("deprecation")
+    public static void onRenderWorldOverlay(RenderLevelLastEvent event)
+    { Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(event.getPoseStack(), event.getPartialTick()); }
   }
+
 }

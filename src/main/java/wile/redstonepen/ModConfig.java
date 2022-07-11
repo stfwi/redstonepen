@@ -15,8 +15,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
-import wile.redstonepen.libmc.detail.Auxiliaries;
-import wile.redstonepen.libmc.detail.Registries;
+import wile.redstonepen.libmc.Auxiliaries;
+import wile.redstonepen.libmc.Registries;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;

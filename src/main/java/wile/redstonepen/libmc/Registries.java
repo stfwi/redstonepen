@@ -6,7 +6,7 @@
  *
  * Common game registry handling.
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;

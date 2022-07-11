@@ -6,7 +6,7 @@
  *
  * Main client/server message handling.
  */
-package wile.redstonepen.libmc.detail;
+package wile.redstonepen.libmc;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
