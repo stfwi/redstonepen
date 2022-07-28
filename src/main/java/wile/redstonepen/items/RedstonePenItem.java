@@ -6,7 +6,6 @@
  */
 package wile.redstonepen.items;
 
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -74,6 +73,7 @@ public class RedstonePenItem extends Item
   { return (Collections.singletonList(Registries.getCreativeModeTab())); }
 
   @Override
+  @SuppressWarnings("deprecation")
   public int getEnchantmentValue()
   { return 0; }
 
@@ -217,9 +217,8 @@ public class RedstonePenItem extends Item
       if(te instanceof ComparatorBlockEntity) {
         tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(((ComparatorBlockEntity)te).getOutputSignal()));
         switch(state.getValue(ComparatorBlock.MODE)) {
-          case COMPARE: tc.append(Auxiliaries.localizable("overlay.comparator_compare")); break;
-          case SUBTRACT: tc.append(Auxiliaries.localizable("overlay.comparator_subtract")); break;
-          default: break;
+          case COMPARE -> tc.append(Auxiliaries.localizable("overlay.comparator_compare"));
+          case SUBTRACT -> tc.append(Auxiliaries.localizable("overlay.comparator_subtract"));
         }
       }
     } else if(state.isSignalSource()) {

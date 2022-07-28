@@ -102,7 +102,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
         if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) continue;
-        remaining.set(i, stack.hasContainerItem() ? stack.getContainerItem() : stack.copy());
+        remaining.set(i, stack.hasCraftingRemainingItem() ? stack.getCraftingRemainingItem() : stack.copy());
       }
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = remaining.get(i);
@@ -163,8 +163,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
               remaining.set(i, rstack);
             }
           }
-        } else if(stack.hasContainerItem()) {
-          remaining.set(i, stack.getContainerItem());
+        } else if(stack.hasCraftingRemainingItem()) {
+          remaining.set(i, stack.getCraftingRemainingItem());
         }
       }
       return remaining;

@@ -1,7 +1,8 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.19": {
-  "1.0.13": "[U] Forge updated to 1.19-41.0.64.",
+  "1.0.14": "[U] Forge updated to Forge 41.1.0.",
+  "1.0.13": "[U] Forge updated to Forge 1.19-41.0.64.",
   "1.0.12": "[F] Minor Track placement fixes.\n[M] Library/obsolete MC override cleanups.",
   "1.0.11": "[U] Initial 1.19 port.",
   "1.0.10": "[R] Release build.\n[F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).",
@@ -29,7 +30,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.19-recommended": "1.0.13",
-  "1.19-latest": "1.0.13"
+  "1.19-recommended": "1.0.14",
+  "1.19-latest": "1.0.14"
  }
 }

@@ -9,8 +9,6 @@ package wile.redstonepen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.RenderLevelLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -97,14 +95,18 @@ public class ModRedstonePen
   {
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
-    public static void onRenderGui(RenderGuiOverlayEvent.Post event)
+    public static void onRenderGui(net.minecraftforge.client.event.RenderGuiOverlayEvent.Post event)
     { Overlay.TextOverlayGui.INSTANCE.onRenderGui(event.getPoseStack()); }
 
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
     @SuppressWarnings("deprecation")
-    public static void onRenderWorldOverlay(RenderLevelLastEvent event)
-    { Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(event.getPoseStack(), event.getPartialTick()); }
+    public static void onRenderWorldOverlay(net.minecraftforge.client.event.RenderLevelStageEvent event)
+    {
+      if(event.getStage() == net.minecraftforge.client.event.RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+        Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(event.getPoseStack(), event.getPartialTick());
+      }
+    }
   }
 
 }

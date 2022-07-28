@@ -4,7 +4,9 @@
 ----
 ## Version history
 
-    - v1.0.13     [U] Forge updated to 1.19-41.0.64.
+    - v1.0.14     [U] Forge updated to Forge 41.1.0.
+
+    - v1.0.13     [U] Forge updated to Forge 1.19-41.0.64.
 
     - v1.0.12     [F] Minor Track placement fixes.
                   [M] Library/obsolete MC override cleanups.

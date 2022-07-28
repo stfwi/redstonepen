@@ -29,7 +29,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class Registries
 {
@@ -60,9 +59,9 @@ public class Registries
     creative_tab_icon = creative_tab_icon_item_name;
     BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, modid);
     ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, modid);
-    BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITIES, modid);
-    MENUS = DeferredRegister.create(ForgeRegistries.CONTAINERS, modid);
-    ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, modid);
+    BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, modid);
+    MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, modid);
+    ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, modid);
     RECIPE_SERIALIZERS = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, modid);
     List.of(BLOCKS, ITEMS, BLOCK_ENTITIES, MENUS, ENTITIES, RECIPE_SERIALIZERS).forEach(registrar);
   }
@@ -120,19 +119,19 @@ public class Registries
 
   @Nonnull
   public static List<Block> getRegisteredBlocks()
-  { return Collections.unmodifiableList(registered_blocks.values().stream().map(RegistryObject::get).toList()); }
+  { return registered_blocks.values().stream().map(RegistryObject::get).toList(); }
 
   @Nonnull
   public static List<Item> getRegisteredItems()
-  { return Collections.unmodifiableList(registered_items.values().stream().map(RegistryObject::get).toList()); }
+  { return registered_items.values().stream().map(RegistryObject::get).toList(); }
 
   @Nonnull
-  public static List<BlockEntityType<?>> getRegisteredBlockEntityTypes()
-  { return Collections.unmodifiableList(registered_block_entity_types.values().stream().map(RegistryObject::get).toList()); }
+  public static List<? extends BlockEntityType<?>> getRegisteredBlockEntityTypes()
+  { return registered_block_entity_types.values().stream().map(RegistryObject::get).toList(); }
 
   @Nonnull
-  public static List<EntityType<?>> getRegisteredEntityTypes()
-  { return Collections.unmodifiableList(registered_entity_types.values().stream().map(RegistryObject::get).toList()); }
+  public static List<? extends EntityType<?>> getRegisteredEntityTypes()
+  { return registered_entity_types.values().stream().map(RegistryObject::get).toList(); }
 
   // -------------------------------------------------------------------------------------------------------------
 
@@ -156,9 +155,9 @@ public class Registries
     registered_block_entity_types.put(registry_name, BLOCK_ENTITIES.register(registry_name, ()->{
       final Block[] blocks = Arrays.stream(block_names).map(s->{
         Block b = BLOCKS.getEntries().stream().filter((ro)->ro.getId().getPath().equals(s)).findFirst().map(RegistryObject::get).orElse(null);
-        if(b==null) Auxiliaries.logError("registered_blocks does not encompass '" + s + "'");
+        if(b == null) Auxiliaries.logError("registered_blocks does not encompass '" + s + "'");
         return b;
-      }).filter(Objects::nonNull).collect(Collectors.toList()).toArray(new Block[]{});
+      }).filter(Objects::nonNull).toList().toArray(new Block[]{});
       return BlockEntityType.Builder.of(ctor, blocks).build(null);
     }));
   }
