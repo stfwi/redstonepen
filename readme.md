@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.15     [U] Ported to 1.19.1 Fabric.
+
     - v1.0.11     [U] Initial 1.19 Fabric port.
 
     - v1.0.10     [R] Release build.

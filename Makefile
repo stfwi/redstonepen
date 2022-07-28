@@ -43,6 +43,7 @@ data:
 
 clean:
 	@echo "[1.19] Cleaning ..."
+	@rm -f dist/*
 	@rm -rf src/generated
 	@rm -rf mcmodsrepo
 	@rm -f build/libs/*
@@ -51,7 +52,6 @@ clean:
 clean-all:
 	@echo "[1.19] Cleaning using gradle ..."
 	@rm -rf mcmodsrepo
-	@rm -f dist/*
 	@rm -rf build/
 	@rm -rf out/
 	@rm -rf logs/
