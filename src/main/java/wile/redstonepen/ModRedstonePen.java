@@ -65,13 +65,7 @@ public class ModRedstonePen
     ModContent.registerMenuGuis(event);
     ModContent.registerBlockEntityRenderers();
     ModContent.processContentClientSide();
-    Overlay.TextOverlayGui.on_config(
-      0.75,
-      0x00ffaa00,
-      0x55333333,
-      0x55333333,
-      0x55444444
-    );
+    Overlay.TextOverlayGui.on_config(0.75, 0x00ffaa00, 0x55333333, 0x55333333, 0x55444444);
     if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
       MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ModRedstonePen::onPlayerTickEvent);
     }

@@ -66,14 +66,12 @@ public class Overlay
     private static long state_deadline_ = 0;
     private static @Nullable BlockState state_ = EMPTY_STATE;
     private static BlockPos pos_ = BlockPos.ZERO;
-    private net.minecraft.client.Minecraft mc;
 
     public static void on_config(double overlay_y)
     { on_config(overlay_y, 0x00ffaa00, 0xaa333333, 0xaa333333, 0xaa444444); }
 
     public static void on_config(double overlay_y, int text_color, int border_color, int background_color1, int background_color2)
     {
-      INSTANCE.mc = net.minecraft.client.Minecraft.getInstance();
       overlay_y_ = overlay_y;
       text_color_ = text_color;
       border_color_ = border_color;
@@ -111,6 +109,7 @@ public class Overlay
       if(text()==EMPTY_TEXT) return;
       String txt = text().getString();
       if(txt.isEmpty()) return;
+      final net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
       final Window win = mc.getWindow();
       final Font fr = mc.font;
       final boolean was_unicode = fr.isBidirectional();

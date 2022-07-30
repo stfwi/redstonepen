@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
- "1.19": {
+ "1.19.1": {
+  "1.1.15": "[U] Initial Forge port to 1.19.1.\n[A] Added translation zh_cn (PR#15, deluxghost).",
   "1.0.14": "[U] Forge updated to Forge 41.1.0.",
   "1.0.13": "[U] Forge updated to Forge 1.19-41.0.64.",
   "1.0.12": "[F] Minor Track placement fixes.\n[M] Library/obsolete MC override cleanups.",
@@ -30,7 +31,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.19-recommended": "1.0.14",
-  "1.19-latest": "1.0.14"
+  "1.19.1-recommended": "1.1.15",
+  "1.19.1-latest": "1.1.15"
  }
 }
