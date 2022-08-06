@@ -127,9 +127,6 @@ public class StandardBlocks
     public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type)
     { return ((config & CFG_AI_PASSABLE)!=0) && (super.isPathfindable(state, world, pos, type)); }
 
-    public boolean hasSignalConnector(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
-    { return state.isSignalSource(); }
-
     @Override
     @SuppressWarnings("deprecation")
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)

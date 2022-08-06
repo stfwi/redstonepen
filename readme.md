@@ -1,8 +1,11 @@
 
-## Redstone Pen (MC1.19.x)
+## Redstone Pen (MC1.19.1)
 
 ----
 ## Version history
+
+    - v1.0.16     [M] Maintenance release, 1.19 Fabric.
+                  [F] Fixed indirect block signal detection (issue #16, ty Grumpey102).
 
     - v1.0.11     [U] Initial 1.19 Fabric port.
 

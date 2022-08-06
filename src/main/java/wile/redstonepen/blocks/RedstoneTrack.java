@@ -653,7 +653,7 @@ public class RedstoneTrack
         final Direction odir = dir.getOpposite();
         final BlockPos opos = pos.relative(odir);
         final BlockState ostate = world.getBlockState(opos);
-        if((!ostate.isSignalSource()) && (!ostate.isSignalSource())) {   /// @todo: CHECK WHEN FORGE HAS SIDE SELECTIVE canConnectRedstone like feature (world, pos, odir)
+        if(!RsSignals.hasSignalConnector(ostate, world, opos, dir)) {
           flags_to_add |= connections.getWireBit(face, odir);
           ++num_placed;
         }

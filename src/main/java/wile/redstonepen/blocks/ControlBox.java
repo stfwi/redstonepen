@@ -630,7 +630,7 @@ public class ControlBox
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(Component.literal(String.format("%s = %d\n", k.toUpperCase(), kv.getValue())));
+            c.getSiblings().add(Component.literal(String.format("%s = %d", k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));

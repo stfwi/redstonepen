@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 public class RsSignals
 {
 
-  public static boolean hasSignalConnector(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction realSide)
+  public static boolean hasSignalConnector(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction real_side)
   {
     return state.isSignalSource();
   }
@@ -45,7 +45,7 @@ public class RsSignals
 
   public static boolean canEmitWeakPower(BlockState state, Level world, BlockPos pos, Direction redstone_side)
   {
-    return false;
+    return state.isRedstoneConductor(world, pos);
   }
 
 }
