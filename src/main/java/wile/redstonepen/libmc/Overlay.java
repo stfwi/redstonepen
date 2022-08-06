@@ -29,13 +29,6 @@ public class Overlay
   public static void register()
   {
     Networking.OverlayTextMessage.setHandler(TextOverlayGui::show);
-    //MinecraftForge.EVENT_BUS.register(TextOverlayGui.INSTANCE);
-    //@SubscribeEvent
-    //public void onRenderGuiForgeEvent(RenderGameOverlayEvent.Post event)
-    //{ if(event.getType() == RenderGameOverlayEvent.ElementType.CHAT) onRenderGui(event.getPoseStack()); }
-    //@SubscribeEvent
-    //public void onRenderWorldOverlayForgeEvent(RenderLevelLastEvent event)
-    //{ onRenderWorldOverlay(event.getPoseStack(), event.getPartialTick()); }
   }
 
   public static void show(ServerPlayer player, final Component message)

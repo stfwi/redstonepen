@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.16     [A] Added translation zh_cn (PR#15, deluxghost).
+                  [F] Fixed indirect block signal detection (issue #16, ty Grumpey102).
+
     - v1.0.15     [U] Ported to 1.19.1 Fabric.
 
     - v1.0.11     [U] Initial 1.19 Fabric port.
