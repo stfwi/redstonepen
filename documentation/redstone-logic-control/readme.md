@@ -352,7 +352,7 @@ X8 = IF(G, Y,   3)   # ->  3 | G=0=FALSE -> 3
 ```
 #
 # TIME: Time of day in ticks. The value range is 0 to 23999, that is
-#       sunrise to sunrise next day. 12000 is midnight.
+#       sunrise to sunrise next day. 12000 is sunset, 18000 midnight.
 #
 X1 = TIME()          # Daytime in ticks
 X2 = TIME()/20       # Daytime in seconds
