@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.2.16     [U] Initial Forge port to 1.19.2.
+
     - v1.1.15     [U] Initial Forge port to 1.19.1.
                   [A] Added translation zh_cn (PR#15, deluxghost).
 
