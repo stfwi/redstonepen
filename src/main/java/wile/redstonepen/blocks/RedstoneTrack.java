@@ -59,7 +59,7 @@ import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.*;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 

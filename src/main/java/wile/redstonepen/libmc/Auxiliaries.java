@@ -38,7 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;

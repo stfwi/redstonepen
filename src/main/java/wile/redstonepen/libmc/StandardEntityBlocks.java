@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEventListener;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 
 public class StandardEntityBlocks

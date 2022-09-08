@@ -38,7 +38,7 @@ import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.*;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;

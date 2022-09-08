@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -142,19 +141,15 @@ public class Registries
 
   // -------------------------------------------------------------------------------------------------------------
 
-  @Nonnull
   public static List<Block> getRegisteredBlocks()
   { return registered_blocks.values().stream().toList(); }
 
-  @Nonnull
   public static List<Item> getRegisteredItems()
   { return registered_items.values().stream().toList(); }
 
-  @Nonnull
   public static List<BlockEntityType<?>> getRegisteredBlockEntityTypes()
   { return registered_block_entity_types.values().stream().toList(); }
 
-  @Nonnull
   public static List<EntityType<?>> getRegisteredEntityTypes()
   { return registered_entity_types.values().stream().toList(); }
 

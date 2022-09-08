@@ -51,7 +51,7 @@ import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Overlay;
 import wile.redstonepen.libmc.RsSignals;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 
