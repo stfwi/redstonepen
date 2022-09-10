@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.11     [A] Added translation zh_cn (PR#15, deluxghost).
+                  [F] Fixed RLC swapped port colors when placed on ceilings.
+
     - v1.0.10     [R] Release build.
                   [F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).
 
