@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.2.17     [F] Fixed RLC swapped port colors when placed on ceilings.
+
     - v1.2.16     [U] Initial Forge port to 1.19.2.
 
     - v1.1.15     [U] Initial Forge port to 1.19.1.
