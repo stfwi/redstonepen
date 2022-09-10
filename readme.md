@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.2.18     [F] Fixed RLC swapped port colors when placed on ceilings.
+
     - v1.2.17     [U] Ported to 1.19.2 Fabric.
 
     - v1.0.16     [A] Added translation zh_cn (PR#15, deluxghost).
