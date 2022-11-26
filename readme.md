@@ -10,3 +10,4 @@ Thanks for the various contributions in my mods so far guys&girls!
 
 - *pt_br* PR#2, faelBrunnoS
 - *es_es* PR#3, hacheraw
+- *zh_cn* PR#15, deluxghost
