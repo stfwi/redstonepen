@@ -10,6 +10,7 @@ package wile.redstonepen.libmc;
 
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
@@ -62,32 +64,32 @@ public class Registries
     registered_blocks.clear();
     block_suppliers.forEach((reg)->{
       registered_blocks.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.BLOCK, new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
     });
     registered_items.clear();
     item_suppliers.forEach((reg)->{
       registered_items.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.ITEM, new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
     });
     registered_block_entity_types.clear();
     block_entity_type_suppliers.forEach((reg)->{
       registered_block_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.BLOCK_ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
     });
     registered_entity_types.clear();
     entity_type_suppliers.forEach((reg)->{
       registered_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
     });
     registered_menu_types.clear();
     menu_type_suppliers.forEach((reg)->{
       registered_menu_types.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.MENU, new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.MENU, new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
     });
     registered_recipe_serializers.clear();
     recipe_serializers_suppliers.forEach((reg)->{
       registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-      Registry.register(Registry.RECIPE_SERIALIZER, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
     });
   }
 
@@ -95,8 +97,7 @@ public class Registries
   public static CreativeModeTab getCreativeModeTab()
   {
     if(creative_tab==null) {
-      creative_tab = CreativeModeTab.TAB_REDSTONE;
-      // creative_tab = (new CreativeModeTab("tab" + modid) { public ItemStack makeIcon() { return new ItemStack(getItem(creative_tab_icon)); } });
+      creative_tab = CreativeModeTabs.REDSTONE_BLOCKS;
     }
     return creative_tab;
   }
@@ -125,13 +126,13 @@ public class Registries
   { return getBlockEntityType("tet_"+block_name); }
 
   public static BlockEntityType<?> getBlockEntityTypeOfBlock(Block block)
-  { return getBlockEntityTypeOfBlock(Registry.BLOCK.getKey(block).getPath()); }
+  { return getBlockEntityTypeOfBlock(BuiltInRegistries.BLOCK.getKey(block).getPath()); }
 
   public static MenuType<?> getMenuTypeOfBlock(String name)
   { return getMenuType("ct_"+name); }
 
   public static MenuType<?> getMenuTypeOfBlock(Block block)
-  { return getMenuTypeOfBlock(Registry.BLOCK.getKey(block).getPath()); }
+  { return getMenuTypeOfBlock(BuiltInRegistries.BLOCK.getKey(block).getPath()); }
 
   public static TagKey<Block> getBlockTagKey(String name)
   { return registered_block_tag_keys.get(name); }
@@ -161,7 +162,7 @@ public class Registries
   public static <T extends Block> void addBlock(String registry_name, Supplier<T> block_supplier)
   {
     block_suppliers.add(new Tuple<>(registry_name, block_supplier));
-    item_suppliers.add(new Tuple<>(registry_name, ()->new BlockItem(registered_blocks.get(registry_name), (new Item.Properties()).tab(getCreativeModeTab()))));
+    item_suppliers.add(new Tuple<>(registry_name, ()->new BlockItem(registered_blocks.get(registry_name), new Item.Properties())));
   }
 
   public static <TB extends Block, TI extends Item> void addBlock(String registry_name, Supplier<TB> block_supplier, Supplier<TI> item_supplier)
@@ -212,7 +213,7 @@ public class Registries
   // -------------------------------------------------------------------------------------------------------------
 
   public static <TB extends Block, TI extends Item> void addBlock(String registry_name, Supplier<TB> block_supplier, BiFunction<Block, Item.Properties, Item> item_builder)
-  { addBlock(registry_name, block_supplier, ()->item_builder.apply(registered_blocks.get(registry_name), (new Item.Properties()).tab(getCreativeModeTab()))); }
+  { addBlock(registry_name, block_supplier, ()->item_builder.apply(registered_blocks.get(registry_name), new Item.Properties())); }
 
   public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, FabricBlockEntityTypeBuilder.Factory<?> block_entity_ctor)
   {

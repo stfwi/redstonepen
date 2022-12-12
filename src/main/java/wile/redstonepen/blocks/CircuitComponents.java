@@ -7,7 +7,6 @@
 package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.math.Vector3f;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
@@ -376,7 +375,7 @@ public class CircuitComponents
         double p0 = 0.5 + (side.getStepX()*0.4) + (c2*.1);
         double p1 = 0.5 + (side.getStepY()*0.4) + (c2*.1);
         double p2 = 0.5 + (side.getStepZ()*0.4) + (c2*.1);
-        world.addParticle(new DustParticleOptions(new Vector3f(color),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 

@@ -164,16 +164,16 @@ public class Guis
     public UiWidget init(Screen parent)
     {
       this.parent_ = parent;
-      this.x += ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0);
-      this.y += ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0);
+      this.setX(getX() + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0));
+      this.setY(getY() + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0));
       return this;
     }
 
     public UiWidget init(Screen parent, Coord2d position)
     {
       this.parent_ = parent;
-      this.x = position.x + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0);
-      this.y = position.y + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0);
+      this.setX(position.x + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0));
+      this.setY(position.y + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0));
       return this;
     }
 
@@ -193,19 +193,26 @@ public class Guis
     {
       final Window win = mc_.getWindow();
       return Coord2d.of(
-        Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-this.x, -1, this.width+1),
-        Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-this.y, -1, this.height+1)
+        Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-getX(), -1, this.width+1),
+        Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-getY(), -1, this.height+1)
       );
     }
 
     protected final Coord2d screenCoordinates(Coord2d xy, boolean reverse)
-    { return (reverse) ? (Coord2d.of(xy.x+x, xy.y+y)) : (Coord2d.of(xy.x-x, xy.y-y)); }
+    { return (reverse) ? (Coord2d.of(xy.x+getX(), xy.y+getY())) : (Coord2d.of(xy.x-getX(), xy.y-getY())); }
 
     public UiWidget show()
     { visible = true; return this; }
 
     public UiWidget hide()
     { visible = false; return this; }
+
+    public void render(PoseStack mx, int mouseX, int mouseY, float partialTicks)
+    {
+      if(!visible) return;
+      isHovered = (mouseX >= getX()) && (mouseY >= getY()) && (mouseX < getX()+width) && (mouseY < getY()+height);
+      renderButton(mx, mouseX, mouseY, partialTicks);
+    }
 
     @Override
     public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
@@ -214,7 +221,6 @@ public class Guis
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
 
-    @Override
     @SuppressWarnings("all")
     public void renderToolTip(PoseStack mx, int mouseX, int mouseY)
     {
@@ -225,7 +231,7 @@ public class Guis
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput element_output)
+    public void updateWidgetNarration(NarrationElementOutput element_output)
     {}
   }
 
@@ -280,10 +286,10 @@ public class Guis
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
-      blit(mxs, x, y, texture_position_base_.x, texture_position_base_.y, width, height);
+      blit(mxs, getX(), getY(), texture_position_base_.x, texture_position_base_.y, width, height);
       if((progress_max_ > 0) && (progress_ > 0)) {
         int w = Mth.clamp((int)Math.round((progress_ * width) / progress_max_), 0, width);
-        blit(mxs, x, y, texture_position_filled_.x, texture_position_filled_.y, w, height);
+        blit(mxs, getX(), getY(), texture_position_filled_.x, texture_position_filled_.y, w, height);
       }
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
@@ -310,7 +316,7 @@ public class Guis
     {
       if(!visible) return;
       RenderSystem.setShaderTexture(0, atlas_);
-      parent.blit(mx, x, y, atlas_position_.x, atlas_position_.y, width, height);
+      parent.blit(mx, getX(), getY(), atlas_position_.x, atlas_position_.y, width, height);
     }
   }
 
@@ -354,7 +360,7 @@ public class Guis
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = checked_ ? texture_position_on_ : texture_position_off_;
-      blit(mxs, x, y, pos.x, pos.y, width, height);
+      blit(mxs, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
   }
@@ -391,7 +397,7 @@ public class Guis
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = texture_position_;
-      blit(mxs, x, y, pos.x, pos.y, width, height);
+      blit(mxs, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
   }
@@ -423,7 +429,7 @@ public class Guis
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = texture_position_;
-      blit(mxs, x, y, pos.x, pos.y, width, height);
+      blit(mxs, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
   }

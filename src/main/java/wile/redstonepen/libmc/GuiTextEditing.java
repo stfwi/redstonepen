@@ -153,7 +153,7 @@ public class GuiTextEditing
 
     @Override
     public MultiLineTextBox init(Screen parent)
-    { return init(parent, Guis.Coord2d.of(x,y)); }
+    { return init(parent, Guis.Coord2d.of(getX(),getY())); }
 
     @Override
     public MultiLineTextBox init(Screen parent, Guis.Coord2d position)
@@ -173,7 +173,7 @@ public class GuiTextEditing
     @Override
     public boolean mouseClicked(double x, double y, int button)
     {
-      if((!active) || (!visible) || (x<this.x) || (y<this.y) || (x>this.x+this.width) || (y>this.y+this.height)) return false;
+      if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
       if(button != 0) return true;
       final int index = getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false));
       if(index >= 0) {

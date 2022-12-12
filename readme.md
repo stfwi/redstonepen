@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.3.19     [U] Ported to 1.19.3 Fabric.
+
     - v1.2.18     [F] Fixed RLC swapped port colors when placed on ceilings.
 
     - v1.2.17     [U] Ported to 1.19.2 Fabric.
