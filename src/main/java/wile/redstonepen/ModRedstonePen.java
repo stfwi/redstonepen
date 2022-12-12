@@ -10,6 +10,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -42,11 +43,10 @@ public class ModRedstonePen
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onRegisterModels);
+    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::addCreativeTab);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
   }
-
-  public static Logger logger() { return LOGGER; }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Events
@@ -69,6 +69,12 @@ public class ModRedstonePen
     if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
       MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, ModRedstonePen::onPlayerTickEvent);
     }
+  }
+
+  private void addCreativeTab(CreativeModeTabEvent.BuildContents event)
+  {
+    if(event.getTab() != Registries.getCreativeModeTab()) return;
+    Registries.getRegisteredItems().forEach(event::accept);
   }
 
   private void onRegisterModels(final ModelEvent.RegisterAdditional event)

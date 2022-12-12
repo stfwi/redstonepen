@@ -7,7 +7,6 @@
 package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.math.Vector3f;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -283,42 +282,42 @@ public class CircuitComponents
         case DOWN:
         case UP:
           switch(dir) {
-            case EAST:  rotation=1; break;
-            case SOUTH: rotation=2; break;
-            case WEST:  rotation=3; break;
-            default:
+            case EAST -> rotation = 1;
+            case SOUTH -> rotation = 2;
+            case WEST -> rotation = 3;
+            default -> {}
           }
           break;
         case NORTH:
           switch(dir) {
-            case EAST: rotation=1; break;
-            case DOWN: rotation=2; break;
-            case WEST: rotation=3; break;
-            default:
+            case EAST -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case WEST -> rotation = 3;
+            default -> {}
           }
           break;
         case EAST:
           switch(dir) {
-            case SOUTH: rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case NORTH: rotation=3; break;
-            default:
+            case SOUTH -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case NORTH -> rotation = 3;
+            default -> {}
           }
           break;
         case SOUTH:
           switch(dir) {
-            case WEST:  rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case EAST:  rotation=3; break;
-            default:
+            case WEST -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case EAST -> rotation = 3;
+            default -> {}
           }
           break;
         case WEST:
           switch(dir) {
-            case NORTH: rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case SOUTH: rotation=3; break;
-            default:
+            case NORTH -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case SOUTH -> rotation = 3;
+            default -> {}
           }
           break;
       }
@@ -376,7 +375,7 @@ public class CircuitComponents
         double p0 = 0.5 + (side.getStepX()*0.4) + (c2*.1);
         double p1 = 0.5 + (side.getStepY()*0.4) + (c2*.1);
         double p2 = 0.5 + (side.getStepZ()*0.4) + (c2*.1);
-        world.addParticle(new DustParticleOptions(new Vector3f(color),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 
@@ -433,7 +432,7 @@ public class CircuitComponents
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Curcuit neighborChanged recursion detected, dropping!");
+        Auxiliaries.logger().error("Curcuit neighborChanged recursion detected, dropping!");
         Vec3 p = Vec3.atCenterOf(pos);
         world.addFreshEntity(new ItemEntity(world, p.x, p.y, p.z, new ItemStack(this, 1)));
         world.setBlock(pos, world.getBlockState(pos).getFluidState().createLegacyBlock(), 2|16);

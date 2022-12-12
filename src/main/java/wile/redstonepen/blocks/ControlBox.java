@@ -710,15 +710,15 @@ public class ControlBox
             err_nbt.getAllKeys().forEach(k->{ try { errors_.add(new Tuple<>(Integer.parseInt(k), err_nbt.getString(k))); } catch(Throwable ignored) {} });
             if(errors_.isEmpty()) {
               cb_error_indicator.visible = false;
-              cb_error_indicator.x = 0;
-              cb_error_indicator.y = 0;
+              cb_error_indicator.setX(0);
+              cb_error_indicator.setY(0);
               cb_error_indicator.tooltip(Component.empty());
             } else {
               Guis.Coord2d exy = textbox.getPositionAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
               cb_error_indicator.visible = true;
-              cb_error_indicator.x = exy.x;
-              cb_error_indicator.y = exy.y+8;
+              cb_error_indicator.setX(exy.x);
+              cb_error_indicator.setY(exy.y+8);
             }
           }
           if(nbt.contains("player", Tag.TAG_STRING)) {

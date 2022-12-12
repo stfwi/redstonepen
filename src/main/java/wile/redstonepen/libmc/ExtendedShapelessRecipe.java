@@ -11,7 +11,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
@@ -47,8 +46,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
   private final CompoundTag aspects;
   private final ResourceLocation resultTag;
 
-  public ExtendedShapelessRecipe(ResourceLocation id, String group, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
-  { super(id, group, output, ingredients); this.aspects=aspects; this.resultTag = resultTag; }
+  public ExtendedShapelessRecipe(ResourceLocation id, String group,    ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
+  { super(id, group, CraftingBookCategory.MISC, output, ingredients); this.aspects=aspects; this.resultTag = resultTag; }
 
   public CompoundTag getAspects()
   { return aspects.copy(); }
@@ -218,7 +217,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         Ingredient ingredient = Ingredient.fromJson(ingredients.get(i));
         if (!ingredient.isEmpty()) list.add(ingredient);
       }
-      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + Registry.RECIPE_SERIALIZER.getKey(this).getPath() + " recipe");
+      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + ForgeRegistries.RECIPE_SERIALIZERS.getKey(this).getPath() + " recipe");
       if(list.size() > MAX_WIDTH * MAX_HEIGHT) throw new JsonParseException("Too many ingredients for crafting_tool_shapeless recipe the max is " + (MAX_WIDTH * MAX_HEIGHT));
       // Extended recipe aspects
       CompoundTag aspects_nbt = new CompoundTag();
@@ -228,7 +227,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
           try {
             aspects_nbt = TagParser.parseTag( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
           } catch(Exception ex) {
-            throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
+            throw new JsonParseException(ForgeRegistries.RECIPE_SERIALIZERS.getKey(this).getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
           }
         }
       }
@@ -239,10 +238,10 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
         // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
         final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
-        if(key==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag does not exist: #" + rl);
+        if(key==null) throw new JsonParseException(ForgeRegistries.RECIPE_SERIALIZERS.getKey(this).getPath() + ": Result tag does not exist: #" + rl);
         final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
         final @Nullable Item item = tag.stream().findFirst().orElse(null);
-        if(item==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag has no items: #" + rl);
+        if(item==null) throw new JsonParseException(ForgeRegistries.RECIPE_SERIALIZERS.getKey(this).getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
         res.addProperty("item", Auxiliaries.getResourceLocation(item).toString());

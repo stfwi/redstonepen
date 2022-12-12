@@ -7,7 +7,6 @@
 package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableMap;
-import com.mojang.math.Vector3f;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -580,7 +579,7 @@ public class RedstoneTrack
           world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        Auxiliaries.logger().error("Track neighborChanged recursion detected, dropping!");
         final int num_redstone = tile(world, pos).map(TrackBlockEntity::getRedstoneDustCount).orElse(0);
         if(num_redstone > 0) {
           Vec3 p = Vec3.atCenterOf(pos);
@@ -604,7 +603,7 @@ public class RedstoneTrack
         double p0 = 0.5 + (c1 * from.getStepX()) + (c2*.4 * to.getStepX());
         double p1 = 0.5 + (c1 * from.getStepY()) + (c2*.4 * to.getStepY());
         double p2 = 0.5 + (c1 * from.getStepZ()) + (c2*.4 * to.getStepZ());
-        world.addParticle(new DustParticleOptions(new Vector3f(color),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 

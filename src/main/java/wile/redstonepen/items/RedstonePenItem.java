@@ -39,12 +39,9 @@ import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Inventories;
 import wile.redstonepen.libmc.Overlay;
-import wile.redstonepen.libmc.Registries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,10 +64,6 @@ public class RedstonePenItem extends Item
     }
     Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true);
   }
-
-  @Override
-  public Collection<CreativeModeTab> getCreativeTabs()
-  { return (Collections.singletonList(Registries.getCreativeModeTab())); }
 
   @Override
   @SuppressWarnings("deprecation")
