@@ -337,6 +337,8 @@ public class ControlBox
       {
         if(logic_.symbols().containsKey("tickrate")) tick_interval_ = MathHelper.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
         tick_timer_ = tick_interval_;
+        final int dl = logic_.symbol(".deadline");
+        if((dl>0) && (dl<tick_timer_)) tick_timer_ = dl;
         logic_.intr_redges = 0;
         logic_.intr_fedges = 0;
         if(trace_) logic_.symbol(".perf2", (int)(MathHelper.clamp(System.nanoTime()-tick, 0, 0x7fffffff))/1000);
@@ -819,9 +821,10 @@ public class ControlBox
           if(et >= pt) {
             return MathExpr.Expr.bool_true();
           } else if(et <= 0) {
-            m.put("." + sym + ".clk", now+1);
+            m.put("." + sym + ".clk", now);
             m.put(sym + ".et", 1);
             m.put(sym + ".pt", pt);
+            m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
             return MathExpr.Expr.bool_false();
           } else {
             et = Math.min(now-m.getOrDefault("." + sym + ".clk", now), pt);
@@ -830,6 +833,7 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_true();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_false();
             }
           }
@@ -855,9 +859,10 @@ public class ControlBox
           if(et >= pt) {
             return MathExpr.Expr.bool_false();
           } else if(et <= 0) {
-            m.put("." + sym + ".clk", now+1);
+            m.put("." + sym + ".clk", now);
             m.put(sym + ".et", 1);
             m.put(sym + ".pt", pt);
+            m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
             return MathExpr.Expr.bool_true();
           } else {
             et = Math.min(now-m.getOrDefault("." + sym + ".clk", now), pt);
@@ -866,6 +871,7 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_false();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_true();
             }
           }
@@ -893,14 +899,16 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_false();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_true();
             }
           }
         } else if(in > 0) {
           // Input rising edge or initial signal.
-          m.put("." + sym + ".clk", 1+m.getOrDefault(".clock", 0));
+          m.put("." + sym + ".clk", m.getOrDefault(".clock", 0));
           m.put(sym + ".et", 1);
           m.put(sym + ".pt", pt);
+          m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
           return MathExpr.Expr.bool_true();
         } else {
           // Signal 0, not started.
@@ -1043,6 +1051,7 @@ public class ControlBox
         intr_fedges = 0;
 
         // Calculation
+        symbol(".deadline", 40);
         final Map<String,Integer> assigned = expressions_.recalculate(symbols_, (entry, mem)->{
           switch(entry.parsed.assignment_symbol) {
             case"r": case"b": case"y": case"g": case"u": case"d": return (Math.max(0, Math.min(15, entry.last_result)));

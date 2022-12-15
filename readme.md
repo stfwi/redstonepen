@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.0.10     [F] Fixed RLC tickrate=1 TON operation.
+                  [A] Added deadline based RLC tick adaption.
+
     - v1.0.9      [A] Added translation zh_cn (PR#15, deluxghost).
                   [F] Fixed RLC swapped port colors when placed on ceilings.
 
