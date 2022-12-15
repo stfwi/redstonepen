@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.3.20     [F] Fixed RLC tickrate=1 TON operation.
+                  [A] Added deadline based RLC tick adaption.
+
     - v1.3.19     [U] Ported to 1.19.3 Fabric.
 
     - v1.2.18     [F] Fixed RLC swapped port colors when placed on ceilings.
