@@ -12,7 +12,7 @@ displayName="Redstone Pen"
 description="Adds a pen to draw detailed Redstone tracks."
 authors="wilechaote"
 credits=""
-updateJSONURL="https://raw.githubusercontent.com/stfwi/redstonepen/versions/1.18.json"
+updateJSONURL="https://raw.githubusercontent.com/stfwi/redstonepen/versions/forge-1.18.2.json"
 displayURL="https://www.curseforge.com/minecraft/mc-mods/redstone-pen"
 logoFile="logo.png"
 
@@ -26,6 +26,6 @@ logoFile="logo.png"
 [[dependencies.redstonepen]]
   modId="minecraft"
   mandatory=true
-  versionRange="[1.18.2,1.19)"
+  versionRange="[1.18.2]"
   ordering="NONE"
   side="BOTH"

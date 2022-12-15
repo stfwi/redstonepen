@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.18.2": {
+  "1.0.12": "[F] Fixed RLC tickrate=1 TON operation.\n[A] Added deadline based RLC tick adaption.",
   "1.0.11": "[A] Added translation zh_cn (PR#15, deluxghost).\n[F] Fixed RLC swapped port colors when placed on ceilings.",
   "1.0.10": "[R] Release build.\n[F] Fixed RLC GUI freeze on hot bar item quick move (issue #11, ty serifina).",
   "1.0.10-b3": "[F] Fixed RCA indicator in the RLC GUI.",
@@ -27,7 +28,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.18.2-recommended": "1.0.11",
-  "1.18.2-latest": "1.0.11"
+  "1.18.2-recommended": "1.0.12",
+  "1.18.2-latest": "1.0.12"
  }
 }
