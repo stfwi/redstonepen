@@ -4,7 +4,10 @@
 ----
 ## Version history
 
-    - v1.3.18     [F] Updated to 1.19.3 forge.
+    - v1.3.19     [F] Fixed RLC tickrate=1 TON operation.
+                  [A] Added deadline based RLC tick adaption.
+
+    - v1.3.18     [U] Updated to 1.19.3 forge.
 
     - v1.2.17     [F] Fixed RLC swapped port colors when placed on ceilings.
 
