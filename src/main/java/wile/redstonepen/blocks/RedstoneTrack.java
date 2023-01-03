@@ -55,7 +55,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.nbt.Tag;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.StandardBlocks;
@@ -580,7 +579,7 @@ public class RedstoneTrack
           world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
         }
       } catch(Throwable ex) {
-        ModRedstonePen.logger().error("Track neighborChanged recursion detected, dropping!");
+        Auxiliaries.logger().error("Track neighborChanged recursion detected, dropping!");
         final int num_redstone = tile(world, pos).map(TrackBlockEntity::getRedstoneDustCount).orElse(0);
         if(num_redstone > 0) {
           Vec3 p = Vec3.atCenterOf(pos);

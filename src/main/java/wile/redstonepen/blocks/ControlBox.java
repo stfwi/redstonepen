@@ -8,6 +8,7 @@ package wile.redstonepen.blocks;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -258,16 +259,12 @@ public class ControlBox
         {
           logic_.input_data = 0;
           for(Direction d:Direction.values()) {
-            final int mask = 0xf<<(4*d.ordinal());
-            if((logic_.output_mask & mask) != 0) continue;
             final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
-            final BlockPos target_pos = device_pos.relative(world_dir);
-            final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
-            logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             if(device_enabled) {
               // Comparator overrides only if really needed - may be inventories that do expensive lookups.
               final String port_name = Defs.PORT_NAMES.get(d.ordinal());
               if(esyms.contains(port_name+".co")) {
+                final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
                   @SuppressWarnings("deprecation")
@@ -277,6 +274,10 @@ public class ControlBox
                   logic_.symbol(port_name+".co", 0);
                 }
               }
+            }
+            if((logic_.output_mask & (0xf<<(4*d.ordinal()))) == 0) {
+              final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
+              logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             }
           }
           if((logic_.rca_input_mask != 0) && (rca_data != RcaSync.CommonRca.EMPTY)) logic_.rca_input_data = (rca_data.client_inputs() & logic_.rca_input_mask);
@@ -313,6 +314,8 @@ public class ControlBox
       {
         if(logic_.symbols().containsKey("tickrate")) tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
         tick_timer_ = tick_interval_;
+        final int dl = logic_.symbol(".deadline");
+        if((dl>0) && (dl<tick_timer_)) tick_timer_ = dl;
         logic_.intr_redges = 0;
         logic_.intr_fedges = 0;
         if(trace_) logic_.symbol(".perf2", (int)(Mth.clamp(System.nanoTime()-tick, 0, 0x7fffffff))/1000);
@@ -564,7 +567,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -656,6 +659,7 @@ public class ControlBox
         tooltip_.init(tooltips).delay(50);
       }
       setInitialFocus(textbox);
+      setFocused(textbox);
       getMenu().onGuiAction("serverdata");
     }
 
@@ -714,11 +718,11 @@ public class ControlBox
               cb_error_indicator.y = 0;
               cb_error_indicator.tooltip(Component.empty());
             } else {
-              Guis.Coord2d exy = textbox.getPositionAtIndex(errors_.get(0).getA());
+              Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
               cb_error_indicator.visible = true;
               cb_error_indicator.x = exy.x;
-              cb_error_indicator.y = exy.y+8;
+              cb_error_indicator.y = exy.y + textbox.getLineHeight();
             }
           }
           if(nbt.contains("player", Tag.TAG_STRING)) {
@@ -753,9 +757,18 @@ public class ControlBox
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
           focus_editor_ = false;
-          if(!isDragging()) {
-            children().forEach(wg->wg.changeFocus(false));
-            textbox.changeFocus(true);
+          if(!isDragging() && !textbox.isFocused()) {
+            children().forEach(child->{
+              if(child == textbox) {
+                if(!textbox.isFocused()) {
+                  textbox.changeFocus(true);
+                }
+              } else if(child instanceof AbstractWidget wg) {
+                if(wg.isFocused()) {
+                  wg.changeFocus(true);
+                }
+              }
+            });
             setFocused(textbox);
           }
         }
@@ -849,9 +862,10 @@ public class ControlBox
           if(et >= pt) {
             return MathExpr.Expr.bool_true();
           } else if(et <= 0) {
-            m.put("." + sym + ".clk", now+1);
+            m.put("." + sym + ".clk", now);
             m.put(sym + ".et", 1);
             m.put(sym + ".pt", pt);
+            m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
             return MathExpr.Expr.bool_false();
           } else {
             et = Math.min(now-m.getOrDefault("." + sym + ".clk", now), pt);
@@ -860,6 +874,7 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_true();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_false();
             }
           }
@@ -885,9 +900,10 @@ public class ControlBox
           if(et >= pt) {
             return MathExpr.Expr.bool_false();
           } else if(et <= 0) {
-            m.put("." + sym + ".clk", now+1);
+            m.put("." + sym + ".clk", now);
             m.put(sym + ".et", 1);
             m.put(sym + ".pt", pt);
+            m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
             return MathExpr.Expr.bool_true();
           } else {
             et = Math.min(now-m.getOrDefault("." + sym + ".clk", now), pt);
@@ -896,6 +912,7 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_false();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_true();
             }
           }
@@ -923,17 +940,36 @@ public class ControlBox
               m.remove("." + sym + ".clk");
               return MathExpr.Expr.bool_false();
             } else {
+              m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt-et));
               return MathExpr.Expr.bool_true();
             }
           }
         } else if(in > 0) {
           // Input rising edge or initial signal.
-          m.put("." + sym + ".clk", 1+m.getOrDefault(".clock", 0));
+          m.put("." + sym + ".clk", m.getOrDefault(".clock", 0));
           m.put(sym + ".et", 1);
           m.put(sym + ".pt", pt);
+          m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), pt));
           return MathExpr.Expr.bool_true();
         } else {
           // Signal 0, not started.
+          return MathExpr.Expr.bool_false();
+        }
+      }
+
+      private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
+      {
+        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int pt = x[0].calc(m);
+        if(pt <= 2) return MathExpr.Expr.bool_false();
+        final int now = m.getOrDefault(".clock", 0);
+        final int clk = m.getOrDefault(sym + ".clk", now-pt);
+        if(Math.abs(now-clk) >= pt) {
+          m.put(sym + ".clk", now);
+          m.put(".deadline", 1);
+          return MathExpr.Expr.bool_true();
+        } else {
+          m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), clk-now+pt));
           return MathExpr.Expr.bool_false();
         }
       }
@@ -950,22 +986,28 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
+          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
           new MathExpr.ExprFuncDef("cnt4", -1, (x,m)->counter_function(".cnt4", x, m)),
+          new MathExpr.ExprFuncDef("cnt5", -1, (x,m)->counter_function(".cnt5", x, m)),
           new MathExpr.ExprFuncDef("ton1", 2, (x,m)->timer_on_function("ton1", x, m)),
           new MathExpr.ExprFuncDef("ton2", 2, (x,m)->timer_on_function("ton2", x, m)),
           new MathExpr.ExprFuncDef("ton3", 2, (x,m)->timer_on_function("ton3", x, m)),
           new MathExpr.ExprFuncDef("ton4", 2, (x,m)->timer_on_function("ton4", x, m)),
+          new MathExpr.ExprFuncDef("ton5", 2, (x,m)->timer_on_function("ton5", x, m)),
           new MathExpr.ExprFuncDef("tof1", 2, (x,m)->timer_off_function("tof1", x, m)),
           new MathExpr.ExprFuncDef("tof2", 2, (x,m)->timer_off_function("tof2", x, m)),
           new MathExpr.ExprFuncDef("tof3", 2, (x,m)->timer_off_function("tof3", x, m)),
           new MathExpr.ExprFuncDef("tof4", 2, (x,m)->timer_off_function("tof4", x, m)),
+          new MathExpr.ExprFuncDef("tof5", 2, (x,m)->timer_off_function("tof5", x, m)),
           new MathExpr.ExprFuncDef("tp1", 2, (x,m)->timer_pulse_function("tp1", x, m)),
           new MathExpr.ExprFuncDef("tp2", 2, (x,m)->timer_pulse_function("tp2", x, m)),
           new MathExpr.ExprFuncDef("tp3", 2, (x,m)->timer_pulse_function("tp3", x, m)),
-          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m))
+          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m)),
+          new MathExpr.ExprFuncDef("tp5", 2, (x,m)->timer_pulse_function("tp5", x, m))
         );
       }
 
@@ -1074,6 +1116,7 @@ public class ControlBox
         intr_fedges = 0;
 
         // Calculation
+        symbol(".deadline", 40);
         final Map<String,Integer> assigned = expressions_.recalculate(symbols_, (entry, mem)->
           switch(entry.parsed.assignment_symbol) {
             case "r","b","y","g","u","d" -> (Math.max(0, Math.min(15, entry.last_result)));
@@ -1139,7 +1182,8 @@ public class ControlBox
               }
             }
           }
-          offset += line.length();
+          ++line_index;
+          offset += 1+line.length();
         }
         return (entries.isEmpty() && parse_errors.isEmpty()) ? EMPTY : (new MultiLineMathExpr(entries, parse_errors, symbols, assignments));
       }

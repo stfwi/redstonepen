@@ -4,6 +4,14 @@
 ----
 ## Version history
 
+    - v1.2.19     [M] RLC font size reduced, enabling to write 23 code lines.
+
+    - v1.2.18     [F] Fixed RLC tickrate=1 TON operation.
+                  [A] Added deadline based RLC tick adaption.
+                  [A] Added RLC TIV1/2 function blocks (Interval timed pulse
+                      every N ticks, two instances TIV1 and TIV2).
+                  [A] Added RLC comparator signal capture on redstone outputs.
+
     - v1.2.17     [F] Fixed RLC swapped port colors when placed on ceilings.
 
     - v1.2.16     [U] Initial Forge port to 1.19.2.
