@@ -54,7 +54,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.nbt.Tag;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.StandardBlocks;

@@ -258,16 +258,12 @@ public class ControlBox
         {
           logic_.input_data = 0;
           for(Direction d:Direction.values()) {
-            final int mask = 0xf<<(4*d.ordinal());
-            if((logic_.output_mask & mask) != 0) continue;
             final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
-            final BlockPos target_pos = device_pos.relative(world_dir);
-            final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
-            logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             if(device_enabled) {
               // Comparator overrides only if really needed - may be inventories that do expensive lookups.
               final String port_name = Defs.PORT_NAMES.get(d.ordinal());
               if(esyms.contains(port_name+".co")) {
+                final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
                   @SuppressWarnings("deprecation")
@@ -277,6 +273,10 @@ public class ControlBox
                   logic_.symbol(port_name+".co", 0);
                 }
               }
+            }
+            if((logic_.output_mask & (0xf<<(4*d.ordinal()))) == 0) {
+              final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
+              logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             }
           }
           if((logic_.rca_input_mask != 0) && (rca_data != RcaSync.CommonRca.EMPTY)) logic_.rca_input_data = (rca_data.client_inputs() & logic_.rca_input_mask);
@@ -946,6 +946,23 @@ public class ControlBox
         }
       }
 
+      private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
+      {
+        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int pt = x[0].calc(m);
+        if(pt <= 2) return MathExpr.Expr.bool_false();
+        final int now = m.getOrDefault(".clock", 0);
+        final int clk = m.getOrDefault(sym + ".clk", now-pt);
+        if(Math.abs(now-clk) >= pt) {
+          m.put(sym + ".clk", now);
+          m.put(".deadline", 1);
+          return MathExpr.Expr.bool_true();
+        } else {
+          m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), clk-now+pt));
+          return MathExpr.Expr.bool_false();
+        }
+      }
+
       private static List<MathExpr.ExprFuncDef> make_functions()
       {
         return Arrays.asList(
@@ -958,22 +975,28 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
+          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
           new MathExpr.ExprFuncDef("cnt4", -1, (x,m)->counter_function(".cnt4", x, m)),
+          new MathExpr.ExprFuncDef("cnt5", -1, (x,m)->counter_function(".cnt5", x, m)),
           new MathExpr.ExprFuncDef("ton1", 2, (x,m)->timer_on_function("ton1", x, m)),
           new MathExpr.ExprFuncDef("ton2", 2, (x,m)->timer_on_function("ton2", x, m)),
           new MathExpr.ExprFuncDef("ton3", 2, (x,m)->timer_on_function("ton3", x, m)),
           new MathExpr.ExprFuncDef("ton4", 2, (x,m)->timer_on_function("ton4", x, m)),
+          new MathExpr.ExprFuncDef("ton5", 2, (x,m)->timer_on_function("ton5", x, m)),
           new MathExpr.ExprFuncDef("tof1", 2, (x,m)->timer_off_function("tof1", x, m)),
           new MathExpr.ExprFuncDef("tof2", 2, (x,m)->timer_off_function("tof2", x, m)),
           new MathExpr.ExprFuncDef("tof3", 2, (x,m)->timer_off_function("tof3", x, m)),
           new MathExpr.ExprFuncDef("tof4", 2, (x,m)->timer_off_function("tof4", x, m)),
+          new MathExpr.ExprFuncDef("tof5", 2, (x,m)->timer_off_function("tof5", x, m)),
           new MathExpr.ExprFuncDef("tp1", 2, (x,m)->timer_pulse_function("tp1", x, m)),
           new MathExpr.ExprFuncDef("tp2", 2, (x,m)->timer_pulse_function("tp2", x, m)),
           new MathExpr.ExprFuncDef("tp3", 2, (x,m)->timer_pulse_function("tp3", x, m)),
-          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m))
+          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m)),
+          new MathExpr.ExprFuncDef("tp5", 2, (x,m)->timer_pulse_function("tp5", x, m))
         );
       }
 

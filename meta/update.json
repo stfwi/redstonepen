@@ -1,6 +1,7 @@
 {
  "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
  "1.19.3": {
+  "1.3.20": "[A] Added RLC TIV1/2 function blocks (Interval timed pulse every N ticks, two instances TIV1 and TIV2).\n[A] Added RLC comparator signal capture on redstone outputs.",
   "1.3.19": "[F] Fixed RLC tickrate=1 TON operation.\n[A] Added deadline based RLC tick adaption.",
   "1.3.18": "[U] Updated to 1.19.3 forge.",
   "1.2.17": "[F] Fixed RLC swapped port colors when placed on ceilings.",
@@ -35,7 +36,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.19.3-recommended": "1.3.19",
-  "1.19.3-latest": "1.3.19"
+  "1.19.3-recommended": "1.3.20",
+  "1.19.3-latest": "1.3.20"
  }
 }
