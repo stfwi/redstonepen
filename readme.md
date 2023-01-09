@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.0.13     [M] RLC font size reduced, enabling to write 23 code lines.
+
     - v1.0.12     [F] Fixed RLC tickrate=1 TON operation.
                   [A] Added deadline based RLC tick adaption.
 
