@@ -47,6 +47,7 @@ public class GuiTextEditing
   @Environment(EnvType.CLIENT)
   public static class MultiLineTextBox extends Guis.UiWidget implements GuiEventListener
   {
+    private static final int NORM_LINE_HEIGHT = 9;
     private static final Consumer<MultiLineTextBox> ON_CHANGE_IGNORED = (tb)->{};
     private static final BiConsumer<MultiLineTextBox, Guis.Coord2d> ON_MOUSEMOVE_IGNORED = (xy,tb)->{};
     private int frame_tick_;
@@ -55,6 +56,8 @@ public class GuiTextEditing
     private final TextFieldHelper edit_;
     private String text_ = "";
     private Font font_;
+    private int line_height_ = NORM_LINE_HEIGHT;
+    private float font_scale_ = 1f;
     private int max_text_size_ = 1024;
     private int font_color_ = 0xff000000;
     private int cursor_color_ = 0xff000000;
@@ -66,7 +69,7 @@ public class GuiTextEditing
       super(x, y, width, height, title);
       edit_ = new TextFieldHelper(
         this::getText, this::setText, this::getClipboard, this::setClipboard,
-        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width)<=height
+        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
       );
     }
 
@@ -125,6 +128,16 @@ public class GuiTextEditing
     public MultiLineTextBox setCursorColor(int color)
     { cursor_color_=color|0xff000000; return this; }
 
+    public int getLineHeight()
+    { return line_height_; }
+
+    public MultiLineTextBox setLineHeight(int h)
+    {
+      line_height_ = Mth.clamp(h, 6, NORM_LINE_HEIGHT);
+      font_scale_ = (((float)line_height_)/9f);
+      return this;
+    }
+
     public MultiLineTextBox onValueChanged(Consumer<MultiLineTextBox> cb)
     { on_changed_ = cb; return this; }
 
@@ -134,16 +147,18 @@ public class GuiTextEditing
     public int getIndexUnderMouse(double mouseX, double mouseY)
     { return (font_ == null) ? 0 : (getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)mouseX, (int)mouseY), false))); }
 
-    public Guis.Coord2d getPositionAtIndex(int textIndex)
+    public Guis.Coord2d getCoordinatesAtIndex(int textIndex)
     {
       if(font_ == null) return Guis.Coord2d.ORIGIN;
       textIndex = Mth.clamp(textIndex, 0, getDisplayCache().fullText.length());
       final int lindex = findLineFromPos(getDisplayCache().lineStarts, textIndex);
       if(lindex < 0 || lindex >= getDisplayCache().lineStarts.length) return Guis.Coord2d.ORIGIN;
       final LineInfo li = getDisplayCache().lines[lindex];
-      textIndex = Mth.clamp(textIndex + lindex - getDisplayCache().lineStarts[lindex], 0, li.contents.length());
+      textIndex = textIndex - getDisplayCache().lineStarts[lindex];
+      textIndex = Mth.clamp(textIndex, 0, li.contents.length());
       final int ox = (int)font_.getSplitter().stringWidth(li.contents.substring(0, textIndex));
-      return Guis.Coord2d.of(li.x+ox, li.y);
+      final int oy = getDisplayCache().lines[0].y;
+      return Guis.Coord2d.of(li.x+(ox*line_height_/NORM_LINE_HEIGHT), oy + ((li.y-oy)*line_height_/NORM_LINE_HEIGHT));
     }
 
     public String getWordAtPosition(Guis.Coord2d xy)
@@ -175,7 +190,8 @@ public class GuiTextEditing
     {
       if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
       if(button != 0) return true;
-      final int index = getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false));
+      final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
+      final int index = getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_));
       if(index >= 0) {
         if((index==last_index_) && ((Util.getMillis()-last_clicked_)<250)) {
           if(edit_.isSelecting()) {
@@ -200,7 +216,8 @@ public class GuiTextEditing
     {
       if(super.mouseDragged(x, y, button, dx, dy) || (button != 0)) return true;
       if((!active) || (!visible)) return false;
-      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, screenCoordinates(new Guis.Coord2d((int)x, (int)y), false)), true);
+      final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
+      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_)), true);
       clearDisplayCache();
       return true;
     }
@@ -242,6 +259,11 @@ public class GuiTextEditing
       if(!this.visible) return;
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+      mxs.pushPose();
+      int ox = (int)(this.getX() * (1.-font_scale_));
+      int oy = (int)(this.getY() * (1.-font_scale_));
+      mxs.translate(ox, oy, 0);
+      mxs.scale(font_scale_, font_scale_, font_scale_);
       final DisplayCache cache = getDisplayCache();
       for(LineInfo li:cache.lines) font_.draw(mxs, li.asComponent, li.x, li.y, font_color_);
       this.renderHighlight(cache.selection);
@@ -250,6 +272,7 @@ public class GuiTextEditing
         Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
       }
+      mxs.popPose();
     }
 
     //---------------------------------------------------------------------------------
@@ -300,7 +323,7 @@ public class GuiTextEditing
       if((++frame_tick_ & 0x3f) < 0x20) return;
       pos = screenCoordinates(pos, true);
       if(!at_end) {
-        GuiComponent.fill(mxs, pos.x, pos.y - 1, pos.x + 1, pos.y + 9, cursor_color_);
+        GuiComponent.fill(mxs, pos.x, pos.y - 1, pos.x + 1, pos.y + NORM_LINE_HEIGHT, cursor_color_);
       } else {
         font_.draw(mxs, "_", (float)pos.x, (float)pos.y, 0);
       }
@@ -315,11 +338,13 @@ public class GuiTextEditing
       RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
       final BufferBuilder buf = Tesselator.getInstance().getBuilder();
       buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+      final double ox = this.getX() * (1.-font_scale_);
+      final double oy = this.getY() * (1.-font_scale_);
       for(Rect2i rc: line_rects) {
-        final int x0 = rc.getX();
-        final int y0 = rc.getY();
-        final int x1 = x0 + rc.getWidth();
-        final int y1 = y0 + rc.getHeight();
+        final int x0 = (int)Math.floor(ox+(double)(rc.getX())*font_scale_)-1;
+        final int y0 = (int)Math.floor(oy+(double)(rc.getY())*font_scale_)-1;
+        final int x1 = (int)Math.ceil(x0+(double)(rc.getWidth())*font_scale_);
+        final int y1 = (int)Math.ceil(y0+(double)(rc.getHeight())*font_scale_)-1;
         buf.vertex(x0, y1, 0.0D).endVertex();
         buf.vertex(x1, y1, 0.0D).endVertex();
         buf.vertex(x1, y0, 0.0D).endVertex();
@@ -350,23 +375,23 @@ public class GuiTextEditing
       final MutableInt line_no = new MutableInt();
       final MutableBoolean line_terminated = new MutableBoolean();
       final StringSplitter ssp = font_.getSplitter();
-      ssp.splitLines(full_text, this.width, Style.EMPTY, true, (text, spos, epos) -> {
+      ssp.splitLines(full_text, this.width*NORM_LINE_HEIGHT/line_height_, Style.EMPTY, true, (text, spos, epos) -> {
         final String full_line = full_text.substring(spos, epos);
         line_terminated.setValue(full_line.endsWith("\n"));
         final String line = StringUtils.stripEnd(full_line, " \n");
         lsp.add(spos);
-        final Guis.Coord2d pxy = screenCoordinates(new Guis.Coord2d(0, line_no.getAndIncrement() * 9), true);
+        final Guis.Coord2d pxy = screenCoordinates(new Guis.Coord2d(0, line_no.getAndIncrement() * NORM_LINE_HEIGHT), true);
         line_infos.add(new LineInfo(text, line, pxy.x, pxy.y));
       });
       final int[] line_starts = lsp.toIntArray();
       final boolean cur_at_eos = (cur_pos==full_text.length());
       Guis.Coord2d ppos;
       if(cur_at_eos && line_terminated.isTrue()) {
-        ppos = new Guis.Coord2d(0, line_infos.size() * 9);
+        ppos = new Guis.Coord2d(0, line_infos.size() * NORM_LINE_HEIGHT);
       } else {
         final int lno = findLineFromPos(line_starts, cur_pos);
         final int lpx = font_.width(full_text.substring(line_starts[lno], cur_pos));
-        ppos = new Guis.Coord2d(lpx, lno * 9); // line height==9
+        ppos = new Guis.Coord2d(lpx, lno * NORM_LINE_HEIGHT);
       }
       List<Rect2i> selection_blocks = Lists.newArrayList();
       if(cur_pos != sel_pos) {
@@ -375,19 +400,19 @@ public class GuiTextEditing
         int j1 = findLineFromPos(line_starts, l2);
         int k1 = findLineFromPos(line_starts, i1);
         if(j1 == k1) {
-          int l1 = j1 * 9;
+          int l1 = j1 * NORM_LINE_HEIGHT;
           int i2 = line_starts[j1];
           selection_blocks.add(createPartialLineSelection(full_text, ssp, l2, i1, l1, i2));
         } else {
           int i3 = j1 + 1 > line_starts.length ? full_text.length() : line_starts[j1 + 1];
-          selection_blocks.add(createPartialLineSelection(full_text, ssp, l2, i3, j1 * 9, line_starts[j1]));
+          selection_blocks.add(createPartialLineSelection(full_text, ssp, l2, i3, j1 * NORM_LINE_HEIGHT, line_starts[j1]));
           for(int j3 = j1 + 1; j3 < k1; ++j3) {
-            int j2 = j3 * 9;
+            int j2 = j3 * NORM_LINE_HEIGHT;
             String s1 = full_text.substring(line_starts[j3], line_starts[j3 + 1]);
             int k2 = (int)ssp.stringWidth(s1);
-            selection_blocks.add(createSelection(new Guis.Coord2d(0, j2), new Guis.Coord2d(k2, j2 + 9)));
+            selection_blocks.add(createSelection(new Guis.Coord2d(0, j2), new Guis.Coord2d(k2, j2 + NORM_LINE_HEIGHT)));
           }
-          selection_blocks.add(createPartialLineSelection(full_text, ssp, line_starts[k1], i1, k1 * 9, line_starts[k1]));
+          selection_blocks.add(createPartialLineSelection(full_text, ssp, line_starts[k1], i1, k1 * NORM_LINE_HEIGHT, line_starts[k1]));
         }
       }
       return new DisplayCache(full_text, ppos, cur_at_eos, line_starts, line_infos.toArray(new LineInfo[0]), selection_blocks.toArray(new Rect2i[0]));
@@ -399,8 +424,8 @@ public class GuiTextEditing
     private Rect2i createPartialLineSelection(String text, StringSplitter ssp, int spos, int epos, int liney, int line_start_pos)
     {
       final String s0 = text.substring(line_start_pos, spos);
-      final String s1 = text.substring(line_start_pos, epos);
-      return createSelection(new Guis.Coord2d((int)ssp.stringWidth(s0), liney), new Guis.Coord2d((int)ssp.stringWidth(s1), liney + 9));
+      final String s1 = text.substring(line_start_pos, epos).replaceAll("[\\r\\n]+$", "");
+      return createSelection(new Guis.Coord2d((int)ssp.stringWidth(s0), liney), new Guis.Coord2d((int)ssp.stringWidth(s1), liney + NORM_LINE_HEIGHT));
     }
 
     private Rect2i createSelection(Guis.Coord2d pos1, Guis.Coord2d pos2)
@@ -430,23 +455,23 @@ public class GuiTextEditing
 
       public int getIndexAtPosition(Font font, Guis.Coord2d pos)
       {
-        int i = pos.y / 9;
+        int i = pos.y / NORM_LINE_HEIGHT;
         if(i < 0) return 0;
         if(i >= lines.length) return this.fullText.length();
         return this.lineStarts[i] + font.getSplitter().plainIndexAtWidth(lines[i].contents, pos.x, lines[i].style);
       }
 
-      public int changeLine(int p_98211_, int p_98212_)
+      public int changeLine(int cursor_pos, int length)
       {
-        int i = findLineFromPos(this.lineStarts, p_98211_);
-        int j = i + p_98212_;
+        int i = findLineFromPos(this.lineStarts, cursor_pos);
+        int j = i + length;
         int k;
         if (0 <= j && j < this.lineStarts.length) {
-          int l = p_98211_ - this.lineStarts[i];
+          int l = cursor_pos - this.lineStarts[i];
           int i1 = this.lines[j].contents.length();
           k = this.lineStarts[j] + Math.min(l, i1);
         } else {
-          k = p_98211_;
+          k = cursor_pos;
         }
         return k;
       }
