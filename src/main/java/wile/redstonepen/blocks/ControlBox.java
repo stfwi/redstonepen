@@ -10,6 +10,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -282,16 +283,12 @@ public class ControlBox
         {
           logic_.input_data = 0;
           for(Direction d:Direction.values()) {
-            final int mask = 0xf<<(4*d.ordinal());
-            if((logic_.output_mask & mask) != 0) continue;
             final Direction world_dir = ControlBoxBlock.getForwardStateMappedFacing(device_state, d);
-            final BlockPos target_pos = device_pos.relative(world_dir);
-            final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
-            logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             if(device_enabled) {
               // Comparator overrides only if really needed - may be inventories that do expensive lookups.
               final String port_name = Defs.PORT_NAMES.get(d.ordinal());
               if(esyms.contains(port_name+".co")) {
+                final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
                   @SuppressWarnings("deprecation")
@@ -301,6 +298,10 @@ public class ControlBox
                   logic_.symbol(port_name+".co", 0);
                 }
               }
+            }
+            if((logic_.output_mask & (0xf<<(4*d.ordinal()))) == 0) {
+              final int p = world.getSignal(device_pos.relative(world_dir), world_dir);
+              logic_.input_data |= (p & 0xf)<<(4*d.ordinal());
             }
           }
         }
@@ -561,7 +562,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
         addButton(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{getMenu().onGuiAction("enabled"); focus_editor_=true; });
@@ -641,6 +642,7 @@ public class ControlBox
         tooltip_.init(tooltips).delay(50);
       }
       setInitialFocus(textbox);
+      setFocused(textbox);
       getMenu().onGuiAction("serverdata");
     }
 
@@ -702,11 +704,11 @@ public class ControlBox
               cb_error_indicator.y = 0;
               cb_error_indicator.tooltip(StringTextComponent.EMPTY);
             } else {
-              Guis.Coord2d exy = textbox.getPositionAtIndex(errors_.get(0).getA());
+              Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
               cb_error_indicator.visible = true;
               cb_error_indicator.x = exy.x;
-              cb_error_indicator.y = exy.y+8;
+              cb_error_indicator.y = exy.y+textbox.getLineHeight();
             }
           }
         } else if(--update_counter_ <= 0) {
@@ -729,9 +731,19 @@ public class ControlBox
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
           focus_editor_ = false;
-          if(!isDragging()) {
-            children().forEach(wg->wg.changeFocus(false));
-            textbox.changeFocus(true);
+          if(!isDragging() && !textbox.isFocused()) {
+            children().forEach(child->{
+              if(child == textbox) {
+                if(!textbox.isFocused()) {
+                  textbox.changeFocus(true);
+                }
+              } else if(child instanceof Widget) {
+                final Widget wg = (Widget)child;
+                if(wg.isFocused()) {
+                  wg.changeFocus(true);
+                }
+              }
+            });
             setFocused(textbox);
           }
         }
@@ -916,6 +928,23 @@ public class ControlBox
         }
       }
 
+      private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
+      {
+        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int pt = x[0].calc(m);
+        if(pt <= 2) return MathExpr.Expr.bool_false();
+        final int now = m.getOrDefault(".clock", 0);
+        final int clk = m.getOrDefault(sym + ".clk", now-pt);
+        if(Math.abs(now-clk) >= pt) {
+          m.put(sym + ".clk", now);
+          m.put(".deadline", 1);
+          return MathExpr.Expr.bool_true();
+        } else {
+          m.put(".deadline", Math.min(m.getOrDefault(".deadline", 20), clk-now+pt));
+          return MathExpr.Expr.bool_false();
+        }
+      }
+
       private static int limit_function(MathExpr.Expr[] x, Map<String, Integer> m)
       {
         switch(x.length) {
@@ -948,22 +977,28 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
+          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
           new MathExpr.ExprFuncDef("cnt4", -1, (x,m)->counter_function(".cnt4", x, m)),
+          new MathExpr.ExprFuncDef("cnt5", -1, (x,m)->counter_function(".cnt5", x, m)),
           new MathExpr.ExprFuncDef("ton1", 2, (x,m)->timer_on_function("ton1", x, m)),
           new MathExpr.ExprFuncDef("ton2", 2, (x,m)->timer_on_function("ton2", x, m)),
           new MathExpr.ExprFuncDef("ton3", 2, (x,m)->timer_on_function("ton3", x, m)),
           new MathExpr.ExprFuncDef("ton4", 2, (x,m)->timer_on_function("ton4", x, m)),
+          new MathExpr.ExprFuncDef("ton5", 2, (x,m)->timer_on_function("ton5", x, m)),
           new MathExpr.ExprFuncDef("tof1", 2, (x,m)->timer_off_function("tof1", x, m)),
           new MathExpr.ExprFuncDef("tof2", 2, (x,m)->timer_off_function("tof2", x, m)),
           new MathExpr.ExprFuncDef("tof3", 2, (x,m)->timer_off_function("tof3", x, m)),
           new MathExpr.ExprFuncDef("tof4", 2, (x,m)->timer_off_function("tof4", x, m)),
+          new MathExpr.ExprFuncDef("tof5", 2, (x,m)->timer_off_function("tof5", x, m)),
           new MathExpr.ExprFuncDef("tp1", 2, (x,m)->timer_pulse_function("tp1", x, m)),
           new MathExpr.ExprFuncDef("tp2", 2, (x,m)->timer_pulse_function("tp2", x, m)),
           new MathExpr.ExprFuncDef("tp3", 2, (x,m)->timer_pulse_function("tp3", x, m)),
-          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m))
+          new MathExpr.ExprFuncDef("tp4", 2, (x,m)->timer_pulse_function("tp4", x, m)),
+          new MathExpr.ExprFuncDef("tp5", 2, (x,m)->timer_pulse_function("tp5", x, m))
         );
       }
 
@@ -1108,7 +1143,8 @@ public class ControlBox
               }
             }
           }
-          offset += line.length();
+          ++line_index;
+          offset += 1+line.length();
         }
         return (entries.isEmpty() && parse_errors.isEmpty()) ? EMPTY : (new MultiLineMathExpr(entries, parse_errors, symbols, assignments));
       }

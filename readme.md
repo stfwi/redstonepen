@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.0.11     [A] Added RLC TIV1/2 function blocks (Interval timed pulse
+                      every N ticks, two instances TIV1 and TIV2).
+                  [A] Added RLC comparator signal capture on redstone outputs.
+                  [M] RLC font size reduced, enabling to write 23 code lines.
+
     - v1.0.10     [F] Fixed RLC tickrate=1 TON operation.
                   [A] Added deadline based RLC tick adaption.
 
