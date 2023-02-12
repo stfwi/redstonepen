@@ -46,6 +46,7 @@ public class ModConfig
     // MISC
     public final ForgeConfigSpec.BooleanValue with_experimental;
     public final ForgeConfigSpec.BooleanValue with_config_logging;
+    public final ForgeConfigSpec.BooleanValue without_preview_rendering;
     /// Tweaks
     public final ForgeConfigSpec.IntValue max_pen_redstone_capacity;
 
@@ -88,6 +89,10 @@ public class ModConfig
           .translation(MODID + ".config.with_config_logging")
           .comment("Enable detailed logging of the config values and resulting calculations in each mod feature config.")
           .define("with_config_logging", false);
+        without_preview_rendering = builder
+          .translation(MODID + ".config.without_preview_rendering")
+          .comment("Disable RLC and Relay preview rendering. Can be very useful if optifine is installed.")
+          .define("without_preview_rendering", false);
         builder.pop();
       }
       // --- TWEAKS ------------------------------------------------------------
@@ -122,6 +127,9 @@ public class ModConfig
   public static boolean withDebugLogging()
   { return with_experimental_features_ && with_config_logging_; }
 
+  public static boolean withoutPreviewRendering()
+  { return wihtout_preview_rendering_; }
+
   //--------------------------------------------------------------------------------------------------------------------
   // Cache
   //--------------------------------------------------------------------------------------------------------------------
@@ -130,6 +138,7 @@ public class ModConfig
   private static HashSet<String> optouts_ = new HashSet<>();
   private static boolean with_experimental_features_ = false;
   private static boolean with_config_logging_ = false;
+  private static boolean wihtout_preview_rendering_ = false;
 
   public static CompoundTag getServerConfig()
   { return server_config_; }
@@ -200,6 +209,7 @@ public class ModConfig
     with_config_logging_ = COMMON.with_config_logging.get();
     with_experimental_features_ = COMMON.with_experimental.get();
     if(with_experimental_features_) LOGGER.info("Config: EXPERIMENTAL FEATURES ENABLED.");
+    wihtout_preview_rendering_ = COMMON.without_preview_rendering.get();
     updateOptouts();
     //RedstonePenItem.on_config(COMMON.max_pen_redstone_capacity.get());
   }
