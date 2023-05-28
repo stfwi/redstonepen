@@ -755,11 +755,11 @@ public class ControlBox
             children().forEach(child->{
               if(child == textbox) {
                 if(!textbox.isFocused()) {
-                  textbox.changeFocus(true);
+                  textbox.setFocused(true);
                 }
               } else if(child instanceof AbstractWidget wg) {
                 if(wg.isFocused()) {
-                  wg.changeFocus(true);
+                  wg.setFocused(false);
                 }
               }
             });

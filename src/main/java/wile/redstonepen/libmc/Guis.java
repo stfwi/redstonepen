@@ -113,24 +113,23 @@ public class Guis
     protected void renderItemTemplate(PoseStack mx, ItemStack stack, int x, int y)
     {
       final ItemRenderer ir = itemRenderer;
-      final int main_zl = getBlitOffset();
-      final float zl = ir.blitOffset;
+      mx.pushPose();
       final int x0 = getGuiLeft();
       final int y0 = getGuiTop();
-      ir.blitOffset = -80;
-      ir.renderGuiItem(stack, x0+x, y0+y);
-      RenderSystem.disableColorLogicOp(); //RenderSystem.disableColorMaterial();
-      RenderSystem.enableDepthTest(); //RenderSystem.enableAlphaTest();
+      mx.pushPose();
+      mx.translate(0, 0, -80);
+      ir.renderGuiItem(mx, stack, x0+x, y0+y);
+      mx.popPose();
+      RenderSystem.disableColorLogicOp();
+      RenderSystem.enableDepthTest();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableBlend();
-      ir.blitOffset = zl;
-      setBlitOffset(100);
       RenderSystem.colorMask(true, true, true, true);
       RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.8f);
       RenderSystem.setShaderTexture(0, background_image_);
       blit(mx, x0+x, y0+y, x, y, 16, 16);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-      setBlitOffset(main_zl);
+      mx.popPose();
     }
   }
 
@@ -211,13 +210,12 @@ public class Guis
     {
       if(!visible) return;
       isHovered = (mouseX >= getX()) && (mouseY >= getY()) && (mouseX < getX()+width) && (mouseY < getY()+height);
-      renderButton(mx, mouseX, mouseY, partialTicks);
+      renderWidget(mx, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
-      super.renderButton(mxs, mouseX, mouseY, partialTicks);
       if(isHovered) renderToolTip(mxs, mouseX, mouseY);
     }
 
@@ -275,11 +273,7 @@ public class Guis
     {}
 
     @Override
-    protected void renderBg(PoseStack mx, Minecraft mc, int x, int y)
-    {}
-
-    @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
       RenderSystem.setShaderTexture(0, atlas_);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
@@ -316,7 +310,7 @@ public class Guis
     {
       if(!visible) return;
       RenderSystem.setShaderTexture(0, atlas_);
-      parent.blit(mx, getX(), getY(), atlas_position_.x, atlas_position_.y, width, height);
+      blit(mx, getX(), getY(), atlas_position_.x, atlas_position_.y, width, height);
     }
   }
 
@@ -351,7 +345,7 @@ public class Guis
     { checked_ = !checked_; on_click_.accept(this); }
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);
@@ -388,7 +382,7 @@ public class Guis
     { on_click_.accept(this); }
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);
@@ -420,7 +414,7 @@ public class Guis
     {}
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);

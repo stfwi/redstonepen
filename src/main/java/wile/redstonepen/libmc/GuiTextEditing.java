@@ -182,10 +182,6 @@ public class GuiTextEditing
     }
 
     @Override
-    protected void onFocusedChanged(boolean focus)
-    {}
-
-    @Override
     public boolean mouseClicked(double x, double y, int button)
     {
       if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
@@ -254,7 +250,7 @@ public class GuiTextEditing
     }
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
     {
       if(!this.visible) return;
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -333,7 +329,6 @@ public class GuiTextEditing
     {
       RenderSystem.setShader(GameRenderer::getPositionShader);
       RenderSystem.setShaderColor(0.0F, 0.0F, 255.0F, 255.0F);
-      RenderSystem.disableTexture();
       RenderSystem.enableColorLogicOp();
       RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
       final BufferBuilder buf = Tesselator.getInstance().getBuilder();
@@ -352,7 +347,6 @@ public class GuiTextEditing
       }
       Tesselator.getInstance().end();
       RenderSystem.disableColorLogicOp();
-      RenderSystem.enableTexture();
     }
 
     @Nullable

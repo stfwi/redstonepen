@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -187,7 +188,7 @@ public class Registries
   { entity_type_suppliers.add(new Tuple<>(registry_name, supplier)); }
 
   public static <T extends MenuType<?>> void addMenuType(String registry_name, MenuType.MenuSupplier<?> supplier)
-  { menu_type_suppliers.add(new Tuple<>(registry_name, ()->new MenuType<>(supplier))); }
+  { menu_type_suppliers.add(new Tuple<>(registry_name, ()->new MenuType<>(supplier, FeatureFlagSet.of()))); }
 
   public static void addRecipeSerializer(String registry_name, Supplier<? extends RecipeSerializer<?>> serializer_supplier)
   { recipe_serializers_suppliers.add(new Tuple<>(registry_name, serializer_supplier)); }
