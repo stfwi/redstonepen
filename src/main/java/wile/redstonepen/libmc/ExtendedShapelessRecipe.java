@@ -11,6 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
@@ -45,9 +46,10 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
   private final CompoundTag aspects;
   private final ResourceLocation resultTag;
+  private final ItemStack resultItem;
 
-  public ExtendedShapelessRecipe(ResourceLocation id, String group,    ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
-  { super(id, group, CraftingBookCategory.MISC, output, ingredients); this.aspects=aspects; this.resultTag = resultTag; }
+  public ExtendedShapelessRecipe(ResourceLocation id, String group, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
+  { super(id, group, CraftingBookCategory.MISC, output, ingredients); this.resultItem=output; this.aspects=aspects; this.resultTag = resultTag; }
 
   public CompoundTag getAspects()
   { return aspects.copy(); }
@@ -171,13 +173,13 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
   }
 
   @Override
-  public ItemStack assemble(CraftingContainer inv)
+  public ItemStack assemble(CraftingContainer inv, RegistryAccess ra)
   {
     if(isRepair()) {
       return getRepaired(inv).getA();
     } else {
       // Initial item crafting
-      ItemStack rstack = super.assemble(inv);
+      ItemStack rstack = super.assemble(inv, ra);
       if(rstack.isEmpty()) return ItemStack.EMPTY;
       if(aspects.getInt("initial_durability") > 0) {
         int dmg = Math.max(0, rstack.getMaxDamage() - aspects.getInt("initial_durability"));
@@ -191,8 +193,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
   }
 
   @Override
-  public ItemStack getResultItem()
-  { return isSpecial() ? ItemStack.EMPTY : super.getResultItem(); }
+  public ItemStack getResultItem(RegistryAccess ra)
+  { return isSpecial() ? ItemStack.EMPTY : super.getResultItem(ra); }
 
   //--------------------------------------------------------------------------------------------------------------------
 
@@ -269,7 +271,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       pkt.writeUtf(recipe.getGroup());
       pkt.writeVarInt(recipe.getIngredients().size());
       for(Ingredient ingredient : recipe.getIngredients()) ingredient.toNetwork(pkt);
-      pkt.writeItem(recipe.getResultItem());
+      pkt.writeItem(recipe.resultItem);
       pkt.writeNbt(recipe.getAspects());
       pkt.writeResourceLocation(recipe.resultTag);
     }

@@ -11,6 +11,7 @@ package wile.redstonepen.libmc;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -30,8 +31,6 @@ import java.util.function.Supplier;
 public class Registries
 {
   private static String modid = null;
-  private static String creative_tab_icon = "";
-  private static CreativeModeTab creative_tab = null;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -53,7 +52,6 @@ public class Registries
   public static void init(String mod_id, String creative_tab_icon_item_name, Consumer<DeferredRegister<?>> registrar)
   {
     modid = mod_id;
-    creative_tab_icon = creative_tab_icon_item_name;
     BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, modid);
     ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, modid);
     BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, modid);
@@ -61,18 +59,6 @@ public class Registries
     ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, modid);
     RECIPE_SERIALIZERS = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, modid);
     List.of(BLOCKS, ITEMS, BLOCK_ENTITIES, MENUS, ENTITIES, RECIPE_SERIALIZERS).forEach(registrar);
-  }
-
-
-  public static CreativeModeTab getCreativeModeTab()
-  {
-    //  if(creative_tab==null) {
-    //    creative_tab = (new CreativeModeTab("tab" + modid) {
-    //      public ItemStack makeIcon() { return new ItemStack(getItem(creative_tab_icon)); }
-    //    });
-    //  }
-    //  return creative_tab;
-    return CreativeModeTabs.REDSTONE_BLOCKS;
   }
 
   // -------------------------------------------------------------------------------------------------------------
@@ -164,7 +150,7 @@ public class Registries
   { registered_entity_types.put(registry_name, ENTITIES.register(registry_name, supplier)); }
 
   public static <T extends MenuType<?>> void addMenuType(String registry_name, MenuType.MenuSupplier<?> supplier)
-  { registered_menu_types.put(registry_name, MENUS.register(registry_name, ()->new MenuType<>(supplier))); }
+  { registered_menu_types.put(registry_name, MENUS.register(registry_name, ()->new MenuType<>(supplier, FeatureFlagSet.of()))); }
 
   public static void addRecipeSerializer(String registry_name, Supplier<? extends RecipeSerializer<?>> serializer_supplier)
   { recipe_serializers.put(registry_name, RECIPE_SERIALIZERS.register(registry_name, serializer_supplier)); }

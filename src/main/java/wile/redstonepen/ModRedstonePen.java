@@ -6,6 +6,9 @@
  */
 package wile.redstonepen;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelEvent;
@@ -43,7 +46,7 @@ public class ModRedstonePen
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onRegisterModels);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::addCreativeTab);
+    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onRegisterCreativeTab);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
   }
@@ -71,10 +74,20 @@ public class ModRedstonePen
     }
   }
 
-  private void addCreativeTab(CreativeModeTabEvent.BuildContents event)
+  private void onRegisterCreativeTab(CreativeModeTabEvent.Register event)
   {
-    if(event.getTab() != Registries.getCreativeModeTab()) return;
-    Registries.getRegisteredItems().forEach(event::accept);
+    event.registerCreativeModeTab(new ResourceLocation(MODID, "tabredstonepen"), builder ->
+      builder.title(Component.translatable("item_group." + MODID + ".tabredstonepen"))
+        .icon(() -> new ItemStack(Registries.getItem("pen")))
+        .displayItems((params, output) -> {
+          Registries.getRegisteredItems().forEach((e)->{
+            if(e != Registries.getItem("track")) { output.accept(e); }
+          });
+          Registries.getRegisteredBlocks().forEach((e)->{
+            if(e != Registries.getBlock("track")) { output.accept(e); }
+          });
+        })
+    );
   }
 
   private void onRegisterModels(final ModelEvent.RegisterAdditional event)

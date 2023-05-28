@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -566,7 +567,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -658,6 +659,7 @@ public class ControlBox
         tooltip_.init(tooltips).delay(50);
       }
       setInitialFocus(textbox);
+      setFocused(textbox);
       getMenu().onGuiAction("serverdata");
     }
 
@@ -716,11 +718,11 @@ public class ControlBox
               cb_error_indicator.setY(0);
               cb_error_indicator.tooltip(Component.empty());
             } else {
-              Guis.Coord2d exy = textbox.getPositionAtIndex(errors_.get(0).getA());
+              Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
               cb_error_indicator.visible = true;
               cb_error_indicator.setX(exy.x);
-              cb_error_indicator.setY(exy.y+8);
+              cb_error_indicator.setY(exy.y+textbox.getLineHeight());
             }
           }
           if(nbt.contains("player", Tag.TAG_STRING)) {
@@ -755,9 +757,18 @@ public class ControlBox
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
           focus_editor_ = false;
-          if(!isDragging()) {
-            children().forEach(wg->wg.changeFocus(false));
-            textbox.changeFocus(true);
+          if(!isDragging() && !textbox.isFocused()) {
+            children().forEach(child->{
+              if(child == textbox) {
+                if(!textbox.isFocused()) {
+                  textbox.setFocused(true);
+                }
+              } else if(child instanceof AbstractWidget wg) {
+                if(wg.isFocused()) {
+                  wg.setFocused(false);
+                }
+              }
+            });
             setFocused(textbox);
           }
         }

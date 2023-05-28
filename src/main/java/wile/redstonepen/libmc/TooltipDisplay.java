@@ -30,7 +30,7 @@ public class TooltipDisplay
   private static long default_delay = 450;
   private static int default_max_deviation = 1;
 
-  public static void config(long delay, int max_deviation)
+  public static void config(int delay, int max_deviation)
   {
     default_delay = Mth.clamp(delay, 500, 5000);
     default_max_deviation = Mth.clamp(max_deviation, 1, 5);
