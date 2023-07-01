@@ -14,7 +14,6 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -48,14 +47,14 @@ public class ModContent
     Registries.addBlock("track",
       ()->new RedstoneTrack.RedstoneTrackBlock(
         StandardBlocks.CFG_DEFAULT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak().dynamicShape().randomTicks()
+        BlockBehaviour.Properties.of().noCollission().instabreak().dynamicShape().randomTicks()
       ),
       RedstoneTrack.TrackBlockEntity::new
     );
     Registries.addBlock("relay",
       ()->new CircuitComponents.RelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -63,7 +62,7 @@ public class ModContent
     Registries.addBlock("inverted_relay",
       ()->new CircuitComponents.InvertedRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -71,7 +70,7 @@ public class ModContent
     Registries.addBlock("bistable_relay",
       ()->new CircuitComponents.BistableRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -79,7 +78,7 @@ public class ModContent
     Registries.addBlock("pulse_relay",
       ()->new CircuitComponents.PulseRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -87,7 +86,7 @@ public class ModContent
     Registries.addBlock("bridge_relay",
       ()->new CircuitComponents.BridgeRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -95,7 +94,7 @@ public class ModContent
     Registries.addBlock("control_box",
       ()->new ControlBox.ControlBoxBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of(Material.DECORATION).noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
         new AABB[]{
           Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
           Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
@@ -110,10 +109,10 @@ public class ModContent
   public static void initItems()
   {
     Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).tab(Registries.getCreativeModeTab()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(0)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(0)
     ));
     Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).tab(Registries.getCreativeModeTab()).rarity(Rarity.UNCOMMON).stacksTo(0).defaultDurability(256)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(0).defaultDurability(256)
     ));
   }
 

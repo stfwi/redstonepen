@@ -6,8 +6,8 @@
  */
 package wile.redstonepen.blocks;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -146,7 +146,8 @@ public class ControlBox
       if(world.isClientSide) return state;
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
-      Direction world_side = Direction.fromNormal(fromPos.subtract(pos));
+      final BlockPos dp = fromPos.subtract(pos);
+      Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
       cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
@@ -394,7 +395,7 @@ public class ControlBox
     public int field(int index) { return fields_.get(index); }
     public Player player() { return player_ ; }
     public Container inventory() { return inventory_ ; }
-    public Level world() { return player_.level; }
+    public Level world() { return player_.level(); }
     public @Nullable ControlBoxBlockEntity te() { return wpc_.evaluate((w,p)->{BlockEntity te=w.getBlockEntity(p); return (te instanceof ControlBoxBlockEntity cbte) ? (cbte): (null); }).orElse(null); }
     //------------------------------------------------------------------------------------------------------------------
 
@@ -714,15 +715,15 @@ public class ControlBox
             err_nbt.getAllKeys().forEach(k->{ try { errors_.add(new Tuple<>(Integer.parseInt(k), err_nbt.getString(k))); } catch(Throwable ignored) {} });
             if(errors_.isEmpty()) {
               cb_error_indicator.visible = false;
-              cb_error_indicator.x = 0;
-              cb_error_indicator.y = 0;
+              cb_error_indicator.setX(0);
+              cb_error_indicator.setY(0);
               cb_error_indicator.tooltip(Component.empty());
             } else {
               Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.get(0).getA());
               cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
               cb_error_indicator.visible = true;
-              cb_error_indicator.x = exy.x;
-              cb_error_indicator.y = exy.y + textbox.getLineHeight();
+              cb_error_indicator.setX(exy.x);
+              cb_error_indicator.setY(exy.y + textbox.getLineHeight());
             }
           }
           if(nbt.contains("player", Tag.TAG_STRING)) {
@@ -759,14 +760,8 @@ public class ControlBox
           focus_editor_ = false;
           if(!isDragging() && !textbox.isFocused()) {
             children().forEach(child->{
-              if(child == textbox) {
-                if(!textbox.isFocused()) {
-                  textbox.changeFocus(true);
-                }
-              } else if(child instanceof AbstractWidget wg) {
-                if(wg.isFocused()) {
-                  wg.changeFocus(true);
-                }
+              if((child != textbox) && (child instanceof AbstractWidget wg)) {
+                wg.setFocused(false);
               }
             });
             setFocused(textbox);
@@ -776,14 +771,14 @@ public class ControlBox
     }
 
     @Override
-    public void render(PoseStack mx, int mouseX, int mouseY, float partialTicks)
-    { super.render(mx, mouseX, mouseY, partialTicks); }
+    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
+    { super.render(gg, mouseX, mouseY, partialTicks); }
 
     @Override
-    protected void renderLabels(PoseStack mx, int x, int y)
+    protected void renderLabels(GuiGraphics gg, int x, int y)
     {
-      font.draw(mx, title, (float)titleLabelX+1, (float)titleLabelY+1, 0x303030);
-      font.draw(mx, title, (float)titleLabelX, (float)titleLabelY, 0x707070);
+      gg.drawString(font, title, titleLabelX+1, titleLabelY+1, 0x303030);
+      gg.drawString(font, title, titleLabelX, titleLabelY, 0x707070);
     }
 
     @Override

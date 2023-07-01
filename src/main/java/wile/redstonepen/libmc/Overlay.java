@@ -103,7 +103,7 @@ public class Overlay
     TextOverlayGui()
     { super(Component.literal("")); }
 
-    public void onRenderGui(final com.mojang.blaze3d.vertex.PoseStack mxs)
+    public void onRenderGui(final net.minecraft.client.gui.GuiGraphics gg)
     {
       if(deadline() < System.currentTimeMillis()) return;
       if(text()==EMPTY_TEXT) return;
@@ -117,12 +117,12 @@ public class Overlay
       final int cy = (int)(win.getGuiScaledHeight() * overlay_y_);
       final int w = fr.width(txt);
       final int h = fr.lineHeight;
-      fillGradient(mxs, cx-(w/2)-3, cy-2, cx+(w/2)+2, cy+h+2, 0xaa333333, 0xaa444444);
-      hLine(mxs, cx-(w/2)-3, cx+(w/2)+2, cy-2, 0xaa333333);
-      hLine(mxs, cx-(w/2)-3, cx+(w/2)+2, cy+h+2, 0xaa333333);
-      vLine(mxs, cx-(w/2)-3, cy-2, cy+h+2, 0xaa333333);
-      vLine(mxs, cx+(w/2)+2, cy-2, cy+h+2, 0xaa333333);
-      drawCenteredString(mxs, fr, text(), cx , cy+1, 0x00ffaa00);
+      gg.fillGradient(cx-(w/2)-3, cy-2, cx+(w/2)+2, cy+h+2, 0xaa333333, 0xaa444444);
+      gg.hLine(cx-(w/2)-3, cx+(w/2)+2, cy-2, 0xaa333333);
+      gg.hLine(cx-(w/2)-3, cx+(w/2)+2, cy+h+2, 0xaa333333);
+      gg.vLine(cx-(w/2)-3, cy-2, cy+h+2, 0xaa333333);
+      gg.vLine(cx+(w/2)+2, cy-2, cy+h+2, 0xaa333333);
+      gg.drawCenteredString(fr, text(), cx , cy+1, 0x00ffaa00);
     }
 
     @SuppressWarnings("deprecation")

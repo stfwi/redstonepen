@@ -19,7 +19,7 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.font.TextFieldHelper;
 import net.minecraft.client.gui.screens.Screen;
@@ -169,7 +169,7 @@ public class GuiTextEditing
 
     @Override
     public MultiLineTextBox init(Screen parent)
-    { return init(parent, Coord2d.of(x,y)); }
+    { return init(parent, Coord2d.of(getX(),getY())); }
 
     @Override
     public MultiLineTextBox init(Screen parent, Coord2d position)
@@ -183,13 +183,9 @@ public class GuiTextEditing
     }
 
     @Override
-    protected void onFocusedChanged(boolean focus)
-    {}
-
-    @Override
     public boolean mouseClicked(double x, double y, int button)
     {
-      if((!active) || (!visible) || (x<this.x) || (y<this.y) || (x>this.x+this.width) || (y>this.y+this.height)) return false;
+      if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
       if(button != 0) return true;
       final Coord2d sc = screenCoordinates(Coord2d.of((int)x, (int)y), false);
       final int index = getDisplayCache().getIndexAtPosition(font_, Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_));
@@ -255,20 +251,21 @@ public class GuiTextEditing
     }
 
     @Override
-    public void renderButton(PoseStack mxs, int mouseX, int mouseY, float partialTicks)
+    protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
       if(!this.visible) return;
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+      int ox = (int)(getX() * (1.-font_scale_));
+      int oy = (int)(getY() * (1.-font_scale_));
+      final PoseStack mxs = gg.pose();
       mxs.pushPose();
-      int ox = (int)(this.x * (1.-font_scale_));
-      int oy = (int)(this.y * (1.-font_scale_));
       mxs.translate(ox, oy, 0);
       mxs.scale(font_scale_, font_scale_, font_scale_);
       final DisplayCache cache = getDisplayCache();
-      for(LineInfo li:cache.lines) font_.draw(mxs, li.asComponent, li.x, li.y, font_color_);
+      for(LineInfo li:cache.lines) gg.drawString(font_, li.asComponent, li.x, li.y, font_color_);
       this.renderHighlight(cache.selection);
-      this.renderCursor(mxs, cache.cursor, cache.cursorAtEnd);
+      this.renderCursor(gg, cache.cursor, cache.cursorAtEnd);
       {
         Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
@@ -318,15 +315,15 @@ public class GuiTextEditing
     private void changeLine(int incr)
     { edit_.setCursorPos(getDisplayCache().changeLine(edit_.getCursorPos(), incr), Screen.hasShiftDown()); }
 
-    private void renderCursor(PoseStack mxs, Coord2d pos, boolean at_end)
+    private void renderCursor(GuiGraphics gg, Coord2d pos, boolean at_end)
     {
       if(!active || !visible) frame_tick_ = 0;
       if((++frame_tick_ & 0x3f) < 0x20) return;
       pos = screenCoordinates(pos, true);
       if(!at_end) {
-        GuiComponent.fill(mxs, pos.x, pos.y - 1, pos.x + 1, pos.y + NORM_LINE_HEIGHT, cursor_color_);
+        gg.fill(pos.x, pos.y - 1, pos.x + 1, pos.y + NORM_LINE_HEIGHT, cursor_color_);
       } else {
-        font_.draw(mxs, "_", (float)pos.x, (float)pos.y, 0);
+        gg.drawString(font_, "_", pos.x, pos.y, 0);
       }
     }
 
@@ -334,13 +331,12 @@ public class GuiTextEditing
     {
       RenderSystem.setShader(GameRenderer::getPositionShader);
       RenderSystem.setShaderColor(0.0F, 0.0F, 255.0F, 255.0F);
-      RenderSystem.disableTexture();
       RenderSystem.enableColorLogicOp();
       RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
       final BufferBuilder buf = Tesselator.getInstance().getBuilder();
       buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-      final double ox = this.x * (1.-font_scale_);
-      final double oy = this.y * (1.-font_scale_);
+      final double ox = getX() * (1.-font_scale_);
+      final double oy = getY() * (1.-font_scale_);
       for(Rect2i rc: line_rects) {
         final int x0 = (int)Math.floor(ox+(double)(rc.getX())*font_scale_)-1;
         final int y0 = (int)Math.floor(oy+(double)(rc.getY())*font_scale_)-1;
@@ -353,7 +349,6 @@ public class GuiTextEditing
       }
       Tesselator.getInstance().end();
       RenderSystem.disableColorLogicOp();
-      RenderSystem.enableTexture();
     }
 
     @Nullable

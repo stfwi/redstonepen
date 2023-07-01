@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.3.20     [U] Initial Forge port to 1.20.1.
+
     - v1.2.20     [F] Fixed Optifine related preview-rendering issue (#26, thx wisquimas).
 
     - v1.2.19     [M] RLC font size reduced, enabling to write 23 code lines.

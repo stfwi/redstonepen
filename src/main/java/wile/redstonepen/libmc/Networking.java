@@ -95,7 +95,7 @@ public class Networking
         ctx.get().enqueueWork(() -> {
           Player player = ctx.get().getSender();
           if(player==null) return;
-          Level world = player.level;
+          Level world = player.level();
           final BlockEntity te = world.getBlockEntity(pkt.pos);
           if(!(te instanceof IPacketTileNotifyReceiver)) return;
           ((IPacketTileNotifyReceiver)te).onClientPacketReceived(ctx.get().getSender(), pkt.nbt);

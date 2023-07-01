@@ -6,11 +6,13 @@
  */
 package wile.redstonepen;
 
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -43,6 +45,7 @@ public class ModRedstonePen
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onRegisterModels);
+    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onCreativeModeTabContents);
     if(USE_CONFIG) ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
     MinecraftForge.EVENT_BUS.register(this);
   }
@@ -77,10 +80,18 @@ public class ModRedstonePen
     wile.redstonepen.detail.ModRenderers.TrackTer.registerModels().forEach(event::register);
   }
 
+  private void onCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
+    if(event.getTabKey() == CreativeModeTabs.REDSTONE_BLOCKS) {
+      Registries.getRegisteredItems().stream().filter(e->e!=Registries.getItem("track")).forEach(event::accept);
+      Registries.getRegisteredBlocks().stream().filter(e->e!=Registries.getBlock("track")).forEach(event::accept);
+    }
+  }
+
+  @SuppressWarnings("all")
   public static void onPlayerTickEvent(final TickEvent.PlayerTickEvent event)
   {
-    if((event.phase != TickEvent.Phase.END) || (!event.player.level.isClientSide)) return;
-    if((event.player.level.getGameTime() & 0x1) != 0) return;
+    if((event.phase != TickEvent.Phase.END) || (!event.player.level().isClientSide)) return;
+    if((event.player.level().getGameTime() & 0x1) != 0) return;
     wile.redstonepen.detail.RcaSync.ClientRca.tick();
   }
 
@@ -91,7 +102,7 @@ public class ModRedstonePen
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
     public static void onRenderGui(net.minecraftforge.client.event.RenderGuiOverlayEvent.Post event)
-    { Overlay.TextOverlayGui.INSTANCE.onRenderGui(event.getPoseStack()); }
+    { Overlay.TextOverlayGui.INSTANCE.onRenderGui(event.getGuiGraphics()); }
 
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)

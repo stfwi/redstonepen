@@ -36,7 +36,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
-import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
@@ -140,7 +140,7 @@ public class StandardBlocks
 
     @Override
     @SuppressWarnings("deprecation")
-    public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder)
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder)
     {
       final ServerLevel world = builder.getLevel();
       final Float explosion_radius = builder.getOptionalParameter(LootContextParams.EXPLOSION_RADIUS);
@@ -223,7 +223,7 @@ public class StandardBlocks
     }
 
     @Override
-    public boolean isPossibleToRespawnInThis()
+    public boolean isPossibleToRespawnInThis(BlockState state)
     { return false; }
 
     @Override
@@ -318,7 +318,7 @@ public class StandardBlocks
     { this(config, properties.isValidSpawn((s,w,p,e)->false), new AABB[]{unrotatedAABB}); }
 
     @Override
-    public boolean isPossibleToRespawnInThis()
+    public boolean isPossibleToRespawnInThis(BlockState state)
     { return false; }
 
     @Override
@@ -382,7 +382,7 @@ public class StandardBlocks
     { this(config, properties, new AABB[]{unrotatedAABB}); }
 
     @Override
-    public boolean isPossibleToRespawnInThis()
+    public boolean isPossibleToRespawnInThis(BlockState state)
     { return false; }
 
     @Override

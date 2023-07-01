@@ -14,7 +14,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
@@ -292,12 +291,11 @@ public class Auxiliaries
 
   @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Item item)
-  { return Registry.ITEM.getKey(item); }
+  { return ForgeRegistries.ITEMS.getKey(item); }
 
   @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Block block)
-  { return Registry.BLOCK.getKey(block); }
-
+  { return ForgeRegistries.BLOCKS.getKey(block); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Item NBT data
