@@ -32,10 +32,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.piston.MovingPistonBlock;
@@ -43,7 +40,6 @@ import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -53,6 +49,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.nbt.Tag;
+import org.joml.Vector3f;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
@@ -339,7 +336,7 @@ public class RedstoneTrack
   public static class RedstoneTrackBlock extends StandardBlocks.WaterLoggable implements EntityBlock
   {
     public RedstoneTrackBlock(long config, BlockBehaviour.Properties builder)
-    { super(config, builder); }
+    { super(config, builder.pushReaction(PushReaction.DESTROY)); }
 
     public static Optional<TrackBlockEntity> tile(BlockGetter world, BlockPos pos)
     { final BlockEntity te=world.getBlockEntity(pos); return (((te instanceof TrackBlockEntity) && (!te.isRemoved())) ? Optional.of((TrackBlockEntity)te) : Optional.empty()); }
@@ -415,10 +412,6 @@ public class RedstoneTrack
     { return !state.getValue(WATERLOGGED); }
 
     @Override
-    public PushReaction getPistonPushReaction(BlockState state)
-    { return PushReaction.DESTROY; }
-
-    @Override
     @SuppressWarnings("deprecation")
     public boolean useShapeForLightOcclusion(BlockState state)
     { return true; }
@@ -452,23 +445,20 @@ public class RedstoneTrack
     public boolean hasAnalogOutputSignal(BlockState state)
     { return false; }
 
-    @Deprecated
     @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos)
     { return 0; }
 
-    @Deprecated
     @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0) : 0; }
 
-    @Deprecated
     @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, false)).orElse(0) : 0; }
 
     @Override
-    public boolean shouldCheckWeakPower(BlockState state, LevelReader world, BlockPos pos, Direction side)
+    public boolean shouldCheckWeakPower(BlockState state, LevelReader level, BlockPos pos, Direction side)
     { return false; }
 
     @Override
@@ -599,7 +589,7 @@ public class RedstoneTrack
         double p0 = 0.5 + (c1 * from.getStepX()) + (c2*.4 * to.getStepX());
         double p1 = 0.5 + (c1 * from.getStepY()) + (c2*.4 * to.getStepY());
         double p2 = 0.5 + (c1 * from.getStepZ()) + (c2*.4 * to.getStepZ());
-        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x,(float)color.y,(float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        world.addParticle(new DustParticleOptions(new Vector3f(color.toVector3f()),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 
@@ -1147,11 +1137,12 @@ public class RedstoneTrack
     { return "[" +pos.getX()+ "," +pos.getY()+ "," +pos.getZ()+ "]"; }
 
     @SuppressWarnings("all")
-    private boolean isRedstoneInsulator(BlockState state)
+    private boolean isRedstoneInsulator(BlockState state, BlockPos pos)
     {
-      // if(state.isAir()) return false;
-      if(state.getMaterial() == Material.GLASS) return true;
-      return false;
+//if(state.getBlock().canConnectRedstone(state, getLevel(), pos, null)) return false; // @todo: isRedstoneConductor only does not work properly, but that should be the correct function to query. (formerly we were looking for glass or ice here).
+      if(state.isSignalSource()) return false;
+      if(!state.isCollisionShapeFullBlock(getLevel(), pos)) return false;
+      return !state.isRedstoneConductor(getLevel(), pos);
     }
 
     private void updateConnections()
@@ -1294,7 +1285,7 @@ public class RedstoneTrack
                   }
                 }
                 // air or full block
-                if(!isRedstoneInsulator(wire_state)) {
+                if(!isRedstoneInsulator(wire_state, wire_pos)) {
                   block_positions.add(wire_pos);
                   block_sides.add(tdir.getOpposite());
                   internal_sides.add(side);
@@ -1307,7 +1298,7 @@ public class RedstoneTrack
             if((external_connected_routes[i] & bulk) != 0) {
               final BlockPos bulk_pos = getBlockPos().relative(side);
               final BlockState bulk_state = getLevel().getBlockState(bulk_pos);
-              if(isRedstoneInsulator(bulk_state)) continue;
+              if(isRedstoneInsulator(bulk_state, bulk_pos)) continue;
               block_positions.add(bulk_pos);
               block_sides.add(side.getOpposite()); // NOT the redstone side, the real face.
               internal_sides.add(side);

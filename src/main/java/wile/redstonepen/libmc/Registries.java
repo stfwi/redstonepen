@@ -11,6 +11,7 @@ package wile.redstonepen.libmc;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
@@ -35,7 +36,7 @@ public class Registries
 {
   private static String modid = null;
   private static String creative_tab_icon = "";
-  private static CreativeModeTab creative_tab = null;
+  private static ResourceKey<CreativeModeTab> creative_tab = null;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -95,10 +96,10 @@ public class Registries
   }
 
 
-  public static CreativeModeTab getCreativeModeTab()
+  public static ResourceKey<CreativeModeTab> getCreativeModeTab()
   {
     if(creative_tab==null) {
-      creative_tab = CreativeModeTabs.REDSTONE_BLOCKS;
+      creative_tab = CreativeModeTabs.BUILDING_BLOCKS;
     }
     return creative_tab;
   }

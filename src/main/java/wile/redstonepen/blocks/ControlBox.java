@@ -6,10 +6,10 @@
  */
 package wile.redstonepen.blocks;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -140,7 +140,8 @@ public class ControlBox
       if(world.isClientSide) return state;
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
-      Direction world_side = Direction.fromNormal(fromPos.subtract(pos));
+      final BlockPos dp = fromPos.subtract(pos);
+      final Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
       if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
@@ -388,7 +389,7 @@ public class ControlBox
     public int field(int index) { return fields_.get(index); }
     public Player player() { return player_ ; }
     public Container inventory() { return inventory_ ; }
-    public Level world() { return player_.level; }
+    public Level world() { return player_.level(); }
     public @Nullable ControlBoxBlockEntity te() { return wpc_.evaluate((w,p)->{BlockEntity te=w.getBlockEntity(p); return (te instanceof ControlBoxBlockEntity cbte) ? (cbte): (null); }).orElse(null); }
     //------------------------------------------------------------------------------------------------------------------
 
@@ -633,7 +634,8 @@ public class ControlBox
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(Component.literal(String.format("%s = %d", k.toUpperCase(), kv.getValue())));
+            final String lf = (c.getSiblings().isEmpty()) ? "" : "\n"; // bah, can't do Component.join(separator)
+            c.getSiblings().add(Component.literal(String.format("%s%s = %d", lf, k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));
@@ -753,14 +755,8 @@ public class ControlBox
           focus_editor_ = false;
           if(!isDragging() && !textbox.isFocused()) {
             children().forEach(child->{
-              if(child == textbox) {
-                if(!textbox.isFocused()) {
-                  textbox.setFocused(true);
-                }
-              } else if(child instanceof AbstractWidget wg) {
-                if(wg.isFocused()) {
-                  wg.setFocused(false);
-                }
+              if((child != textbox) && (child instanceof AbstractWidget wg)) {
+                wg.setFocused(false);
               }
             });
             setFocused(textbox);
@@ -770,14 +766,14 @@ public class ControlBox
     }
 
     @Override
-    public void render(PoseStack mx, int mouseX, int mouseY, float partialTicks)
-    { super.render(mx, mouseX, mouseY, partialTicks); }
+    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
+    { super.render(gg, mouseX, mouseY, partialTicks); }
 
     @Override
-    protected void renderLabels(PoseStack mx, int x, int y)
+    protected void renderLabels(GuiGraphics gg, int x, int y)
     {
-      font.draw(mx, title, (float)titleLabelX+1, (float)titleLabelY+1, 0x303030);
-      font.draw(mx, title, (float)titleLabelX, (float)titleLabelY, 0x707070);
+      gg.drawString(font, title, titleLabelX+1, titleLabelY+1, 0x303030);
+      gg.drawString(font, title, titleLabelX, titleLabelY, 0x707070);
     }
 
     @Override

@@ -8,8 +8,10 @@
  */
 package wile.redstonepen.libmc;
 
+import com.mojang.blaze3d.platform.Window;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.Font;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -103,25 +105,26 @@ public class Overlay
     { super(Component.literal("")); }
 
     @Environment(EnvType.CLIENT)
-    public void onRenderGui(final com.mojang.blaze3d.vertex.PoseStack mxs)
+    public void onRenderGui(final net.minecraft.client.gui.GuiGraphics gg)
     {
       if(deadline() < System.currentTimeMillis()) return;
       if(text()==EMPTY_TEXT) return;
       String txt = text().getString();
       if(txt.isEmpty()) return;
-      final com.mojang.blaze3d.platform.Window win = mc.getWindow();
-      final net.minecraft.client.gui.Font fr = mc.font;
+      final net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+      final Window win = mc.getWindow();
+      final Font fr = mc.font;
       final boolean was_unicode = fr.isBidirectional();
       final int cx = win.getGuiScaledWidth() / 2;
       final int cy = (int)(win.getGuiScaledHeight() * overlay_y_);
       final int w = fr.width(txt);
       final int h = fr.lineHeight;
-      fillGradient(mxs, cx-(w/2)-3, cy-2, cx+(w/2)+2, cy+h+2, 0xaa333333, 0xaa444444);
-      hLine(mxs, cx-(w/2)-3, cx+(w/2)+2, cy-2, 0xaa333333);
-      hLine(mxs, cx-(w/2)-3, cx+(w/2)+2, cy+h+2, 0xaa333333);
-      vLine(mxs, cx-(w/2)-3, cy-2, cy+h+2, 0xaa333333);
-      vLine(mxs, cx+(w/2)+2, cy-2, cy+h+2, 0xaa333333);
-      drawCenteredString(mxs, fr, text(), cx , cy+1, 0x00ffaa00);
+      gg.fillGradient(cx-(w/2)-3, cy-2, cx+(w/2)+2, cy+h+2, 0xaa333333, 0xaa444444);
+      gg.hLine(cx-(w/2)-3, cx+(w/2)+2, cy-2, 0xaa333333);
+      gg.hLine(cx-(w/2)-3, cx+(w/2)+2, cy+h+2, 0xaa333333);
+      gg.vLine(cx-(w/2)-3, cy-2, cy+h+2, 0xaa333333);
+      gg.vLine(cx+(w/2)+2, cy-2, cy+h+2, 0xaa333333);
+      gg.drawCenteredString(fr, text(), cx , cy+1, 0x00ffaa00);
     }
 
     @Environment(EnvType.CLIENT)

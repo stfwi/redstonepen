@@ -38,7 +38,7 @@ public class Networking
       final CompoundTag nbt = buf.readNbt();
       server.execute(()->{
         if(player==null) return;
-        Level world = player.level;
+        Level world = player.level();
         final BlockEntity te = world.getBlockEntity(pos);
         if(!(te instanceof IPacketTileNotifyReceiver)) return;
         ((IPacketTileNotifyReceiver)te).onClientPacketReceived(player, nbt);

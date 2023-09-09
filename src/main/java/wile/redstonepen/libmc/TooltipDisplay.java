@@ -9,7 +9,9 @@
  */
 package wile.redstonepen.libmc;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -20,6 +22,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 
@@ -56,10 +59,11 @@ public class TooltipDisplay
   private int max_deviation = default_max_deviation;
   private int x_last, y_last;
   private long t;
+  private final Font font;
   private static boolean had_render_exception = false;
 
   public TooltipDisplay()
-  { t = System.currentTimeMillis(); }
+  { t = System.currentTimeMillis(); this.font = Minecraft.getInstance().font; }
 
   public TooltipDisplay init(List<TipRange> ranges, long delay_ms, int max_deviation_xy)
   {
@@ -83,7 +87,7 @@ public class TooltipDisplay
   public void resetTimer()
   { t = System.currentTimeMillis(); }
 
-  public <T extends AbstractContainerMenu> boolean render(PoseStack mx, final AbstractContainerScreen<T> gui, int x, int y)
+  public <T extends AbstractContainerMenu> boolean render(GuiGraphics gg, final AbstractContainerScreen<T> gui, int x, int y)
   {
     if(had_render_exception) return false;
     if((Math.abs(x-x_last) > max_deviation) || (Math.abs(y-y_last) > max_deviation)) {
@@ -99,9 +103,8 @@ public class TooltipDisplay
         final Component tip_component = tip.text.get();
         if(tip_component.getString().isEmpty()) return false;
         try {
-          //List<Component> lines = Minecraft.getInstance().font.getSplitter().splitLines(tip_component, gui.width * 3/2, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
-          List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
-          gui.renderComponentTooltip(mx, lines, x, y);
+          final List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
+          gg.renderTooltip(this.font, lines, Optional.empty(), x, y);
         } catch(Exception ex) {
           had_render_exception = true;
           Auxiliaries.logError("Tooltip rendering disabled due to exception: '" + ex.getMessage() + "'");

@@ -181,7 +181,7 @@ public class CircuitComponents
 
     public DirectedComponentBlock(long config, BlockBehaviour.Properties builder, AABB[] aabbs)
     {
-      super(config, builder);
+      super(config, builder.pushReaction(PushReaction.DESTROY));
       registerDefaultState(super.defaultBlockState().setValue(FACING, Direction.NORTH).setValue(ROTATION,0).setValue(POWERED,false).setValue(STATE,0));
       stateDefinition.getPossibleStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabbs)));
       fill_state_facing_lookups(stateDefinition.getPossibleStates());
@@ -224,10 +224,6 @@ public class CircuitComponents
     @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
     { return !state.getValue(WATERLOGGED); }
-
-    @Override
-    public PushReaction getPistonPushReaction(BlockState state)
-    { return PushReaction.DESTROY; }
 
     @Deprecated
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)

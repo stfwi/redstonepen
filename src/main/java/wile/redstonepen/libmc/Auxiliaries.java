@@ -192,7 +192,9 @@ public class Auxiliaries
   public static List<Component> wrapText(Component text, int max_width_percent)
   {
     int max_width = ((Minecraft.getInstance().getWindow().getGuiScaledWidth())-10) * max_width_percent/100;
-    return Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
+    return Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream()
+      .map(ft->Component.literal(ft.getString()))
+      .collect(Collectors.toList());
   }
 
   public static MutableComponent join(Collection<? extends Component> components, String separator)
@@ -253,16 +255,6 @@ public class Auxiliaries
   // -------------------------------------------------------------------------------------------------------------------
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
-
-/*
-  public static boolean isInItemTag(Item item, ResourceLocation tag)
-  {
-    return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item));
-  }
-
-  public static boolean isInBlockTag(Block block, ResourceLocation tag)
-  { return ForgeRegistries.BLOCKS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(block)); }
- */
 
   public static ResourceLocation getResourceLocation(Item item)
   { return BuiltInRegistries.ITEM.getKey(item); }

@@ -46,8 +46,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
   private final ResourceLocation resultTag;
   private final ItemStack resultItem;
 
-  public ExtendedShapelessRecipe(ResourceLocation id, String group, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
-  { super(id, group, CraftingBookCategory.REDSTONE, output, ingredients); this.resultItem=output; this.aspects=aspects; this.resultTag = resultTag; }
+  public ExtendedShapelessRecipe(ResourceLocation id, String group, CraftingBookCategory cat, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
+  { super(id, group, cat, output, ingredients); this.aspects=aspects; this.resultTag = resultTag; this.resultItem=output; }
 
   public CompoundTag getAspects()
   { return aspects.copy(); }
@@ -140,7 +140,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         ItemStack rem_stack = remaining.get(i);
         ItemStack inv_stack = inv.getItem(i);
         if(inv_stack.isEmpty()) continue;
-        if(!rem_stack.isEmpty() && !inv.getItem(i).sameItem(rem_stack)) continue;
+        if(!rem_stack.isEmpty() && !inv.getItem(i).is(rem_stack.getItem())) continue;
         remaining.set(i, ItemStack.EMPTY);
         rem_stack.grow(1);
         inv.setItem(i, rem_stack);
@@ -192,7 +192,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
   @Override
   public ItemStack getResultItem(RegistryAccess ra)
-  { return isSpecial() ? ItemStack.EMPTY : super.getResultItem(ra); }
+  { return isSpecial() ? ItemStack.EMPTY : this.resultItem; }
 
   //--------------------------------------------------------------------------------------------------------------------
 
@@ -216,7 +216,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
         Ingredient ingredient = Ingredient.fromJson(ingredients.get(i));
         if (!ingredient.isEmpty()) list.add(ingredient);
       }
-      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + BuiltInRegistries.RECIPE_SERIALIZER.getKey(this).getPath() + " recipe");
+      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + recipeId.getPath() + " recipe");
       if(list.size() > MAX_WIDTH * MAX_HEIGHT) throw new JsonParseException("Too many ingredients for crafting_tool_shapeless recipe the max is " + (MAX_WIDTH * MAX_HEIGHT));
       // Extended recipe aspects
       CompoundTag aspects_nbt = new CompoundTag();
@@ -226,7 +226,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
           try {
             aspects_nbt = TagParser.parseTag( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
           } catch(Exception ex) {
-            throw new JsonParseException(BuiltInRegistries.RECIPE_SERIALIZER.getKey(this).getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
+            throw new JsonParseException(recipeId.getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
           }
         }
       }
@@ -239,19 +239,19 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
 /* @TODO
         final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
-        if(key==null) throw new JsonParseException(Registry.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag does not exist: #" + rl);
+        if(key==null) throw new JsonParseException(recipeId.getPath() + ": Result tag does not exist: #" + rl);
         final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
         final @Nullable Item item = tag.stream().findFirst().orElse(null);
 */
 final @Nullable Item item = null;
 
-        if(item==null) throw new JsonParseException(BuiltInRegistries.RECIPE_SERIALIZER.getKey(this).getPath() + ": Result tag has no items: #" + rl);
+        if(item==null) throw new JsonParseException(recipeId.getPath() + ": Result tag has no items: #" + rl);
         if(res.has("item")) res.remove("item");
         resultTag = rl;
         res.addProperty("item", Auxiliaries.getResourceLocation(item).toString());
       }
       ItemStack result_stack = ShapedRecipe.itemStackFromJson(res);
-      return new ExtendedShapelessRecipe(recipeId, group, result_stack, list, aspects_nbt, resultTag);
+      return new ExtendedShapelessRecipe(recipeId, group, CraftingBookCategory.MISC, result_stack, list, aspects_nbt, resultTag);
     }
 
     @Override
@@ -264,7 +264,7 @@ final @Nullable Item item = null;
       ItemStack stack = pkt.readItem();
       CompoundTag aspects = pkt.readNbt();
       ResourceLocation resultTag = pkt.readResourceLocation();
-      return new ExtendedShapelessRecipe(recipeId, group, stack, list, aspects, resultTag);
+      return new ExtendedShapelessRecipe(recipeId, group, CraftingBookCategory.MISC, stack, list, aspects, resultTag);
     }
 
     @Override

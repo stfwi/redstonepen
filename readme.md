@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.5.23     [U] Updated to 1.20.1 fabric.
+
     - v1.4.23     [U] Updated to 1.19.4 fabric.
 
     - v1.3.22     [F] RLC font size reduced, enabling to write 23 code lines.

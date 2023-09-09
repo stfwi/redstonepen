@@ -20,6 +20,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -90,6 +91,36 @@ public class RedstonePenItem extends StandardItems.BaseItem
   @Override
   public boolean doesSneakBypassUse(ItemStack stack, LevelReader world, BlockPos pos, Player player)
   { return true; }
+
+  @Override
+  public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
+  { return false; }
+
+  @Override // not really needed, canAttack=false
+  public float getDestroySpeed(ItemStack stack, BlockState state)
+  { return -1; }
+
+  @Override // Called after breaking, no use it seems. -> canAttackBlock()->false
+  public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity entity)
+  {
+    if(!(entity instanceof Player player)) return true;
+    if(state.getBlock() instanceof RepeaterBlock) return false;
+    if(state.is(Blocks.REDSTONE_WIRE)) {
+      pushRedstone(stack, 1, player);
+      world.removeBlock(pos, false);
+      return true;
+    }
+    if(state.is(ModContent.references.TRACK_BLOCK)) {
+      HitResult rt = player.pick(10.0, 0f, false);
+      if(rt.getType() != HitResult.Type.BLOCK) return false;
+      final InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+      if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock) {
+        ((RedstoneTrack.RedstoneTrackBlock)state.getBlock()).onBlockActivated(state, player.getCommandSenderWorld(), pos, player, hand, ((BlockHitResult)rt), true);
+        return true;
+      }
+    }
+    return (state.getDestroySpeed(world, pos) != 0);
+  }
 
   @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
