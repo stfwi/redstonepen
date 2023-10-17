@@ -428,7 +428,7 @@ public class ControlBox
     public ItemStack quickMoveStack(Player player, int slot)
     { return ItemStack.EMPTY; }
 
-    // Container client/server synchronisation --------------------------------------------------
+    // Container client/server synchronization --------------------------------------------------
 
     @Environment(EnvType.CLIENT)
     public void onGuiAction(String message)

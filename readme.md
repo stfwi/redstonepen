@@ -1,8 +1,10 @@
 
-## Redstone Pen (MC1.19.x)
+## Redstone Pen (MC1.20.x)
 
 ----
 ## Version history
+
+    - v1.6.23     [U] Updated to 1.20.2 fabric.
 
     - v1.5.23     [U] Updated to 1.20.1 fabric.
 

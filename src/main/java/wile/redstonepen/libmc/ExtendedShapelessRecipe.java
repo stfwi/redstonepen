@@ -6,18 +6,17 @@
  */
 package wile.redstonepen.libmc;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Either;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -25,7 +24,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 
-import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,11 +41,10 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
   //--------------------------------------------------------------------------------------------------------------------
 
   private final CompoundTag aspects;
-  private final ResourceLocation resultTag;
   private final ItemStack resultItem;
 
-  public ExtendedShapelessRecipe(ResourceLocation id, String group, CraftingBookCategory cat, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects, ResourceLocation resultTag)
-  { super(id, group, cat, output, ingredients); this.aspects=aspects; this.resultTag = resultTag; this.resultItem=output; }
+  public ExtendedShapelessRecipe(String group, CraftingBookCategory cat, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects)
+  { super(group, cat, output, ingredients); this.aspects=aspects; this.resultItem=output; }
 
   public CompoundTag getAspects()
   { return aspects.copy(); }
@@ -198,84 +195,63 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
 
   public static class Serializer implements RecipeSerializer<ExtendedShapelessRecipe>
   {
-    private static final int MAX_WIDTH = 3;
-    private static final int MAX_HEIGHT = 3;
+    private static final Codec<CompoundTag> NBT_CODEC = ExtraCodecs.xor(Codec.STRING, CompoundTag.CODEC).flatXmap(
+      either -> either.map(
+        s -> {
+          try { return DataResult.success(TagParser.parseTag(s)); } catch (CommandSyntaxException e) { return DataResult.error(e::getMessage); }
+        }, DataResult::success
+      ),
+      nbt -> DataResult.success(Either.left(nbt.getAsString()))
+    );
+
+    private static final Codec<ExtendedShapelessRecipe> CODEC = RecordCodecBuilder.create((instance) -> (
+      instance.group(
+        ExtraCodecs.strictOptionalField(Codec.STRING, "group", "").forGetter(ShapelessRecipe::getGroup),
+        CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapelessRecipe::category),
+        CraftingRecipeCodecs.ITEMSTACK_OBJECT_CODEC.fieldOf("result").forGetter(recipe->recipe.resultItem),
+        Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap(
+          (list) -> {
+            final Ingredient[] ingredients = list.stream().filter((ingredient) -> !ingredient.isEmpty()).toArray(Ingredient[]::new);
+            if(ingredients.length == 0) {
+              return DataResult.error(() -> "No ingredients for shapeless recipe");
+            } else {
+              return (ingredients.length > 9) ? DataResult.error(() -> "Too many ingredients for shapeless recipe") : DataResult.success(NonNullList.of(Ingredient.EMPTY, ingredients));
+            }
+          },
+          DataResult::success
+        ).forGetter(ShapelessRecipe::getIngredients),
+        ExtraCodecs.strictOptionalField(NBT_CODEC , "aspects", new CompoundTag()).forGetter(ExtendedShapelessRecipe::getAspects)
+      )
+      .apply(instance, ExtendedShapelessRecipe::new)
+    ));
 
     public Serializer()
     {}
 
-    @Override
-    public ExtendedShapelessRecipe fromJson(ResourceLocation recipeId, JsonObject json)
+    public Codec<ExtendedShapelessRecipe> codec()
+    { return CODEC; }
+
+    public ExtendedShapelessRecipe fromNetwork(FriendlyByteBuf pkt)
     {
-      ResourceLocation resultTag = new ResourceLocation("libmc", "none"); // just no null
-      String group = GsonHelper.getAsString(json, "group", "");
-      // Recipe ingredients
-      NonNullList<Ingredient> list = NonNullList.create();
-      JsonArray ingredients = GsonHelper.getAsJsonArray(json, "ingredients");
-      for(int i = 0; i < ingredients.size(); ++i) {
-        Ingredient ingredient = Ingredient.fromJson(ingredients.get(i));
-        if (!ingredient.isEmpty()) list.add(ingredient);
-      }
-      if(list.isEmpty()) throw new JsonParseException("No ingredients for " + recipeId.getPath() + " recipe");
-      if(list.size() > MAX_WIDTH * MAX_HEIGHT) throw new JsonParseException("Too many ingredients for crafting_tool_shapeless recipe the max is " + (MAX_WIDTH * MAX_HEIGHT));
-      // Extended recipe aspects
-      CompoundTag aspects_nbt = new CompoundTag();
-      if(json.get("aspects")!=null) {
-        final JsonObject aspects = GsonHelper.getAsJsonObject(json, "aspects");
-        if(aspects.size() > 0) {
-          try {
-            aspects_nbt = TagParser.parseTag( (((new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()).toJson(aspects))) );
-          } catch(Exception ex) {
-            throw new JsonParseException(recipeId.getPath() + ": Failed to parse the 'aspects' object:" + ex.getMessage());
-          }
-        }
-      }
-      // Recipe result
-      final JsonObject res = GsonHelper.getAsJsonObject(json, "result");
-      if(res.has("tag")) {
-        // Tag based item picking
-        ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
-        // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
-
-/* @TODO
-        final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
-        if(key==null) throw new JsonParseException(recipeId.getPath() + ": Result tag does not exist: #" + rl);
-        final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
-        final @Nullable Item item = tag.stream().findFirst().orElse(null);
-*/
-final @Nullable Item item = null;
-
-        if(item==null) throw new JsonParseException(recipeId.getPath() + ": Result tag has no items: #" + rl);
-        if(res.has("item")) res.remove("item");
-        resultTag = rl;
-        res.addProperty("item", Auxiliaries.getResourceLocation(item).toString());
-      }
-      ItemStack result_stack = ShapedRecipe.itemStackFromJson(res);
-      return new ExtendedShapelessRecipe(recipeId, group, CraftingBookCategory.MISC, result_stack, list, aspects_nbt, resultTag);
-    }
-
-    @Override
-    public ExtendedShapelessRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf pkt)
-    {
-      String group = pkt.readUtf(0x7fff);
+      final String group = pkt.readUtf();
+      final CraftingBookCategory cat = pkt.readEnum(CraftingBookCategory.class);
       final int size = pkt.readVarInt();
-      NonNullList<Ingredient> list = NonNullList.withSize(size, Ingredient.EMPTY);
-      list.replaceAll(ignored -> Ingredient.fromNetwork(pkt));
-      ItemStack stack = pkt.readItem();
-      CompoundTag aspects = pkt.readNbt();
-      ResourceLocation resultTag = pkt.readResourceLocation();
-      return new ExtendedShapelessRecipe(recipeId, group, CraftingBookCategory.MISC, stack, list, aspects, resultTag);
+      final NonNullList<Ingredient> nonNullList = NonNullList.withSize(size, Ingredient.EMPTY);
+      nonNullList.replaceAll(ignored->Ingredient.fromNetwork(pkt));
+      final ItemStack stack = pkt.readItem();
+      final CompoundTag aspects = pkt.readNbt();
+      final String resultTag = pkt.readUtf();
+      return new ExtendedShapelessRecipe(group, cat, stack, nonNullList, aspects);
     }
 
-    @Override
     public void toNetwork(FriendlyByteBuf pkt, ExtendedShapelessRecipe recipe)
     {
       pkt.writeUtf(recipe.getGroup());
+      pkt.writeEnum(recipe.category());
       pkt.writeVarInt(recipe.getIngredients().size());
-      for(Ingredient ingredient : recipe.getIngredients()) ingredient.toNetwork(pkt);
-      pkt.writeItem(recipe.resultItem);
+      for(Ingredient ingredient: recipe.getIngredients()) ingredient.toNetwork(pkt);
+      pkt.writeItem(recipe.getResultItem(null));
       pkt.writeNbt(recipe.getAspects());
-      pkt.writeResourceLocation(recipe.resultTag);
     }
   }
 }

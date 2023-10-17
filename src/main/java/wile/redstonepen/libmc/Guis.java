@@ -75,7 +75,7 @@ public class Guis
     @Override
     public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
-      renderBackground(gg);
+      renderBackground(gg, mouseX, mouseY, partialTicks);
       super.render(gg, mouseX, mouseY, partialTicks);
       if(!tooltip_.render(gg, this, mouseX, mouseY)) renderTooltip(gg, mouseX, mouseY);
     }
