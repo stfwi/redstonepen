@@ -360,8 +360,8 @@ public class CircuitComponents
       }
     }
 
-public boolean shouldCheckWeakPower(BlockState state, LevelReader world, BlockPos pos, Direction side)
-{ return false; }
+    public boolean shouldCheckWeakPower(BlockState state, SignalGetter level, BlockPos pos, Direction side)
+    { return false; }
 
     @Override
     @SuppressWarnings("deprecation")

@@ -3,13 +3,13 @@ plugins {
   id 'eclipse'
   id 'idea'
   id 'maven-publish'
-  id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+  id 'net.neoforged.gradle' version '[6.0.13,6.2)'
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 //-----------------------------------------------------------------------------
 version = "${version_mod}"
 group = "wile.${meta_modid}"
-base { archivesName = "${meta_modid}-${version_minecraft}-forge" }
+base { archivesName = "${meta_modid}-${version_minecraft}-neoforge" }
 
 repositories {
   maven { name = "Progwml6 maven"; url = "https://dvs1.progwml6.com/files/maven/" } // JEI files
@@ -41,15 +41,21 @@ minecraft {
 }
 
 dependencies {
-  minecraft "net.minecraftforge:forge:${version_minecraft}-${version_forge}"
+  minecraft "net.neoforged:forge:${version_minecraft}-${version_neoforge}"
 }
 
 tasks.named('processResources', ProcessResources).configure {
   var property_replacements = [
     meta_modid:meta_modid, meta_modname:meta_modname, meta_author:meta_author, meta_license:meta_license,
     meta_description:meta_description, meta_issues:meta_issues, meta_updateurl:meta_updateurl,
-    meta_download:meta_download, version_range_loader:version_range_loader, version_range_forge:version_range_forge,
-    version_minecraft:version_minecraft, version_forge:version_forge, version_mod: version_mod,
+    meta_download:meta_download,
+    version_mod: version_mod,
+    version_minecraft:version_minecraft,
+    version_neoforge:version_neoforge,
+    version_range_loader:version_range_loader,
+    version_range_neoforge:version_range_neoforge,
+    version_range_minecraft: version_range_minecraft,
+    version_pack_format: version_pack_format,
   ]
   inputs.properties property_replacements
   filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {

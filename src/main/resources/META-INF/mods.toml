@@ -19,7 +19,7 @@ logoFile="logo.png"
 [[dependencies.${meta_modid}]]
   modId="forge"
   mandatory=true
-  versionRange="${version_range_forge}"
+  versionRange="${version_range_neoforge}"
   ordering="NONE"
   side="BOTH"
 

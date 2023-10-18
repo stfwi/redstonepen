@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.3.21     [U] Initial port to NeoForged 1.20.1.
+
     - v1.3.20     [U] Initial Forge port to 1.20.1.
 
     - v1.2.20     [F] Fixed Optifine related preview-rendering issue (#26, thx wisquimas).
