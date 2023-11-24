@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModRedstonePen;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
@@ -55,7 +55,7 @@ public class ModRenderers
             break;
           }
         }
-        resources_to_register.add(mrl); //  net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
+        resources_to_register.add(mrl); //  net.neoforged.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
         ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
@@ -80,19 +80,11 @@ public class ModRenderers
       power_rgb.clear();
       for(int i = 0; i <= 15; ++i) {
         float f = (float)i / 15.0f;
-        if(false) {
-          power_rgb.add(new Vec3(
-            Mth.clamp(0.01f + f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
-          ));
-        } else {
-          power_rgb.add(new Vec3(
-            Mth.clamp(f * 0.6F + (f > 0.0F ? 0.4F : 0.3F), 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.7F - 0.5F, 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.6F - 0.7F, 0.0F, 1.0F)
-          ));
-        }
+        power_rgb.add(new Vec3(
+          Mth.clamp(0.01f + f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
+        ));
       }
       return resources_to_register;
     }
@@ -155,13 +147,13 @@ public class ModRenderers
             );
           }
         }
-        mxs.popPose();
       } catch(Throwable e) {
         if(--tesr_error_counter<=0) {
           Auxiliaries.logError("TER was disabled because broken, exception was: " + e.getMessage());
           Auxiliaries.logError(String.join("\n", Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).toList()));
         }
       }
+      mxs.popPose();
     }
   }
 

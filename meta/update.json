@@ -1,6 +1,8 @@
 {
- "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
- "1.20.1": {
+ "homepage": "https://github.com/stfwi/redstonepen",
+ "1.20.4": {
+  "1.8.29": "[U] Initial port for Neoforge 1.20.4 (20.4.200).\n[M] Added RLC interval timer instance `TIV3`.\n[M] Added RLC TIVx enable signal (2nd argument).\n[M] Re-implemented/refactored Track optimizations.\n[M] Redstone Track colour brightness adapted.\n[M] Redstone Relay stone texture edited.\n[I] Known issue: Neighbour power update when removing Track segments not adapted properly yet to Neo. (Workaround: Remove+Replace the adjacent segment).",
+  "1.3.22": "[F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).",
   "1.3.21": "[U] Initial port to NeoForged 1.20.1.",
   "1.3.20": "[U] Initial Forge port to 1.20.1.",
   "1.2.20": "[F] Fixed Optifine related preview-rendering issue (#26, thx wisquimas).",
@@ -38,7 +40,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.20.1-recommended": "1.3.21",
-  "1.20.1-latest": "1.3.21"
+  "1.20.4-recommended": "1.8.29",
+  "1.20.4-latest": "1.8.29"
  }
 }

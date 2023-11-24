@@ -14,6 +14,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
@@ -32,23 +33,19 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,13 +54,11 @@ public class Auxiliaries
 {
   private static String modid;
   private static Logger logger;
-  private static Supplier<CompoundTag> server_config_supplier = CompoundTag::new;
 
-  public static void init(String modid, Logger logger, Supplier<CompoundTag> server_config_supplier)
+  public static void init(String modid, Logger logger)
   {
     Auxiliaries.modid = modid;
     Auxiliaries.logger = logger;
-    Auxiliaries.server_config_supplier = server_config_supplier;
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -155,35 +150,7 @@ public class Auxiliaries
   {
     Component tr = Component.translatable(translationKey, args);
     tr.getStyle().applyFormat(ChatFormatting.RESET);
-    final String ft = tr.getString();
-    if(ft.contains("${")) {
-      // Non-recursive, non-argument lang file entry cross referencing.
-      Pattern pt = Pattern.compile("\\$\\{([^}]+)\\}");
-      Matcher mt = pt.matcher(ft);
-      StringBuffer sb = new StringBuffer();
-      while(mt.find()) {
-        String m = mt.group(1);
-        if(m.contains("?")) {
-          String[] kv = m.split("\\?", 2);
-          String key = kv[0].trim();
-          boolean not = key.startsWith("!");
-          if(not) key = key.replaceFirst("!", "");
-          m = kv[1].trim();
-          if(!server_config_supplier.get().contains(key)) {
-            m = "";
-          } else {
-            boolean r = server_config_supplier.get().getBoolean(key);
-            if(not) r = !r;
-            if(!r) m = "";
-          }
-        }
-        mt.appendReplacement(sb, Matcher.quoteReplacement((Component.translatable(m)).getString().trim()));
-      }
-      mt.appendTail(sb);
-      return sb.toString();
-    } else {
-      return ft;
-    }
+    return tr.getString(); // Note: Dropped the whole dynamic config replacement stuff, this function can actually vanish completly now.
   }
 
   /**
@@ -281,21 +248,11 @@ public class Auxiliaries
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
 
-  @SuppressWarnings("deprecation")
-  public static boolean isInItemTag(Item item, ResourceLocation tag)
-  { return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item)); }
-
-  @SuppressWarnings("deprecation")
-  public static boolean isInBlockTag(Block block, ResourceLocation tag)
-  { return ForgeRegistries.BLOCKS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(block)); }
-
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Item item)
-  { return ForgeRegistries.ITEMS.getKey(item); }
+  { return BuiltInRegistries.ITEM.getKey(item); }
 
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Block block)
-  { return ForgeRegistries.BLOCKS.getKey(block); }
+  { return BuiltInRegistries.BLOCK.getKey(block); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Item NBT data

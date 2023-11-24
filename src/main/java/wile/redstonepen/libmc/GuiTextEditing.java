@@ -28,14 +28,13 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
-import wile.redstonepen.libmc.Guis.Coord2d;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -50,7 +49,7 @@ public class GuiTextEditing
   {
     private static final int NORM_LINE_HEIGHT = 9;
     private static final Consumer<MultiLineTextBox> ON_CHANGE_IGNORED = (tb)->{};
-    private static final BiConsumer<MultiLineTextBox, Coord2d> ON_MOUSEMOVE_IGNORED = (xy,tb)->{};
+    private static final BiConsumer<MultiLineTextBox, Guis.Coord2d> ON_MOUSEMOVE_IGNORED = (xy,tb)->{};
     private int frame_tick_;
     private long last_clicked_ = 0;
     private int last_index_ = -1;
@@ -63,7 +62,7 @@ public class GuiTextEditing
     private int font_color_ = 0xff000000;
     private int cursor_color_ = 0xff000000;
     private Consumer<MultiLineTextBox> on_changed_ = ON_CHANGE_IGNORED;
-    private BiConsumer<MultiLineTextBox, Coord2d> on_mouse_move_ = ON_MOUSEMOVE_IGNORED;
+    private BiConsumer<MultiLineTextBox, Guis.Coord2d> on_mouse_move_ = ON_MOUSEMOVE_IGNORED;
 
     public MultiLineTextBox(int x, int y, int width, int height, Component title)
     {
@@ -142,40 +141,40 @@ public class GuiTextEditing
     public MultiLineTextBox onValueChanged(Consumer<MultiLineTextBox> cb)
     { on_changed_ = cb; return this; }
 
-    public MultiLineTextBox onMouseMove(BiConsumer<MultiLineTextBox, Coord2d> cb)
+    public MultiLineTextBox onMouseMove(BiConsumer<MultiLineTextBox, Guis.Coord2d> cb)
     { on_mouse_move_ = cb; return this; }
 
     public int getIndexUnderMouse(double mouseX, double mouseY)
-    { return (font_ == null) ? 0 : (getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Coord2d.of((int)mouseX, (int)mouseY), false))); }
+    { return (font_ == null) ? 0 : (getDisplayCache().getIndexAtPosition(font_, screenCoordinates(Guis.Coord2d.of((int)mouseX, (int)mouseY), false))); }
 
-    public Coord2d getCoordinatesAtIndex(int textIndex)
+    public Guis.Coord2d getCoordinatesAtIndex(int textIndex)
     {
-      if(font_ == null) return Coord2d.ORIGIN;
+      if(font_ == null) return Guis.Coord2d.ORIGIN;
       textIndex = Mth.clamp(textIndex, 0, getDisplayCache().fullText.length());
       final int lindex = findLineFromPos(getDisplayCache().lineStarts, textIndex);
-      if(lindex < 0 || lindex >= getDisplayCache().lineStarts.length) return Coord2d.ORIGIN;
+      if(lindex < 0 || lindex >= getDisplayCache().lineStarts.length) return Guis.Coord2d.ORIGIN;
       final LineInfo li = getDisplayCache().lines[lindex];
       textIndex = textIndex - getDisplayCache().lineStarts[lindex];
       textIndex = Mth.clamp(textIndex, 0, li.contents.length());
       final int ox = (int)font_.getSplitter().stringWidth(li.contents.substring(0, textIndex));
       final int oy = getDisplayCache().lines[0].y;
-      return Coord2d.of(li.x+(ox*line_height_/NORM_LINE_HEIGHT), oy + ((li.y-oy)*line_height_/NORM_LINE_HEIGHT));
+      return Guis.Coord2d.of(li.x+(ox*line_height_/NORM_LINE_HEIGHT), oy + ((li.y-oy)*line_height_/NORM_LINE_HEIGHT));
     }
 
-    public String getWordAtPosition(Coord2d xy)
+    public String getWordAtPosition(Guis.Coord2d xy)
     { return ""; } // implement
 
     //---------------------------------------------------------------------------------
 
     @Override
     public MultiLineTextBox init(Screen parent)
-    { return init(parent, Coord2d.of(getX(),getY())); }
+    { return init(parent, Guis.Coord2d.of(getX(),getY())); }
 
     @Override
-    public MultiLineTextBox init(Screen parent, Coord2d position)
+    public MultiLineTextBox init(Screen parent, Guis.Coord2d position)
     {
       super.init(parent, position);
-      font_ = parent.getMinecraft().font;
+      font_ = Minecraft.getInstance().font;
       font_color_ = 0xff000000;
       cursor_color_ = 0xff000000;
       clearDisplayCache();
@@ -187,8 +186,8 @@ public class GuiTextEditing
     {
       if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
       if(button != 0) return true;
-      final Coord2d sc = screenCoordinates(Coord2d.of((int)x, (int)y), false);
-      final int index = getDisplayCache().getIndexAtPosition(font_, Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_));
+      final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
+      final int index = getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_));
       if(index >= 0) {
         if((index==last_index_) && ((Util.getMillis()-last_clicked_)<250)) {
           if(edit_.isSelecting()) {
@@ -213,8 +212,8 @@ public class GuiTextEditing
     {
       if(super.mouseDragged(x, y, button, dx, dy) || (button != 0)) return true;
       if((!active) || (!visible)) return false;
-      final Coord2d sc = screenCoordinates(Coord2d.of((int)x, (int)y), false);
-      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_)), true);
+      final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
+      edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_)), true);
       clearDisplayCache();
       return true;
     }
@@ -256,8 +255,8 @@ public class GuiTextEditing
       if(!this.visible) return;
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-      int ox = (int)(getX() * (1.-font_scale_));
-      int oy = (int)(getY() * (1.-font_scale_));
+      int ox = (int)(this.getX() * (1.-font_scale_));
+      int oy = (int)(this.getY() * (1.-font_scale_));
       final PoseStack mxs = gg.pose();
       mxs.pushPose();
       mxs.translate(ox, oy, 0);
@@ -267,7 +266,7 @@ public class GuiTextEditing
       this.renderHighlight(cache.selection);
       this.renderCursor(gg, cache.cursor, cache.cursorAtEnd);
       {
-        Coord2d xy = getMousePosition();
+        Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
       }
       mxs.popPose();
@@ -315,7 +314,7 @@ public class GuiTextEditing
     private void changeLine(int incr)
     { edit_.setCursorPos(getDisplayCache().changeLine(edit_.getCursorPos(), incr), Screen.hasShiftDown()); }
 
-    private void renderCursor(GuiGraphics gg, Coord2d pos, boolean at_end)
+    private void renderCursor(GuiGraphics gg, Guis.Coord2d pos, boolean at_end)
     {
       if(!active || !visible) frame_tick_ = 0;
       if((++frame_tick_ & 0x3f) < 0x20) return;
@@ -335,8 +334,8 @@ public class GuiTextEditing
       RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
       final BufferBuilder buf = Tesselator.getInstance().getBuilder();
       buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-      final double ox = getX() * (1.-font_scale_);
-      final double oy = getY() * (1.-font_scale_);
+      final double ox = this.getX() * (1.-font_scale_);
+      final double oy = this.getY() * (1.-font_scale_);
       for(Rect2i rc: line_rects) {
         final int x0 = (int)Math.floor(ox+(double)(rc.getX())*font_scale_)-1;
         final int y0 = (int)Math.floor(oy+(double)(rc.getY())*font_scale_)-1;
@@ -376,18 +375,18 @@ public class GuiTextEditing
         line_terminated.setValue(full_line.endsWith("\n"));
         final String line = StringUtils.stripEnd(full_line, " \n");
         lsp.add(spos);
-        final Coord2d pxy = screenCoordinates(new Coord2d(0, line_no.getAndIncrement() * NORM_LINE_HEIGHT), true);
+        final Guis.Coord2d pxy = screenCoordinates(new Guis.Coord2d(0, line_no.getAndIncrement() * NORM_LINE_HEIGHT), true);
         line_infos.add(new LineInfo(text, line, pxy.x, pxy.y));
       });
       final int[] line_starts = lsp.toIntArray();
       final boolean cur_at_eos = (cur_pos==full_text.length());
-      Coord2d ppos;
+      Guis.Coord2d ppos;
       if(cur_at_eos && line_terminated.isTrue()) {
-        ppos = new Coord2d(0, line_infos.size() * NORM_LINE_HEIGHT);
+        ppos = new Guis.Coord2d(0, line_infos.size() * NORM_LINE_HEIGHT);
       } else {
         final int lno = findLineFromPos(line_starts, cur_pos);
         final int lpx = font_.width(full_text.substring(line_starts[lno], cur_pos));
-        ppos = new Coord2d(lpx, lno * NORM_LINE_HEIGHT);
+        ppos = new Guis.Coord2d(lpx, lno * NORM_LINE_HEIGHT);
       }
       List<Rect2i> selection_blocks = Lists.newArrayList();
       if(cur_pos != sel_pos) {
@@ -406,7 +405,7 @@ public class GuiTextEditing
             int j2 = j3 * NORM_LINE_HEIGHT;
             String s1 = full_text.substring(line_starts[j3], line_starts[j3 + 1]);
             int k2 = (int)ssp.stringWidth(s1);
-            selection_blocks.add(createSelection(new Coord2d(0, j2), new Coord2d(k2, j2 + NORM_LINE_HEIGHT)));
+            selection_blocks.add(createSelection(new Guis.Coord2d(0, j2), new Guis.Coord2d(k2, j2 + NORM_LINE_HEIGHT)));
           }
           selection_blocks.add(createPartialLineSelection(full_text, ssp, line_starts[k1], i1, k1 * NORM_LINE_HEIGHT, line_starts[k1]));
         }
@@ -421,13 +420,13 @@ public class GuiTextEditing
     {
       final String s0 = text.substring(line_start_pos, spos);
       final String s1 = text.substring(line_start_pos, epos).replaceAll("[\\r\\n]+$", "");
-      return createSelection(new Coord2d((int)ssp.stringWidth(s0), liney), new Coord2d((int)ssp.stringWidth(s1), liney + NORM_LINE_HEIGHT));
+      return createSelection(new Guis.Coord2d((int)ssp.stringWidth(s0), liney), new Guis.Coord2d((int)ssp.stringWidth(s1), liney + NORM_LINE_HEIGHT));
     }
 
-    private Rect2i createSelection(Coord2d pos1, Coord2d pos2)
+    private Rect2i createSelection(Guis.Coord2d pos1, Guis.Coord2d pos2)
     {
-      final Coord2d cd1 = screenCoordinates(pos1, true);
-      final Coord2d cd2 = screenCoordinates(pos2, true);
+      final Guis.Coord2d cd1 = screenCoordinates(pos1, true);
+      final Guis.Coord2d cd2 = screenCoordinates(pos2, true);
       final int x0 = Math.min(cd1.x, cd2.x);
       final int x1 = Math.max(cd1.x, cd2.x);
       final int y0 = Math.min(cd1.y, cd2.y);
@@ -438,18 +437,18 @@ public class GuiTextEditing
     @OnlyIn(Dist.CLIENT)
     static class DisplayCache
     {
-      static final DisplayCache EMPTY = new DisplayCache("", new Coord2d(0, 0), true, new int[]{0}, new LineInfo[]{new LineInfo(Style.EMPTY, "", 0, 0)}, new Rect2i[0]);
+      static final DisplayCache EMPTY = new DisplayCache("", new Guis.Coord2d(0, 0), true, new int[]{0}, new LineInfo[]{new LineInfo(Style.EMPTY, "", 0, 0)}, new Rect2i[0]);
       private final String fullText;
-      final Coord2d cursor;
+      final Guis.Coord2d cursor;
       final boolean cursorAtEnd;
       private final int[] lineStarts;
       final LineInfo[] lines;
       final Rect2i[] selection;
 
-      public DisplayCache(String text, Coord2d cur, boolean at_end, int[] line_starts, LineInfo[] line_data, Rect2i[] sel)
+      public DisplayCache(String text, Guis.Coord2d cur, boolean at_end, int[] line_starts, LineInfo[] line_data, Rect2i[] sel)
       { fullText = text; cursor = cur; cursorAtEnd = at_end; lineStarts = line_starts; lines = line_data; selection = sel; }
 
-      public int getIndexAtPosition(Font font, Coord2d pos)
+      public int getIndexAtPosition(Font font, Guis.Coord2d pos)
       {
         int i = pos.y / NORM_LINE_HEIGHT;
         if(i < 0) return 0;

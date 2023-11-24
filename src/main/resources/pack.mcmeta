@@ -1,8 +1,6 @@
 {
   "pack": {
-    "description": {
-      "text": "${meta_modid} resources"
-    },
-    "pack_format": ${version_pack_format}
+    "description": "redstonepen resources",
+    "pack_format": 12
   }
 }

@@ -25,14 +25,14 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-
+@SuppressWarnings("deprecation")
 public class Guis
 {
   // -------------------------------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ public class Guis
     @Override
     public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
-      renderBackground(gg);
+      renderBackground(gg, mouseX, mouseY, partialTicks);
       super.render(gg, mouseX, mouseY, partialTicks);
       if(!tooltip_.render(gg, this, mouseX, mouseY)) renderTooltip(gg, mouseX, mouseY);
     }
@@ -85,7 +85,6 @@ public class Guis
     {}
 
     @Override
-    @SuppressWarnings("deprecation")
     protected final void renderBg(GuiGraphics gg, float partialTicks, int mouseX, int mouseY)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -212,13 +211,12 @@ public class Guis
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
 
-    @SuppressWarnings("all")
     public void renderToolTip(GuiGraphics gg, int mouseX, int mouseY)
     {
       if(!visible || (!active) || (tooltip_ == NO_TOOLTIP)) return;
       final Component tip = tooltip_.apply(this);
       if(tip.getString().trim().isEmpty()) return;
-      gg.renderTooltip(mc_.font, Arrays.asList(tip.getVisualOrderText()), mouseX, mouseY);
+      gg.renderTooltip(mc_.font, List.of(tip.getVisualOrderText()), mouseX, mouseY);
     }
   }
 

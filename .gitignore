@@ -17,12 +17,13 @@ build
 eclipse
 run
 tests
-/dist
 signing.*
 src/main/java/archive
 src/main/resources/assets/minecraft
 src/generated
 .vscode
+/dist
+/runs
 /classes
 /dev
 /tmp

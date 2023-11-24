@@ -12,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Networking;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

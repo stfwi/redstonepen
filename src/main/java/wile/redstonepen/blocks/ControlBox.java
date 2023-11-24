@@ -31,8 +31,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
 import wile.redstonepen.libmc.StandardEntityBlocks;
@@ -43,12 +43,13 @@ import wile.redstonepen.libmc.GuiTextEditing;
 import wile.redstonepen.libmc.Guis;
 import wile.redstonepen.libmc.TooltipDisplay;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 
+@SuppressWarnings("deprecation")
 public class ControlBox
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -128,7 +129,6 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -268,7 +268,6 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  @SuppressWarnings("deprecation")
                   final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
                   logic_.symbol(port_name+".co", cov);
                 } else {
@@ -426,7 +425,7 @@ public class ControlBox
     public void sendAllDataToRemote()
     {
       super.sendAllDataToRemote();
-      if((world().isClientSide) || (te()==null)) return;
+      if(!(world().isClientSide) || (te()==null)) return;
       Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te(), true));
     }
 
@@ -954,7 +953,9 @@ public class ControlBox
 
       private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
       {
-        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        if(x.length < 1 || x.length > 2) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int en = (x.length < 2) ? 15 : x[1].calc(m);
+        if(en <= 0) { m.remove(sym + ".clk"); return 0; } // Disabled by enable signal argument.
         final int pt = x[0].calc(m);
         if(pt <= 2) return MathExpr.Expr.bool_false();
         final int now = m.getOrDefault(".clock", 0);
@@ -981,8 +982,9 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
-          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
-          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv1", -1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2", -1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv3", -1, (x,m)->timer_interval_function(".tiv3", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
