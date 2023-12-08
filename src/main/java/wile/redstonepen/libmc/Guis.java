@@ -186,13 +186,6 @@ public class Guis
     public UiWidget hide()
     { visible = false; return this; }
 
-    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
-    {
-      if(!visible) return;
-      isHovered = (mouseX >= getX()) && (mouseY >= getY()) && (mouseX < getX()+width) && (mouseY < getY()+height);
-      renderWidget(gg, mouseX, mouseY, partialTicks);
-    }
-
     @Override
     protected void updateWidgetNarration(NarrationElementOutput neo)
     {}
@@ -201,6 +194,7 @@ public class Guis
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
+      setTooltip(null);
     }
 
     @SuppressWarnings("all")

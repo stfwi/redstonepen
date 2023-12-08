@@ -208,7 +208,7 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       instance.group(
         ExtraCodecs.strictOptionalField(Codec.STRING, "group", "").forGetter(ShapelessRecipe::getGroup),
         CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapelessRecipe::category),
-        CraftingRecipeCodecs.ITEMSTACK_OBJECT_CODEC.fieldOf("result").forGetter(recipe->recipe.resultItem),
+        ItemStack.ITEM_WITH_COUNT_CODEC.fieldOf("result").forGetter(recipe->recipe.resultItem),
         Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap(
           (list) -> {
             final Ingredient[] ingredients = list.stream().filter((ingredient) -> !ingredient.isEmpty()).toArray(Ingredient[]::new);

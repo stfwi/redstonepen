@@ -1142,7 +1142,7 @@ public class RedstoneTrack
 
     @SuppressWarnings("all")
     private boolean isRedstoneInsulator(BlockState state, BlockPos pos)
-    { return (state.getBlock() instanceof AbstractGlassBlock); } // don't care about isRedstoneConductor(), messes up depending on block implementations.
+    { return state.is(Blocks.GLASS); } // don't care about isRedstoneConductor(), messes up depending on block implementations.
 
     private void updateConnections(int recursion_left)
     {
