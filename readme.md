@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.8.24     [U] Updated to 1.20.4 fabric.
+
     - v1.7.24     [U] Updated to 1.20.3 fabric.
 
     - v1.6.24     [F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).
