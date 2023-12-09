@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.8.25     [F] Updated to loom 1.4.4.
+
     - v1.8.24     [U] Updated to 1.20.4 fabric.
 
     - v1.7.24     [U] Updated to 1.20.3 fabric.
