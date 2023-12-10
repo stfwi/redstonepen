@@ -240,7 +240,6 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       nonNullList.replaceAll(ignored->Ingredient.fromNetwork(pkt));
       final ItemStack stack = pkt.readItem();
       final CompoundTag aspects = pkt.readNbt();
-      final String resultTag = pkt.readUtf();
       return new ExtendedShapelessRecipe(group, cat, stack, nonNullList, aspects);
     }
 
