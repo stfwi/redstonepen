@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.8.27     [F] Fixed neighbour updates of removed track segments (issue #32, ty lukescott)
+
     - v1.8.26     [F] Fixed recipe network deserialization (issue #30, ty nickademas)
 
     - v1.8.25     [F] Updated to loom 1.4.4.

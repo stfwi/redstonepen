@@ -1144,10 +1144,15 @@ public class RedstoneTrack
     private boolean isRedstoneInsulator(BlockState state, BlockPos pos)
     { return state.is(Blocks.GLASS); } // don't care about isRedstoneConductor(), messes up depending on block implementations.
 
+    @SuppressWarnings("deprecation")
     private void updateConnections(int recursion_left)
     {
+      final Set<BlockPos> all_neighbours = new HashSet<>();
       final int[] current_side_powers = {0,0,0,0,0,0};
-      nets_.forEach((net)->net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power));
+      nets_.forEach((net)->{
+        net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power);
+        all_neighbours.addAll(net.neighbour_positions);
+      });
       if(trace_) Auxiliaries.logWarn(String.format("UCON: %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
       nets_.clear();
       final Set<TrackBlockEntity> track_connection_updates = new HashSet<>();
@@ -1327,6 +1332,18 @@ public class RedstoneTrack
           if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
           te.updateConnections(recursion_left-1);
         }
+      }
+      // Removed/added connections
+      {
+        nets_.stream().filter((net)->net.power > 0).forEach((net)->all_neighbours.addAll(net.neighbour_positions));
+        final Level world = getLevel();
+        final BlockState state = getBlockState();
+        all_neighbours.forEach((pos)->{
+          final BlockState st = world.getBlockState(pos);
+          if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE TRACK CHANGES TO %s.", posstr(getBlockPos()), posstr(pos)));
+          st.neighborChanged(world, pos, state.getBlock(), getBlockPos(), false);
+          world.updateNeighborsAt(pos, st.getBlock());
+        });
       }
     }
   }
