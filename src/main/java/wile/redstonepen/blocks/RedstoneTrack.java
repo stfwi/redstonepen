@@ -77,6 +77,8 @@ public class RedstoneTrack
     public static final int  STATE_FLAG_CON_POS   = 24;
     public static final int  STATE_FLAG_PWR_POS   = 32;
 
+    public static final Direction[] REDSTONE_UPDATE_DIRECTIONS = new Direction[]{Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH};
+
     public static final class connections
     {
       public static final Direction[] CONNECTION_BIT_ORDER  = {
@@ -434,7 +436,7 @@ public class RedstoneTrack
     @Deprecated
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
     {
-      // @fabric: not available, need to hook into `RedstoneWireBlock.shouldConnectTo(BlockState blockState, @Nullable Direction direction)`
+      // @todo: fabric: not available, need to hook into `RedstoneWireBlock.shouldConnectTo(BlockState blockState, @Nullable Direction direction)` or leave it as it is.
       return (side != null) && (tile(world,pos).map(te->te.hasVanillaRedstoneConnection(side.getOpposite()))).orElse(false);
     }
 
@@ -1079,7 +1081,8 @@ public class RedstoneTrack
 
     public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos)
     {
-      final Map<BlockPos,BlockPos> change_notifications = new HashMap<>();
+      final Level world = getLevel();
+      final Map<BlockPos,BlockPos> change_notifications = new LinkedHashMap<>();
       boolean power_changed = false;
       for(TrackNet net: nets_) {
         if(!net.neighbour_positions.contains(fromPos)) continue;
@@ -1097,20 +1100,18 @@ public class RedstoneTrack
             }
           } else if(ext_state.is(getBlock())) {
             if(pmax < 15) {
-              final int p_track = RedstoneTrackBlock.tile(getLevel(), ext_pos).map(te->Math.max(0, te.getSidePower(ext_side)-1)).orElse(0);
+              final int p_track = RedstoneTrackBlock.tile(world, ext_pos).map(te->Math.max(0, te.getSidePower(ext_side)-1)).orElse(0);
               pmax = Math.max(pmax, p_track);
             }
           } else {
             final Direction eside = ext_side.getOpposite();
-            final int p_nowire = getNonWireSignal(getLevel(), ext_pos, eside);
+            final int p_nowire = getNonWireSignal(world, ext_pos, eside);
             pmax = Math.max(pmax, p_nowire);
-            if((!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(getLevel(), ext_pos)) {
-              if(ext_side!=Direction.DOWN) change_notifications.putIfAbsent(ext_pos.relative(Direction.DOWN), ext_pos);
-              if(ext_side!=Direction.UP) change_notifications.putIfAbsent(ext_pos.relative(Direction.UP), ext_pos);
-              if(ext_side!=Direction.NORTH) change_notifications.putIfAbsent(ext_pos.relative(Direction.NORTH), ext_pos);
-              if(ext_side!=Direction.SOUTH) change_notifications.putIfAbsent(ext_pos.relative(Direction.SOUTH), ext_pos);
-              if(ext_side!=Direction.EAST) change_notifications.putIfAbsent(ext_pos.relative(Direction.EAST), ext_pos);
-              if(ext_side!=Direction.WEST) change_notifications.putIfAbsent(ext_pos.relative(Direction.WEST), ext_pos);
+            if((!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(world, ext_pos)) {
+              for(Direction update_direction: defs.REDSTONE_UPDATE_DIRECTIONS) {
+                if(ext_side == update_direction) continue;
+                change_notifications.putIfAbsent(ext_pos.relative(update_direction), ext_pos);
+              }
             }
           }
         }

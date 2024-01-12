@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.8.28     [F] Fixed localization codec exception for RS signal inspection
+                      with the Pen.
+                  [F] Adapted signal update ordering.
+                  [F] Pack meta file format fixed (issue #33, ty tropheusj).
+
     - v1.8.27     [F] Fixed neighbour updates of removed track segments (issue #32, ty lukescott)
 
     - v1.8.26     [F] Fixed recipe network deserialization (issue #30, ty nickademas)
