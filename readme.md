@@ -1,8 +1,16 @@
 
-## Redstone Pen (MC1.19.x)
+## Redstone Pen (MC1.20.1)
 
 ----
 ## Version history
+
+    - v1.5.28     [R] Maintenance release.
+                  [F] Fixed localization codec exception for RS signal inspection with the Pen.
+                  [F] Adapted signal update ordering.
+                  [F] Pack meta file format fixed (issue #33, ty tropheusj).
+                  [F] Fixed neighbour updates of removed track segments (issue #32, ty lukescott)
+                  [F] Fixed recipe network deserialization (issue #30, ty nickademas)
+                  [F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).
 
     - v1.5.23     [U] Updated to 1.20.1 fabric.
 

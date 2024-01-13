@@ -185,7 +185,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
       final BlockState rs_state = ModContent.references.TRACK_BLOCK.getStateForPlacement(ctx);
       if(rs_state==null) return InteractionResult.FAIL;
       if(!target_state.getBlock().canBeReplaced(target_state, ctx)) return InteractionResult.FAIL;
-      if(!world.setBlock(target_pos, rs_state, 1|2)) return InteractionResult.FAIL;
+      if(!world.setBlock(target_pos, rs_state, 1|2|16)) return InteractionResult.FAIL;
       final BlockState placed_state = world.getBlockState(target_pos);
       if(!(placed_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock)) {
         world.removeBlock(target_pos, false);
@@ -252,7 +252,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
         if((p == 0) || (max_side==null)) {
           tc = Auxiliaries.localizable("overlay.direct_power", powerFormatted(p));
         } else {
-          tc = Auxiliaries.localizable("overlay.direct_power_at", powerFormatted(p), max_side.getOpposite());
+          tc = Auxiliaries.localizable("overlay.direct_power_at", powerFormatted(p), max_side.getOpposite().toString());
         }
       }
     } else if(RsSignals.canEmitWeakPower(state, world, pos, rs_side)) {
@@ -262,7 +262,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
         int ps = world.getSignal(pos.relative(d), d);
         if(ps>p) { p = ps; max_side=d; if(p>=15){break;} }
       }
-      if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side);
+      if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side.toString()); // @todo: temporary workaround (direction untranslated). Direction may not have a component serialization since codecs are introduced.
     }
     Overlay.show((ServerPlayer)entity, tc, 400);
   }
