@@ -69,8 +69,9 @@ mrproper: clean-all
 	@rm -f .classpath
 
 init:
-	@echo "[1.20] Initialising eclipse workspace using gradle ..."
+	@echo "[1.20] Initialising workspace using gradle ..."
 	@$(GRADLE) genSources
+	@$(GRADLE) vscode
 
 sanitize:
 	@echo "[1.20] Running sanitising tasks ..."

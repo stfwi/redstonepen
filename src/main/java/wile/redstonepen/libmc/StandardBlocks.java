@@ -15,6 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -165,16 +166,16 @@ public class StandardBlocks
     }
 
     @Override // SimpleWaterloggedBlock
-    public boolean canPlaceLiquid(BlockGetter world, BlockPos pos, BlockState state, Fluid fluid)
-    { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.canPlaceLiquid(world, pos, state, fluid); }
+    public boolean canPlaceLiquid(@Nullable Player player, BlockGetter world, BlockPos pos, BlockState state, Fluid fluid)
+    { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.canPlaceLiquid(player, world, pos, state, fluid); }
 
     @Override // SimpleWaterloggedBlock
     public boolean placeLiquid(LevelAccessor world, BlockPos pos, BlockState state, FluidState fluidState)
     { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.placeLiquid(world, pos, state, fluidState); }
 
     @Override // SimpleWaterloggedBlock
-    public ItemStack pickupBlock(LevelAccessor world, BlockPos pos, BlockState state)
-    { return ((config & CFG_WATERLOGGABLE)!=0) ? (SimpleWaterloggedBlock.super.pickupBlock(world, pos, state)) : (ItemStack.EMPTY); }
+    public ItemStack pickupBlock(@Nullable Player player, LevelAccessor world, BlockPos pos, BlockState state)
+    { return ((config & CFG_WATERLOGGABLE)!=0) ? (SimpleWaterloggedBlock.super.pickupBlock(player, world, pos, state)) : (ItemStack.EMPTY); }
 
     @Override // SimpleWaterloggedBlock
     public Optional<SoundEvent> getPickupSound()
