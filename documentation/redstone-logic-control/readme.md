@@ -518,6 +518,17 @@ U = TP3( G, 20)  # 1s pulse when G switches ON
 D = TP4(!G, 20)  # 1s pulse when G switches OFF
 ```
 
+##### Interval Timers
+
+More specifically for the use in Minecraft, interval timers (`TIV1`,...)
+provide a steady one-tick pulse every `N` ticks:
+
+```
+# Use interval timer 1 to generate a one-tick pulse every
+second:
+R = TIV1(20) # 1 tick on, 19 ticks off.
+```
+
 ##### Signal Counters
 
 Counters are, similar to timers, *instances* with an internal state

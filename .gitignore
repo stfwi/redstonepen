@@ -16,10 +16,12 @@
 *.mp4
 *.tmp
 *.xcf
+*.7z
 /*.txt
 /1.*
 /1.*/src/generated
 /archive
+/_archive
 /assets
 /assets-src
 /classes
