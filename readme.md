@@ -6,11 +6,10 @@ Redstone tracks more accurately. Inspired by the Redstone Paste mod.
 
 ## Distribution file download
 
-Main distribution channel for this mod is CurseForge:
+Main distribution channels for this mod:
 
-  - Release/beta versions: https://www.curseforge.com/minecraft/mc-mods/redstone-pen/files
-
-  - All versions: https://minecraft.curseforge.com/projects/redstone-pen/files
+  - CurseForge: https://www.curseforge.com/minecraft/mc-mods/redstone-pen/files
+  - Modrinth: https://modrinth.com/mod/redstonepen
 
 ## Description
 
