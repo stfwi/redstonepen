@@ -4,6 +4,12 @@
 ----
 ## Version history
 
+    - v1.8.29     [M] Added RLC interval timer instance `TIV3`.
+                  [M] Added RLC TIVx enable signal (2nd argument).
+                  [M] Re-implemented/refactored Track optimizations.
+                  [M] Redstone Track colour brightness adapted.
+                  [M] Redstone Relay stone texture edited.
+
     - v1.8.28     [F] Fixed localization codec exception for RS signal inspection
                       with the Pen.
                   [F] Adapted signal update ordering.

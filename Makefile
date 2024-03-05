@@ -89,6 +89,7 @@ dist-files: clean init mod
 	@cp build/libs/$(MOD_JAR_PREFIX)* dist/
 	@rm -f dist/*-sources.jar
 	@$(TASK) dist
+	@rm -f dist/*-sources.jar
 
 dist: sanitize dist-check dist-files
 

@@ -80,19 +80,11 @@ public class ModRenderers
       power_rgb.clear();
       for(int i = 0; i <= 15; ++i) {
         float f = (float)i / 15.0f;
-        if(false) {
-          power_rgb.add(new Vec3(
-            Mth.clamp(0.01f + f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
-          ));
-        } else {
-          power_rgb.add(new Vec3(
-            Mth.clamp(f * 0.6F + (f > 0.0F ? 0.4F : 0.3F), 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.7F - 0.5F, 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.6F - 0.7F, 0.0F, 1.0F)
-          ));
-        }
+        power_rgb.add(new Vec3(
+          Mth.clamp(0.01f + f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
+        ));
       }
       return resources_to_register;
     }

@@ -557,10 +557,11 @@ public class RedstoneTrack
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     {
       if(world.isClientSide()) return;
-      final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
-      if(blocks_to_update.isEmpty()) return;
       try {
+        final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
+        if(blocks_to_update.isEmpty()) return;
         for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
+          if(update_pos.getKey().equals(update_pos.getValue())) continue;
           world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
         }
       } catch(Throwable ex) {
@@ -998,12 +999,16 @@ public class RedstoneTrack
     public Map<BlockPos,BlockPos> updateAllPowerValuesFromAdjacent()
     {
       if(updatepower_order.isEmpty()) {
-        for(Direction side:Direction.values())
-          updatepower_order.add(new Vec3i(0,0,0).relative(side,1));
-        for(int x=-1; x<=1; ++x)
-          for(int y=-1; y<=1; ++y)
-            for(int z=-1; z<=1; ++z)
+        for(Direction side:Direction.values()) {
+          updatepower_order.add(new Vec3i(0, 0, 0).relative(side, 1));
+        }
+        for(int x=-1; x<=1; ++x) {
+          for(int y=-1; y<=1; ++y) {
+            for(int z=-1; z<=1; ++z) {
               if(Math.abs(x)+Math.abs(y)+Math.abs(z) == 2) updatepower_order.add(new Vec3i(x,y,z));
+            }
+          }
+        }
       }
       final Map<BlockPos,BlockPos> all_change_notifications = new HashMap<>();
       for(Vec3i ofs:updatepower_order) {
@@ -1063,7 +1068,7 @@ public class RedstoneTrack
       int p = (!state.is(Blocks.REDSTONE_WIRE) && (!state.is(getBlock()))) ? state.getSignal(world, pos, redstone_side) : 0;
       //if(trace_) Auxiliaries.logWarn(String.format("GETNWS from [%s @ %s] = %dw", posstr(getPos()), redstone_side, p));
       if(!RsSignals.canEmitWeakPower(state, world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
-      // According to world.getStrongPower():
+      // According to world.getDirectSignalTo():
       for(Direction rs_side: Direction.values()) {
         final BlockPos side_pos = pos.relative(rs_side);
         final BlockState side_state = world.getBlockState(side_pos);
@@ -1080,62 +1085,75 @@ public class RedstoneTrack
     }
 
     public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos)
+    { return handleNeighborChanged(fromPos, null); }
+
+    public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos, @Nullable Map<BlockPos,BlockPos> change_notifications)
     {
+      record Neighbor(BlockPos pos, Direction side, int power, boolean is_track, boolean needs_indirect) {}
       final Level world = getLevel();
-      final Map<BlockPos,BlockPos> change_notifications = new LinkedHashMap<>();
-      boolean power_changed = false;
-      for(TrackNet net: nets_) {
-        if(!net.neighbour_positions.contains(fromPos)) continue;
-        if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s from %s", posstr(getBlockPos()), posstr(fromPos)));
-        int pmax = 0;
-        for(int i = 0; i<net.neighbour_positions.size(); ++i) {
-          final BlockPos ext_pos = net.neighbour_positions.get(i);
-          change_notifications.put(ext_pos, getBlockPos());
-          final Direction ext_side = net.neighbour_sides.get(i);
-          final BlockState ext_state = level.getBlockState(ext_pos);
-          if(ext_state.is(Blocks.REDSTONE_WIRE)) {
-            if(pmax < 15) {
-              final int p_vanilla_wire = Math.max(0, ext_state.getValue(RedStoneWireBlock.POWER)-1);
-              pmax = Math.max(pmax, p_vanilla_wire);
-            }
-          } else if(ext_state.is(getBlock())) {
-            if(pmax < 15) {
-              final int p_track = RedstoneTrackBlock.tile(world, ext_pos).map(te->Math.max(0, te.getSidePower(ext_side)-1)).orElse(0);
-              pmax = Math.max(pmax, p_track);
-            }
-          } else {
-            final Direction eside = ext_side.getOpposite();
-            final int p_nowire = getNonWireSignal(world, ext_pos, eside);
-            pmax = Math.max(pmax, p_nowire);
-            if((!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(world, ext_pos)) {
-              for(Direction update_direction: defs.REDSTONE_UPDATE_DIRECTIONS) {
-                if(ext_side == update_direction) continue;
-                change_notifications.putIfAbsent(ext_pos.relative(update_direction), ext_pos);
-              }
-            }
-          }
+      final List<Neighbor> neighbors = new LinkedList<>();
+      final TrackNet net = nets_.stream().filter(n->n.neighbour_positions.contains(fromPos)).findFirst().orElse(null);
+      if(net == null) return Collections.emptyMap(); // Only one net can be affected.
+      if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s from %s", posstr(getBlockPos()), posstr(fromPos)));
+      int pmax = 0;
+      for(int i = 0; i<net.neighbour_positions.size(); ++i) {
+        final BlockPos ext_pos = net.neighbour_positions.get(i);
+        final Direction ext_side = net.neighbour_sides.get(i);
+        final BlockState ext_state = level.getBlockState(ext_pos);
+        if(ext_state.is(Blocks.REDSTONE_WIRE)) {
+          final int p_vanilla_wire = ext_state.getValue(RedStoneWireBlock.POWER);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_vanilla_wire, false, false));
+          pmax = Math.max(pmax, p_vanilla_wire-1);
+        } else if(ext_state.is(getBlock())) {
+          final int p_track = RedstoneTrackBlock.tile(world, ext_pos).map(te->Math.max(0, te.getSidePower(ext_side))).orElse(0);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_track, true, false));
+          pmax = Math.max(pmax, p_track-1);
+        } else {
+          final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
+          final boolean weak_updates = (!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(world, ext_pos);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, false, weak_updates));
+          pmax = Math.max(pmax, p_nowire);
         }
-        if(net.power != pmax) {
-          if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s net power %d->%d", posstr(getBlockPos()), net.power, pmax));
-          net.power = pmax;
+      }
+      boolean power_changed = false;
+      if(net.power != pmax) {
+        if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s net power %d->%d", posstr(getBlockPos()), net.power, pmax));
+        net.power = pmax;
+        power_changed = true;
+      }
+      for(Direction side: net.internal_sides) {
+        if(getSidePower(side) != pmax) {
+          setSidePower(side, pmax);
           power_changed = true;
         }
-        for(Direction side: net.internal_sides) {
-          if(getSidePower(side) != pmax) {
-            setSidePower(side, pmax);
-            power_changed = true;
+      }
+      if(!power_changed) {
+        return Collections.emptyMap();
+      }
+      final boolean emit_notification = change_notifications == null;
+      if(emit_notification) change_notifications = new LinkedHashMap<>();
+      for(Neighbor neighbor: neighbors) {
+        if(neighbor.is_track) {
+          if(world.getBlockEntity(neighbor.pos) instanceof TrackBlockEntity te) {
+            te.handleNeighborChanged(getBlockPos(), change_notifications);
+          } else {
+            change_notifications.put(neighbor.pos, getBlockPos());
+          }
+        } else {
+          change_notifications.put(neighbor.pos, getBlockPos());
+          if(neighbor.needs_indirect) {
+            for(Direction update_direction: defs.REDSTONE_UPDATE_DIRECTIONS) {
+              if(neighbor.side == update_direction) continue;
+              change_notifications.putIfAbsent(neighbor.pos.relative(update_direction), neighbor.pos);
+            }
           }
         }
       }
-      if(power_changed) {
-        if(trace_ && change_notifications.size()>0) {
-          Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), change_notifications.entrySet().stream().map(kv-> posstr(kv.getKey())+">"+posstr(kv.getValue())).collect(Collectors.joining(" ; "))));
-        }
-        sync(true);
-        return change_notifications;
-      } else {
-        return Collections.emptyMap();
+      if(trace_ && emit_notification && change_notifications.size()>0) {
+        Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), change_notifications.entrySet().stream().map(kv-> posstr(kv.getValue())+">"+posstr(kv.getKey())).collect(Collectors.joining(", "))));
       }
+      sync(true);
+      return emit_notification ? change_notifications : Collections.emptyMap();
     }
 
     private String posstr(BlockPos pos)

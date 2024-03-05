@@ -949,7 +949,9 @@ public class ControlBox
 
       private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
       {
-        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        if(x.length < 1 || x.length > 2) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int en = (x.length < 2) ? 15 : x[1].calc(m);
+        if(en <= 0) { m.remove(sym + ".clk"); return 0; } // Disabled by enable signal argument.
         final int pt = x[0].calc(m);
         if(pt <= 2) return MathExpr.Expr.bool_false();
         final int now = m.getOrDefault(".clock", 0);
@@ -976,8 +978,9 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
-          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
-          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv1", -1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2", -1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv3", -1, (x,m)->timer_interval_function(".tiv3", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
