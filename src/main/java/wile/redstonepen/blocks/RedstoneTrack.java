@@ -683,10 +683,10 @@ public class RedstoneTrack
       public int power;
 
       public TrackNet(List<BlockPos> positions, List<Direction> ext_sides, List<Direction> int_sides, List<Direction> pwr_sides)
-      { neighbour_positions =positions; neighbour_sides =ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power = 0; }
+      { neighbour_positions=positions; neighbour_sides=ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power=0; }
 
       public TrackNet(List<BlockPos> positions, List<Direction> ext_sides, List<Direction> int_sides, List<Direction> pwr_sides, int power_setval)
-      { neighbour_positions =positions; neighbour_sides =ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power = power_setval; }
+      { neighbour_positions=positions; neighbour_sides=ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power=power_setval; }
     }
 
     private long state_flags_ = 0;      // server/client
@@ -1152,15 +1152,18 @@ public class RedstoneTrack
     {
       final Set<BlockPos> all_neighbours = new HashSet<>();
       final int[] current_side_powers = {0,0,0,0,0,0};
-      nets_.forEach((net)->{
-        net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power);
-        all_neighbours.addAll(net.neighbour_positions);
-      });
-      if(trace_) Auxiliaries.logWarn(String.format("UCON: %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
-      nets_.clear();
       final Set<TrackBlockEntity> track_connection_updates = new HashSet<>();
       final long[] internal_connected_sides = {0,0,0,0,0,0};
       final long[] external_connected_routes = {0,0,0,0,0,0};
+      // Cache and reset current net data
+      {
+        nets_.forEach((net)->{
+          net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power);
+          all_neighbours.addAll(net.neighbour_positions);
+        });
+        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
+        nets_.clear();
+      }
       // Own internal and external connections.
       {
         long external_connection_flags = getStateFlags() & (defs.STATE_FLAG_WIR_MASK|defs.STATE_FLAG_CON_MASK);
@@ -1318,25 +1321,42 @@ public class RedstoneTrack
           }
         }
         Arrays.stream(Direction.values()).filter(side->!used_sides.contains(side)).forEach(side->setSidePower(side, 0));
+        setChanged();
       }
-      setChanged();
-      if(trace_) {
-        final String poss = posstr(getBlockPos());
-        for(TrackNet net:nets_) {
-          final List<String> ss = new ArrayList<>();
-          for(int i = 0; i<net.neighbour_positions.size(); ++i) ss.add(posstr(net.neighbour_positions.get(i)) + ":" + net.neighbour_sides.get(i).toString());
-          String int_sides = net.internal_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
-          String pwr_sides = net.power_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
-          Auxiliaries.logWarn(String.format("UCON: %s adj:%s | ints:%s | pwrs:%s", poss, String.join(", ", ss), int_sides, pwr_sides));
+      // -- Prepare neighbour updates
+      {
+        final Set<BlockPos> disconnected_neighbours = new HashSet<>(all_neighbours);
+        final Set<BlockPos> connected_neighbours = new HashSet<>();
+        nets_.forEach(net->net.neighbour_positions.forEach(disconnected_neighbours::remove));
+        nets_.forEach(net->connected_neighbours.addAll(net.neighbour_positions));
+        all_neighbours.forEach(connected_neighbours::remove);
+        if(trace_) {
+          final String poss = posstr(getBlockPos());
+          for(TrackNet net:nets_) {
+            final List<String> ss = new ArrayList<>();
+            for(int i = 0; i<net.neighbour_positions.size(); ++i) ss.add(posstr(net.neighbour_positions.get(i)) + ":" + net.neighbour_sides.get(i).toString());
+            String int_sides = net.internal_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
+            String pwr_sides = net.power_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
+            Auxiliaries.logWarn(String.format("UCON: %s adj:%s | ints:%s | pwrs:%s", poss, String.join(", ", ss), int_sides, pwr_sides));
+          }
+          if(!disconnected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s DISCONNECTED NEIGHBOURS: %s", posstr(getBlockPos()), disconnected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
+          if(!connected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s CONNECTED NEIGHBOURS: %s", posstr(getBlockPos()), connected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
+        }
+        (new HashSet<>(disconnected_neighbours)).forEach(p->RedstoneTrackBlock.tile(getLevel(), p).ifPresent(te->{ track_connection_updates.add(te); disconnected_neighbours.remove(p); }));
+        if(trace_) {
+          if(!disconnected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s DISCONNECTED NONTRACK: %s", posstr(getBlockPos()), disconnected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
         }
       }
-      if(recursion_left > 0) {
-        for(TrackBlockEntity te:track_connection_updates) {
-          if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
-          te.updateConnections(recursion_left-1);
+      // Update neighbour tracks
+      {
+        if(recursion_left > 0) {
+          for(TrackBlockEntity te:track_connection_updates) {
+            if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
+            te.updateConnections(recursion_left-1);
+          }
         }
       }
-      // Removed/added connections
+      // Update removed/added non-track connections
       {
         nets_.stream().filter((net)->net.power > 0).forEach((net)->all_neighbours.addAll(net.neighbour_positions));
         final Level world = getLevel();

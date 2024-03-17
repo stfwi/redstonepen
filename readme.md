@@ -4,16 +4,14 @@
 ----
 ## Version history
 
+    - v1.8.30     [F] Fixed track segments adding/removing updates.
+
     - v1.8.29     [U] Initial port for Neoforge 1.20.4 (20.4.200).
                   [M] Added RLC interval timer instance `TIV3`.
                   [M] Added RLC TIVx enable signal (2nd argument).
                   [M] Re-implemented/refactored Track optimizations.
                   [M] Redstone Track colour brightness adapted.
                   [M] Redstone Relay stone texture edited.
-
-                  [I] Known issue: Neighbour power update when removing
-                      Track segments not adapted properly yet to Neo.
-                      (Workaround: Remove+Replace the adjacent segment).
 
     - v1.3.22     [F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).
 
