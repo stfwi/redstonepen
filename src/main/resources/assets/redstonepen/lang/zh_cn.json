@@ -10,6 +10,7 @@
   "block.redstonepen.bridge_relay": "红石中继桥",
   "block.redstonepen.bridge_relay.help": "中继来自后方的输入信号，以 15 级能量向前方输出。同时从左到右透传普通红石信号。",
   "block.redstonepen.control_box": "红石逻辑控制器",
+  "block.redstonepen.control_box.error.parse_error": "Parse error",
   "block.redstonepen.control_box.error.expected_assignment": "应为赋值",
   "block.redstonepen.control_box.error.invalid_character": "无效字符",
   "block.redstonepen.control_box.error.invalid_number_of_arguments": "函数参数数量不正确",

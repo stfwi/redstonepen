@@ -43,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 
+@SuppressWarnings("deprecation")
 public class ControlBox
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -122,7 +123,6 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -262,7 +262,6 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  @SuppressWarnings("deprecation")
                   final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
                   logic_.symbol(port_name+".co", cov);
                 } else {
@@ -562,7 +561,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setCursorColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -656,6 +655,7 @@ public class ControlBox
       }
       setInitialFocus(textbox);
       setFocused(textbox);
+      textbox.active = false;
       getMenu().onGuiAction("serverdata");
     }
 
@@ -748,7 +748,7 @@ public class ControlBox
         start_stop.active = errors_.isEmpty();
         if(!start_stop.active) { start_stop.checked(false); } else { cb_error_indicator.visible = false; }
         textbox.active = !start_stop.checked();
-        textbox.setFontColor(textbox.active ? 0xffeeeeee : 0xff999999);
+        textbox.setFontColor(textbox.active ? 0xeeeeee : 0x999999);
         cb_paste_all.visible = textbox.active && textbox.getValue().trim().isEmpty();
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
@@ -1432,7 +1432,7 @@ public class ControlBox
                 assign = exp.name.toLowerCase();
               }
             } catch(Exception e) {
-              err = e.getMessage();
+              err = "parse_error";
             }
           }
           this.expression = exp;

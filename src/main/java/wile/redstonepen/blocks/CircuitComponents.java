@@ -27,7 +27,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -45,15 +44,15 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import wile.redstonepen.ModContent;
+import wile.redstonepen.libmc.RsSignals;
 import wile.redstonepen.libmc.StandardBlocks;
 import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Overlay;
-import wile.redstonepen.libmc.RsSignals;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
-
+@SuppressWarnings("deprecation")
 public class CircuitComponents
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -217,7 +216,6 @@ public class CircuitComponents
     { return getShape(state, world, pos, context); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter world, BlockPos pos)
     { return shapes_.getOrDefault(state, Shapes.block()); }
 
@@ -225,37 +223,30 @@ public class CircuitComponents
     public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
     { return !state.getValue(WATERLOGGED); }
 
-    @Deprecated
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
     { return (side==null) || (side != state.getValue(FACING)); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean isSignalSource(BlockState state)
     { return true; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean hasAnalogOutputSignal(BlockState state)
     { return false; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos)
     { return 0; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return 0; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return 0; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     {}
 
@@ -278,42 +269,42 @@ public class CircuitComponents
         case DOWN:
         case UP:
           switch(dir) {
-            case EAST:  rotation=1; break;
-            case SOUTH: rotation=2; break;
-            case WEST:  rotation=3; break;
-            default:
+            case EAST  -> rotation = 1;
+            case SOUTH -> rotation = 2;
+            case WEST  -> rotation = 3;
+            default    -> {}
           }
           break;
         case NORTH:
           switch(dir) {
-            case EAST: rotation=1; break;
-            case DOWN: rotation=2; break;
-            case WEST: rotation=3; break;
-            default:
+            case EAST -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case WEST -> rotation = 3;
+            default   -> {}
           }
           break;
         case EAST:
           switch(dir) {
-            case SOUTH: rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case NORTH: rotation=3; break;
-            default:
+            case SOUTH -> rotation = 1;
+            case DOWN  -> rotation = 2;
+            case NORTH -> rotation = 3;
+            default    -> {}
           }
           break;
         case SOUTH:
           switch(dir) {
-            case WEST:  rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case EAST:  rotation=3; break;
-            default:
+            case WEST -> rotation = 1;
+            case DOWN -> rotation = 2;
+            case EAST -> rotation = 3;
+            default   -> {}
           }
           break;
         case WEST:
           switch(dir) {
-            case NORTH: rotation=1; break;
-            case DOWN:  rotation=2; break;
-            case SOUTH: rotation=3; break;
-            default:
+            case NORTH -> rotation = 1;
+            case DOWN  -> rotation = 2;
+            case SOUTH -> rotation = 3;
+            default    -> {}
           }
           break;
       }
@@ -327,11 +318,10 @@ public class CircuitComponents
     {
       if((state=super.updateShape(state, facing, facingState, world, pos, facingPos)) == null) return state;
       if(!canSurvive(state, world, pos)) return Blocks.AIR.defaultBlockState();
-      return (world instanceof ServerLevel) ? update(state, (ServerLevel)world, pos, facingPos) : state;
+      return (world instanceof ServerLevel sworld) ? update(state, sworld, pos, facingPos) : state;
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos)
     {
       final Direction face = state.getValue(FACING);
@@ -340,7 +330,6 @@ public class CircuitComponents
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving)
     { update(state, world, pos, null); }
 
@@ -355,12 +344,10 @@ public class CircuitComponents
       }
     }
 
-    @Override
-    public boolean shouldCheckWeakPower(BlockState state, LevelReader world, BlockPos pos, Direction side)
+    public boolean shouldCheckWeakPower(BlockState state, SignalGetter level, BlockPos pos, Direction side)
     { return false; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     { update(state, world, pos, fromPos); }
 
@@ -417,7 +404,6 @@ public class CircuitComponents
     protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos)
     { notifyOutputNeighbourOfStateChange(state, world, pos, getOutputFacing(state)); }
 
-    @SuppressWarnings("deprecation")
     protected void notifyOutputNeighbourOfStateChange(BlockState state, Level world, BlockPos pos, Direction facing)
     {
       final BlockPos adjacent_pos = pos.relative(facing);
@@ -469,8 +455,6 @@ public class CircuitComponents
 
   public static class RelayBlock extends DirectedComponentBlock
   {
-    protected boolean lock_update = false;
-
     protected boolean isPowered(BlockState state, Level world, BlockPos pos)
     {
       final Direction output_side = getOutputFacing(state);
@@ -500,10 +484,8 @@ public class CircuitComponents
       final boolean powered = isPowered(state, world, pos);
       if(powered == state.getValue(POWERED)) return;
       if(!powered) {
-        lock_update = true;
-        world.setBlock(pos, state.setValue(POWERED,false), 2|15);
+        world.setBlock(pos, state.setValue(POWERED,false), 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
-        lock_update = false;
       }
     }
 
@@ -514,10 +496,8 @@ public class CircuitComponents
       if(powered == state.getValue(POWERED)) return state;
       if(world.getBlockTicks().hasScheduledTick(pos, this)) return state;
       if(powered) {
-        lock_update = true;
-        world.setBlock(pos, state.setValue(POWERED,true), 2|15);
+        world.setBlock(pos, state.setValue(POWERED,true), 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
-        lock_update = false;
       } else {
         world.scheduleTick(pos, this, 2);
       }
@@ -531,8 +511,6 @@ public class CircuitComponents
 
   public static class InvertedRelayBlock extends RelayBlock
   {
-    private boolean lock_update = false;
-
     public InvertedRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
     { super(config, builder, aabb); }
 
@@ -546,10 +524,8 @@ public class CircuitComponents
       final boolean powered = isPowered(state, world, pos);
       if(powered == state.getValue(POWERED)) return;
       if(powered) {
-        lock_update = true;
-        world.setBlock(pos, state.setValue(POWERED,true), 2|15);
+        world.setBlock(pos, state.setValue(POWERED,true), 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
-        lock_update = false;
       }
     }
 
@@ -562,10 +538,8 @@ public class CircuitComponents
       if(powered) {
         world.scheduleTick(pos, this, 2);
       } else {
-        lock_update = true;
-        world.setBlock(pos, state.setValue(POWERED,false), 2|15);
+        world.setBlock(pos, state.setValue(POWERED,false), 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
-        lock_update = false;
       }
       return state;
     }
@@ -597,10 +571,10 @@ public class CircuitComponents
       state = state.setValue(POWERED, powered);
       if(powered && !pwstate) {
         state = state.setValue(STATE, (state.getValue(STATE)==0) ? (1) : (0));
-        world.setBlock(pos, state, 2|15);
+        world.setBlock(pos, state, 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
       } else if(!powered && pwstate) {
-        world.setBlock(pos, state, 2|15);
+        world.setBlock(pos, state, 2|16);
       }
       return state;
     }
@@ -624,7 +598,7 @@ public class CircuitComponents
     {
       if(state.getValue(STATE) == 0) return;
       state = state.setValue(STATE, 0);
-      world.setBlock(pos, state, 2|15);
+      world.setBlock(pos, state, 2|16);
       notifyOutputNeighbourOfStateChange(state, world, pos);
     }
 
@@ -637,10 +611,10 @@ public class CircuitComponents
         if(powered) {
           boolean trig = (state.getValue(STATE) == 0);
           state = state.setValue(STATE, 1);
-          world.setBlock(pos, state, 2|15);
+          world.setBlock(pos, state, 2|16);
           if(trig) notifyOutputNeighbourOfStateChange(state, world, pos);
         } else {
-          world.setBlock(pos, state, 2|15);
+          world.setBlock(pos, state, 2|16);
         }
       }
       if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
@@ -661,31 +635,31 @@ public class CircuitComponents
     public BridgeRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
     { super(config, builder, aabb); }
 
-    protected int getInputPower(Level world, BlockPos relay_pos, Direction side)
+    protected int getInputPower(Level world, BlockPos relay_pos, Direction redstone_side)
     {
-      final BlockPos pos = relay_pos.relative(side);
+      final BlockPos pos = relay_pos.relative(redstone_side);
       final BlockState state = world.getBlockState(pos);
       int p = 0;
       if(power_update_recursion_level_ < 32) {
         ++power_update_recursion_level_;
         if(state.is(Blocks.REDSTONE_WIRE)) {
-          p = Math.max(0, state.getValue(RedStoneWireBlock.POWER)-2);
+          p = Math.max(0, state.getDirectSignal(world, pos, redstone_side)-2);
         } else if(state.is(ModContent.references.TRACK_BLOCK)) {
-          p = Math.max(0, RedstoneTrack.RedstoneTrackBlock.tile(world, pos).map((te->te.getRedstonePower(side, true))).orElse(0)-2);
+          p = Math.max(0, RedstoneTrack.RedstoneTrackBlock.tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0)-2);
         } else if(state.is(ModContent.references.BRIDGE_RELAY_BLOCK)) {
           if(state.getValue(FACING) != world.getBlockState(relay_pos).getValue(FACING)) {
             p = 0;
           } else if((state.getValue(ROTATION) & 0x1) != (world.getBlockState(relay_pos).getValue(ROTATION) & 0x1)) {
             p = 0;
           } else {
-            p = getInputPower(world, pos, side);
+            p = getInputPower(world, pos, redstone_side);
           }
         } else {
-          p = state.getSignal(world, pos, side);
-          if((p<15) && (!state.isSignalSource()) && (RsSignals.canEmitWeakPower(state, world, pos, side))) {
+          p = state.getSignal(world, pos, redstone_side);
+          if((p<15) && (!state.isSignalSource()) && (RsSignals.canEmitWeakPower(state, world, pos, redstone_side))) {
             for(Direction d:Direction.values()) {
-              if(d == side.getOpposite()) continue;
-              p = Math.max(p, world.getBlockState(pos.relative(d)).getSignal(world, pos.relative(d), d));
+              if(d == redstone_side.getOpposite()) continue;
+              p = Math.max(p, world.getBlockState(pos.relative(d)).getDirectSignal(world, pos.relative(d), d));
               if(p >= 15) break;
             }
           }
@@ -712,21 +686,17 @@ public class CircuitComponents
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     {
       if((redstone_side == getOutputFacing(state).getOpposite())) return state.getValue(POWERED) ? 15 : 0;
-      int p = 0;
+      if(!(world instanceof ServerLevel sworld)) return 0;
       final Direction left = getLeftFacing(state);
       final Direction right = getRightFacing(state);
-      if(((redstone_side == left) || (redstone_side == right)) && (world instanceof ServerLevel)) {
-        final boolean left_source = !isWireConnected((ServerLevel)world, pos, left) && world.getBlockState(pos.relative(left)).isSignalSource();
-        final boolean right_source = !isWireConnected((ServerLevel)world, pos, right) && world.getBlockState(pos.relative(right)).isSignalSource();
-        if(left_source && !right_source) {
-          p = getInputPower((ServerLevel)world, pos, left);
-        } else if(!left_source && right_source) {
-          p = getInputPower((ServerLevel)world, pos, right);
-        } else {
-          p = Math.max(0, Math.max(getInputPower((ServerLevel)world, pos, left), getInputPower((ServerLevel)world, pos, right)));
-        }
+      if((redstone_side != left) && (redstone_side != right)) return 0;
+      if(isWireConnected(sworld, pos, redstone_side)) {
+        return getInputPower(sworld, pos, redstone_side);
+      } else if(world.getBlockState(pos.relative(redstone_side)).isSignalSource()) {
+        return getInputPower(sworld, pos, left);
+      } else {
+        return 0;
       }
-      return p;
     }
 
     @Override
@@ -737,37 +707,32 @@ public class CircuitComponents
     public BlockState update(BlockState state, Level world, BlockPos pos, @Nullable BlockPos fromPos)
     {
       // Relay branch update
-      {
-        final boolean powered = isPowered(state, world, pos);
-        if(powered != state.getValue(POWERED)) {
-          if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
-            if(powered) {
-              lock_update = true;
-              world.setBlock(pos, (state=state.setValue(POWERED,true)), 2|15);
-              world.neighborChanged(pos.relative(getOutputFacing(state)), this, pos);
-              lock_update = false;
-            } else {
-              world.scheduleTick(pos, this, 2);
-            }
+      final boolean powered = isPowered(state, world, pos);
+      if(powered != state.getValue(POWERED)) {
+        if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
+          if(powered) {
+            world.setBlock(pos, (state=state.setValue(POWERED,true)), 2|16);
+            world.neighborChanged(pos.relative(getOutputFacing(state)), this, pos);
+          } else {
+            world.scheduleTick(pos, this, 2);
           }
         }
+        return state;
       }
-      // Wire branch update
       if(fromPos != null) {
+        // Wire branch update
         final Vec3i v = pos.subtract(fromPos);
-        final Direction dir = Direction.getNearest(v.getX(), v.getY(), v.getZ());
+        final Direction redstone_side = Direction.getNearest(v.getX(), v.getY(), v.getZ());
         final Direction left = getLeftFacing(state);
         final Direction right = getRightFacing(state);
-        if((dir == left) || (dir == right)) {
-          lock_update = true;
-          power_update_recursion_level_ = 0;
-          int pr = getSignal(state, world, pos, right);
-          int pl = getSignal(state, world, pos, left);
-          final boolean track_powered = (pr>0) || (pl>0);
-          if(track_powered != (state.getValue(STATE)==1)) world.setBlock(pos, (state=state.setValue(STATE, track_powered?1:0)), 2|15);
-          world.neighborChanged(pos.relative(dir), this, pos);
-          lock_update = false;
-        }
+        if((redstone_side != left) && (redstone_side != right)) return state;
+        power_update_recursion_level_ = 0;
+        final BlockPos npos = pos.relative(redstone_side);
+        world.getBlockState(npos).neighborChanged(world, npos, this, pos, false);
+        final int pr = getInputPower(world, pos, right);
+        final int pl = getInputPower(world, pos, left);
+        final boolean track_powered = (pr>0) || (pl>0);
+        if(track_powered != (state.getValue(STATE)==1)) world.setBlock(pos, (state=state.setValue(STATE, track_powered?1:0)), 2|16);
       }
       return state;
     }

@@ -56,7 +56,7 @@ public class Networking
       });
     });
     PacketNbtNotifyClientToServer.PACKET_ID = new ResourceLocation(modid, "nnc2s");
-    PacketNbtNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "css2c");
+    PacketNbtNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "nns2c");
     ServerPlayNetworking.registerGlobalReceiver(PacketNbtNotifyClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
       final CompoundTag nbt = buf.readNbt();
       if((player==null) || (nbt==null)) return;

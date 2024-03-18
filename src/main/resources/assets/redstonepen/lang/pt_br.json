@@ -10,6 +10,7 @@
   "block.redstonepen.bridge_relay": "Relé ponte de redstone",
   "block.redstonepen.bridge_relay.help": "Retransmite os sinais de entrada da parte de trás para a frente com uma potência de saída igual a 15. Atravessa um sinal normal pelas laterais.",
   "block.redstonepen.control_box": "Controlador de redstone",
+  "block.redstonepen.control_box.error.parse_error": "Parse error",
   "block.redstonepen.control_box.error.expected_assignment": "Assignment expected",
   "block.redstonepen.control_box.error.invalid_character": "Invalid character",
   "block.redstonepen.control_box.error.invalid_number_of_arguments": "Invalid number of function arguments",

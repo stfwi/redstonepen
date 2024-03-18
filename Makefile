@@ -92,6 +92,7 @@ dist-files: clean init mod
 	@rm -f dist/*-sources.jar
 
 dist: sanitize dist-check dist-files
+	@$(TASK) dist-sign
 
 run:
 	@$(GRADLE) runClient

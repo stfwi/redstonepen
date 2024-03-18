@@ -10,6 +10,7 @@
   "block.redstonepen.bridge_relay": "Bridging Redstone Relay",
   "block.redstonepen.bridge_relay.help": "Re-lays incoming signals from the back to the front with output power 15. Passes through a normal Redstone signal from left-to-right.",
   "block.redstonepen.control_box": "Redstone Logic Control",
+  "block.redstonepen.control_box.error.parse_error": "Parse error",
   "block.redstonepen.control_box.error.expected_assignment": "Assignment expected",
   "block.redstonepen.control_box.error.invalid_character": "Invalid character",
   "block.redstonepen.control_box.error.invalid_number_of_arguments": "Invalid number of function arguments",
