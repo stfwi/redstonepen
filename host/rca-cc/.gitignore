@@ -1,0 +1,9 @@
+*.d
+*.elf
+*.exe
+*.log
+*.lst
+*.o
+*.txt
+/build
+/tmp

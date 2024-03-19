@@ -24,8 +24,11 @@
   #error "Unsupported OS."
 #endif
 #include <type_traits>
-#include <limits>
+#include <algorithm>
 #include <cstdint>
+#include <string>
+#include <limits>
+#include <array>
 
 
 namespace sw { namespace ipc {
@@ -228,9 +231,9 @@ namespace sw { namespace ipc {
           }
           // Memory mapping
           {
-            string name = file_path.c_str();
+            std::string name = file_path.c_str();
             name.erase(std::remove_if(name.begin(), name.end(), [](const char c){ return (c<0x20)||(c>0x7e)||(c=='\\')||(c=='/');}), name.end());
-            name += to_string(long(element_offset*sizeof(value_type))) + "_" + to_string(long(num_value_elements*sizeof(value_type)));
+            name += std::to_string(long(element_offset*sizeof(value_type))) + "_" + to_string(long(num_value_elements*sizeof(value_type)));
             const DWORD protect = (flags & flag_readwrite) ? (PAGE_READWRITE) : (PAGE_READONLY);;
             const DWORD map_access = (flags & flag_readwrite) ? (FILE_MAP_ALL_ACCESS) : (FILE_MAP_READ);
             handles_.fm = ::CreateFileMappingA(handles_.fd, &handles_.sa, protect, 0, uint32_t(), name.c_str());
