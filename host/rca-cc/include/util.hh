@@ -12,7 +12,7 @@
 #ifndef RCA_UTILITY_HH
 #define RCA_UTILITY_HH
 #include <type_traits>
-#include <string_view>
+#include <filesystem>
 #include <cinttypes>
 #include <iostream>
 #include <optional>
@@ -195,6 +195,26 @@ namespace util {
     if((argc <= 1) || (!argv)) return args;
     for(int i=1; (i<argc) && (argv[i]); ++i) args.push_back(argv[i]);
     return args;
+  }
+
+  /**
+   * Removes a file if existing and not a
+   * directory. Returns boolean success.
+   * @tparam typename PathType
+   * @param PathType&& file
+   * @return bool
+   */
+  template<typename PathType>
+  bool unlink(PathType&& file) noexcept
+  {
+    try {
+      const auto path = std::filesystem::path(file);
+      auto ec = std::error_code();
+      if(file.empty() || std::filesystem::is_directory(path)) return false;
+      return std::filesystem::remove(path, ec); // we don't care here why not removed.
+    } catch(...) {
+      return false;
+    }
   }
 
 }

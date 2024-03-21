@@ -172,6 +172,10 @@ namespace rca {
     {
       inp_.close();
       out_.close();
+      // Also remove the files, may fail on windows if Minecraft with RCA is
+      // still running - but hey, can't have everything.
+      util::unlink(inp_.path());
+      util::unlink(out_.path());
     }
 
   private: // Private functions
