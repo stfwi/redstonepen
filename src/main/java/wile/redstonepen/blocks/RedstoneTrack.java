@@ -1074,7 +1074,7 @@ public class RedstoneTrack
 
     public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos, @Nullable Map<BlockPos,BlockPos> change_notifications)
     {
-      record Neighbor(BlockPos pos, Direction side, int power, boolean is_track, boolean needs_indirect) {}
+      record Neighbor(BlockPos pos, Direction side, int power, boolean direct_update, boolean needs_indirect) {}
       final Level world = getLevel();
       final List<Neighbor> neighbors = new LinkedList<>();
       final TrackNet net = nets_.stream().filter(n->n.neighbour_positions.contains(fromPos)).findFirst().orElse(null);
@@ -1093,6 +1093,10 @@ public class RedstoneTrack
           final int p_track = RedstoneTrackBlock.tile(world, ext_pos).map(te->Math.max(0, te.getSidePower(ext_side))).orElse(0);
           neighbors.add(new Neighbor(ext_pos, ext_side, p_track, true, false));
           pmax = Math.max(pmax, p_track-1);
+        } else if(ext_state.is(ModContent.references.BRIDGE_RELAY_BLOCK)) {
+          final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, true, false));
+          pmax = Math.max(pmax, p_nowire);
         } else {
           final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
           final boolean weak_updates = (!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(world, ext_pos);
@@ -1118,11 +1122,11 @@ public class RedstoneTrack
       final boolean emit_notification = change_notifications == null;
       if(emit_notification) change_notifications = new LinkedHashMap<>();
       for(Neighbor neighbor: neighbors) {
-        if(neighbor.is_track) {
+        if(neighbor.direct_update) {
           if(world.getBlockEntity(neighbor.pos) instanceof TrackBlockEntity te) {
             te.handleNeighborChanged(getBlockPos(), change_notifications);
           } else {
-            change_notifications.put(neighbor.pos, getBlockPos());
+            world.getBlockState(neighbor.pos).neighborChanged(world, neighbor.pos, getBlock(), getBlockPos(), false);
           }
         } else {
           change_notifications.put(neighbor.pos, getBlockPos());

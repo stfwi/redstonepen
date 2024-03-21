@@ -1,6 +1,7 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen",
  "1.20.4": {
+  "1.8.31": "[F] Fixed RLC UI initialization locking (issue #40, ty shinchai).\n[F] Bridge Relay to Track update fixed.\n[F] RCA init order fixed.\n[M] RLC editor cursor brightness increased.",
   "1.8.30": "[F] Fixed track segments adding/removing updates.",
   "1.8.29": "[U] Initial port for Neoforge 1.20.4 (20.4.200).\n[M] Added RLC interval timer instance `TIV3`.\n[M] Added RLC TIVx enable signal (2nd argument).\n[M] Re-implemented/refactored Track optimizations.\n[M] Redstone Track colour brightness adapted.\n[M] Redstone Relay stone texture edited.",
   "1.3.22": "[F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).",
@@ -41,7 +42,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.20.4-recommended": "1.8.30",
-  "1.20.4-latest": "1.8.30"
+  "1.20.4-recommended": "1.8.31",
+  "1.20.4-latest": "1.8.31"
  }
 }

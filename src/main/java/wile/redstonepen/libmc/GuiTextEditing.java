@@ -263,8 +263,8 @@ public class GuiTextEditing
       mxs.scale(font_scale_, font_scale_, font_scale_);
       final DisplayCache cache = getDisplayCache();
       for(LineInfo li:cache.lines) gg.drawString(font_, li.asComponent, li.x, li.y, font_color_);
-      this.renderHighlight(cache.selection);
       this.renderCursor(gg, cache.cursor, cache.cursorAtEnd);
+      this.renderHighlight(cache.selection);
       {
         Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
@@ -322,7 +322,7 @@ public class GuiTextEditing
       if(!at_end) {
         gg.fill(pos.x, pos.y - 1, pos.x + 1, pos.y + NORM_LINE_HEIGHT, cursor_color_);
       } else {
-        gg.drawString(font_, "_", pos.x, pos.y, 0);
+        gg.drawString(font_, "_", pos.x, pos.y, cursor_color_);
       }
     }
 

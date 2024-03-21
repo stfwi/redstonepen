@@ -34,6 +34,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.ModRedstonePen;
+import wile.redstonepen.blocks.CircuitComponents;
+import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.*;
@@ -42,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @SuppressWarnings("deprecation")
 public class RedstonePenItem extends StandardItems.BaseItem
@@ -93,7 +96,14 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
-  { return false; }
+  {
+    if(state.getDestroySpeed(world, pos) > 0) return false;
+    if(state.getShape(world, pos).isEmpty()) return false;
+    if(state.getBlock() instanceof DiodeBlock) return false;
+    if(state.getBlock() instanceof CircuitComponents.DirectedComponentBlock) return false;
+    if(state.getBlock() instanceof ControlBox.ControlBoxBlock) return false;
+    return true;
+  }
 
   @Override // not really needed, canAttack=false
   public float getDestroySpeed(ItemStack stack, BlockState state)
@@ -103,7 +113,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity entity)
   {
     if(!(entity instanceof Player player)) return true;
-    if(state.getBlock() instanceof RepeaterBlock) return false;
+    if(state.getBlock() instanceof DiodeBlock) return false;
     if(state.is(Blocks.REDSTONE_WIRE)) {
       pushRedstone(stack, 1, player);
       world.removeBlock(pos, false);

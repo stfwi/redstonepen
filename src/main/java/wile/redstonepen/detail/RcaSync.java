@@ -88,8 +88,6 @@ public class RcaSync
 
   public static final class ClientRca
   {
-    private static byte tick_counter_ = 0;
-
     public static boolean init()
     {
       final wile.api.rca.RedstoneClientAdapter rca = wile.api.rca.FmmRedstoneClientAdapter.Adapter.instance();
@@ -108,7 +106,6 @@ public class RcaSync
     {
       final wile.api.rca.RedstoneClientAdapter rca = wile.api.rca.FmmRedstoneClientAdapter.Adapter.instance();
       if(rca == null) return;
-      if(((++tick_counter_) & 0x1) != 0) return;
       rca.tick();
       CompoundTag nbt = new CompoundTag();
       nbt.putString("hnd", MESSAGE_HANDLER_ID);

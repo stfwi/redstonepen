@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.8.31     [F] Fixed RLC UI initialization locking (issue #40, ty shinchai).
+                  [F] Bridge Relay to Track update fixed.
+                  [F] RCA init order fixed.
+                  [M] RLC editor cursor brightness increased.
+
     - v1.8.30     [F] Fixed track segments adding/removing updates.
 
     - v1.8.29     [U] Initial port for Neoforge 1.20.4 (20.4.200).

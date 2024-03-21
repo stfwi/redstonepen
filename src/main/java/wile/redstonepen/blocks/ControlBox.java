@@ -35,13 +35,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
-import wile.redstonepen.libmc.StandardEntityBlocks;
-import wile.redstonepen.libmc.Auxiliaries;
-import wile.redstonepen.libmc.Networking;
-import wile.redstonepen.libmc.Registries;
-import wile.redstonepen.libmc.GuiTextEditing;
-import wile.redstonepen.libmc.Guis;
-import wile.redstonepen.libmc.TooltipDisplay;
+import wile.redstonepen.libmc.*;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
@@ -108,7 +102,7 @@ public class ControlBox
       final BlockEntity te = world.getBlockEntity(pos);
       if(!(te instanceof ControlBoxBlockEntity cbe)) return;
       final CompoundTag nbt = stack.getTag();
-      if(nbt.contains("tedata")) {
+      if(nbt!=null && nbt.contains("tedata")) {
         CompoundTag te_nbt = nbt.getCompound("tedata");
         if(!te_nbt.isEmpty()) cbe.readnbt(te_nbt);
       }
@@ -147,8 +141,8 @@ public class ControlBox
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
       final BlockPos dp = fromPos.subtract(pos);
-      Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
-      cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
+      final Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
+      if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
   }
@@ -363,7 +357,7 @@ public class ControlBox
       if((signal_intr!=0) && (signal_data==0)) {
         logic_.intr_redges |= mask;
         tick_timer_ = 0;
-      } else if((signal_intr==0) && (signal_data!=0)) {
+      } else if(signal_intr==0) {
         logic_.intr_fedges |= mask;
         tick_timer_ = 0;
       }
@@ -403,7 +397,7 @@ public class ControlBox
 
     private ControlBoxUiContainer(int cid, Inventory player_inventory, Container block_inventory, ContainerLevelAccess wpc, ContainerData fields)
     {
-      super(ModContent.getMenuTypeOfBlock("control_box"), cid);
+      super(Registries.getMenuTypeOfBlock("control_box"), cid);
       player_ = player_inventory.player;
       inventory_ = block_inventory;
       wpc_ = wpc;
@@ -425,7 +419,7 @@ public class ControlBox
     public void sendAllDataToRemote()
     {
       super.sendAllDataToRemote();
-      if(!(world().isClientSide) || (te()==null)) return;
+      if((world().isClientSide) || (te()==null)) return;
       Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te(), true));
     }
 
@@ -433,7 +427,7 @@ public class ControlBox
     public ItemStack quickMoveStack(Player player, int slot)
     { return ItemStack.EMPTY; }
 
-    // Container client/server synchronisation --------------------------------------------------
+    // Container client/server synchronization --------------------------------------------------
 
     @OnlyIn(Dist.CLIENT)
     public void onGuiAction(String message)
@@ -567,7 +561,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setCursorColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -639,7 +633,8 @@ public class ControlBox
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(Component.literal(String.format("%s = %d", k.toUpperCase(), kv.getValue())));
+            final String lf = (c.getSiblings().isEmpty()) ? "" : "\n"; // bah, can't do Component.join(separator)
+            c.getSiblings().add(Component.literal(String.format("%s%s = %d", lf, k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));
@@ -660,6 +655,7 @@ public class ControlBox
       }
       setInitialFocus(textbox);
       setFocused(textbox);
+      textbox.active = false;
       getMenu().onGuiAction("serverdata");
     }
 
@@ -752,7 +748,7 @@ public class ControlBox
         start_stop.active = errors_.isEmpty();
         if(!start_stop.active) { start_stop.checked(false); } else { cb_error_indicator.visible = false; }
         textbox.active = !start_stop.checked();
-        textbox.setFontColor(textbox.active ? 0xffeeeeee : 0xff999999);
+        textbox.setFontColor(textbox.active ? 0xeeeeee : 0x999999);
         cb_paste_all.visible = textbox.active && textbox.getValue().trim().isEmpty();
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
@@ -849,7 +845,7 @@ public class ControlBox
           return MathExpr.Expr.bool_false();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);
@@ -887,7 +883,7 @@ public class ControlBox
           return MathExpr.Expr.bool_true();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);
@@ -1436,7 +1432,7 @@ public class ControlBox
                 assign = exp.name.toLowerCase();
               }
             } catch(Exception e) {
-              err = e.getMessage();
+              err = "parse_error";
             }
           }
           this.expression = exp;

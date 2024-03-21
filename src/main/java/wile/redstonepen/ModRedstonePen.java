@@ -80,6 +80,7 @@ public class ModRedstonePen
   {
     private static void onConstruct(final FMLConstructModEvent event)
     {
+      wile.redstonepen.detail.RcaSync.CommonRca.init();
     }
 
     private static void onRegister(RegisterEvent event)
@@ -95,7 +96,6 @@ public class ModRedstonePen
 
     private static void onLoadComplete(final FMLLoadCompleteEvent event)
     {
-      wile.redstonepen.detail.RcaSync.CommonRca.init();
     }
   }
 
@@ -109,10 +109,10 @@ public class ModRedstonePen
       Networking.OverlayTextMessage.setHandler(Overlay.TextOverlayGui::show);
       Overlay.TextOverlayGui.on_config(0.75, 0x00ffaa00, 0x55333333, 0x55333333, 0x55444444);
       BlockEntityRenderers.register((BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"), wile.redstonepen.detail.ModRenderers.TrackTer::new);
-
+      // Player client tick if RCA existing.
       if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (final TickEvent.PlayerTickEvent ev)->{
-          if((ev.phase != TickEvent.Phase.END) || ((ev.player.level().getGameTime() & 0x1) != 0)) return;
+          if(ev.phase != TickEvent.Phase.END) return;
           wile.redstonepen.detail.RcaSync.ClientRca.tick();
         });
       }
