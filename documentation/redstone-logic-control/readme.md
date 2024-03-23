@@ -527,6 +527,9 @@ provide a steady one-tick pulse every `N` ticks:
 # Use interval timer 1 to generate a one-tick pulse every
 second:
 R = TIV1(20) # 1 tick on, 19 ticks off.
+
+# @since version v1.8.29 with optional enable signal:
+R = TIV2(20, Y) # Pulse every 20 ticks if Y is ON, reset if Y is OFF.
 ```
 
 ##### Signal Counters
