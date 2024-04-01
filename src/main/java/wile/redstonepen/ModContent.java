@@ -24,7 +24,7 @@ import wile.redstonepen.libmc.Registries;
 
 public class ModContent
 {
-  public static void init(String modid)
+  public static void init()
   {
     initBlocks();
     initItems();

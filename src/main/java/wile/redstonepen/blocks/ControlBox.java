@@ -31,8 +31,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
 import wile.redstonepen.libmc.*;
@@ -202,10 +202,6 @@ public class ControlBox
     @Override
     protected void saveAdditional(CompoundTag nbt)
     { super.saveAdditional(nbt); writenbt(nbt); }
-
-    @Override
-    public void setRemoved()
-    { super.setRemoved(); }
 
     @Override
     public Component getName()

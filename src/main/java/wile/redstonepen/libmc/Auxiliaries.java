@@ -11,7 +11,6 @@ package wile.redstonepen.libmc;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -33,11 +32,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.fml.ModList;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.ModList;
 import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
+import wile.redstonepen.ModConstants;
 
 import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
@@ -46,19 +46,20 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+@SuppressWarnings({"unused", "deprecation"})
 public class Auxiliaries
 {
-  private static String modid;
-  private static Logger logger;
+  private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
+  private static Supplier<Player> client_player_supplier = ()->null;
 
-  public static void init(String modid, Logger logger)
+  @OnlyIn(Dist.CLIENT)
+  public static void initClient()
   {
-    Auxiliaries.modid = modid;
-    Auxiliaries.logger = logger;
+    client_player_supplier = ()->net.minecraft.client.Minecraft.getInstance().player;
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ public class Auxiliaries
   // -------------------------------------------------------------------------------------------------------------------
 
   public static String modid()
-  { return modid; }
+  { return ModConstants.MODID; }
 
   public static Logger logger()
   { return logger; }
@@ -107,6 +108,8 @@ public class Auxiliaries
   public static boolean setClipboard(String text)
   { net.minecraft.client.gui.font.TextFieldHelper.setClipboardContents(net.minecraft.client.Minecraft.getInstance(), text); return true; }
 
+    public static @Nullable Player getClientPlayer()
+  { return client_player_supplier.get(); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Logging
@@ -121,6 +124,9 @@ public class Auxiliaries
   public static void logError(final String msg)
   { logger.error(msg); }
 
+  public static void logDebug(final String msg)
+  {}
+
   // -------------------------------------------------------------------------------------------------------------------
   // Localization, text formatting
   // -------------------------------------------------------------------------------------------------------------------
@@ -130,11 +136,11 @@ public class Auxiliaries
    * translation keys. Forces formatting argument, nullable if no special formatting shall be applied..
    */
   public static MutableComponent localizable(String modtrkey, Object... args)
-  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid+"."+modtrkey), args); }
+  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid()+"."+modtrkey), args); }
 
   public static MutableComponent localizable(String modtrkey, @Nullable ChatFormatting color, Object... args)
   {
-    final MutableComponent tr = Component.translatable(modid+"."+modtrkey, args);
+    final MutableComponent tr = Component.translatable(modid()+"."+modtrkey, args);
     if(color!=null) tr.getStyle().applyFormat(color);
     return tr;
   }
@@ -143,7 +149,7 @@ public class Auxiliaries
   { return localizable(modtrkey, new Object[]{}); }
 
   public static Component localizable_block_key(String blocksubkey)
-  { return Component.translatable("block."+modid+"."+blocksubkey); }
+  { return Component.translatable("block."+modid()+"."+blocksubkey); }
 
   @OnlyIn(Dist.CLIENT)
   public static String localize(String translationKey, Object... args)
@@ -163,8 +169,8 @@ public class Auxiliaries
   @OnlyIn(Dist.CLIENT)
   public static List<Component> wrapText(Component text, int max_width_percent)
   {
-    int max_width = ((Minecraft.getInstance().getWindow().getGuiScaledWidth())-10) * max_width_percent/100;
-    return Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
+    int max_width = ((net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth())-10) * max_width_percent/100;
+    return net.minecraft.client.Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream().map(ft->Component.literal(ft.getString())).collect(Collectors.toList());
   }
 
   public static MutableComponent join(Collection<? extends Component> components, String separator)
@@ -204,8 +210,8 @@ public class Auxiliaries
       } else if(extendedTipCondition()) {
         if(tip_available) tip_text = localize(advancedTooltipTranslationKey + ".tip");
       } else if(addAdvancedTooltipHints) {
-        if(tip_available) tip_text += localize(modid + ".tooltip.hint.extended") + (help_available ? " " : "");
-        if(help_available) tip_text += localize(modid + ".tooltip.hint.help");
+        if(tip_available) tip_text += localize(modid() + ".tooltip.hint.extended") + (help_available ? " " : "");
+        if(help_available) tip_text += localize(modid() + ".tooltip.hint.help");
       }
       if(tip_text.isEmpty()) return false;
       String[] tip_list = tip_text.split("\\r?\\n");
@@ -234,7 +240,6 @@ public class Auxiliaries
 
   }
 
-  @SuppressWarnings("unused")
   public static void playerChatMessage(final Player player, final String message)
   { player.displayClientMessage(Component.translatable(message.trim()), true); }
 
@@ -504,12 +509,12 @@ public class Auxiliaries
   public static String loadResourceText(String path)
   { return loadResourceText(Auxiliaries.class.getResourceAsStream(path)); }
 
-  public static void logGitVersion(String mod_name)
+  public static void logGitVersion()
   {
     try {
       // Done during construction to have an exact version in case of a crash while registering.
-      String version = Auxiliaries.loadResourceText("/.gitversion-" + modid).trim();
-      logInfo(mod_name+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
+      String version = Auxiliaries.loadResourceText("/.gitversion-" + modid()).trim();
+      logInfo(ModConstants.MODNAME+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
     } catch(Throwable e) {
       // (void)e; well, then not. Priority is not to get unneeded crashes because of version logging.
     }

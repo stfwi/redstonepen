@@ -1,31 +1,31 @@
 # @file mods.toml
 # @spec TOML v0.5.0 (https://github.com/toml-lang/toml)
 modLoader="javafml"
-loaderVersion="${version_range_loader}"
+loaderVersion="${loader_version_range}"
 issueTrackerURL="${meta_issues}"
-license="${meta_license}"
+license="${mod_license}"
 
 [[mods]]
-modId="${meta_modid}"
-version="${version_mod}"
-displayName="${meta_modname}"
-description='''${meta_description}'''
-authors="${meta_author}"
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+description='''${mod_description}'''
+authors="${mod_authors}"
 credits="The Smiths and Weavers of the World."
 updateJSONURL="${meta_updateurl}"
 displayURL="${meta_download}"
-logoFile="assets/${meta_modid}/logo.png"
+logoFile="assets/${mod_id}/logo.png"
 
-[[dependencies.${meta_modid}]]
-  modId="neoforge"
-  type="required"
-  versionRange="${version_range_neoforge}"
+[[dependencies.${mod_id}]]
+  modId="forge"
+  mandatory=true
+  versionRange="${forge_version_range}"
   ordering="NONE"
   side="BOTH"
 
-[[dependencies.${meta_modid}]]
+[[dependencies.${mod_id}]]
   modId="minecraft"
-  type="required"
-  versionRange="[${version_minecraft}]"
+  mandatory=true
+  versionRange="${minecraft_version_range}"
   ordering="NONE"
   side="BOTH"

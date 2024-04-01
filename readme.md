@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.8.32     [F] Ported to 1.20.4 Forge.
+
     - v1.8.31     [F] Fixed RLC UI initialization locking (issue #40, ty shinchai).
                   [F] Bridge Relay to Track update fixed.
                   [F] RCA init order fixed.

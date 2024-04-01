@@ -8,8 +8,6 @@
  */
 package wile.redstonepen.libmc;
 
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -25,6 +23,9 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.IForgeRegistry;
+import wile.redstonepen.ModConstants;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -33,7 +34,7 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static String modid = null;
+  private static final String modid = ModConstants.MODID;
   private static String creative_tab_icon = "";
   private static ResourceKey<CreativeModeTab> creative_tab = null;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
@@ -54,80 +55,86 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
-  public static void init(String mod_id, String creative_tab_icon_item_name)
+  public static void init(String creative_tab_icon_item_name)
   {
-    modid = mod_id;
     creative_tab_icon = creative_tab_icon_item_name;
   }
 
   public static void instantiateAll()
   {
-    instantiate(BuiltInRegistries.BLOCK);
-    instantiate(BuiltInRegistries.ITEM);
-    instantiate(BuiltInRegistries.BLOCK_ENTITY_TYPE);
-    instantiate(BuiltInRegistries.ENTITY_TYPE);
-    instantiate(BuiltInRegistries.MENU);
-    instantiate(BuiltInRegistries.RECIPE_SERIALIZER);
-    instantiate(BuiltInRegistries.PAINTING_VARIANT);
-    instantiate(BuiltInRegistries.CREATIVE_MODE_TAB);
+    instantiate(ForgeRegistries.BLOCKS);
+    instantiate(ForgeRegistries.ITEMS);
+    instantiate(ForgeRegistries.BLOCK_ENTITY_TYPES);
+    instantiate(ForgeRegistries.ENTITY_TYPES);
+    instantiate(ForgeRegistries.MENU_TYPES);
+    instantiate(ForgeRegistries.RECIPE_SERIALIZERS);
+    instantiate(ForgeRegistries.PAINTING_VARIANTS);
   }
 
   @SuppressWarnings("unchecked")
-  public static String instantiate(Registry<?> registry)
+  public static String instantiate(IForgeRegistry<?> registry)
   {
-    final String id = registry.key().location().toString();
+    if(registry==null) return "";
+    final String id = registry.getRegistryName().toString();
     switch(id) {
       case "minecraft:block" -> {
         registered_blocks.clear();
         block_suppliers.forEach((reg)->{
           registered_blocks.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<Block>)registry, new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
+          ForgeRegistries.BLOCKS.register(new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:item" -> {
         registered_items.clear();
         item_suppliers.forEach((reg)->{
           registered_items.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<Item>)registry, new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
+          ForgeRegistries.ITEMS.register(new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:block_entity_type" -> {
         registered_block_entity_types.clear();
         block_entity_type_suppliers.forEach((reg)->{
           registered_block_entity_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<BlockEntityType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
+          ForgeRegistries.BLOCK_ENTITY_TYPES.register(new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:entity_type" -> {
         registered_entity_types.clear();
         entity_type_suppliers.forEach((reg)->{
           registered_entity_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<EntityType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
+          ForgeRegistries.ENTITY_TYPES.register(new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:menu" -> {
         registered_menu_types.clear();
         menu_type_suppliers.forEach((reg)->{
           registered_menu_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<MenuType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
+          ForgeRegistries.MENU_TYPES.register(new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:recipe_serializer" -> {
         registered_recipe_serializers.clear();
         recipe_serializers_suppliers.forEach((reg)->{
           registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<RecipeSerializer<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+          ForgeRegistries.RECIPE_SERIALIZERS.register(new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
         });
+        return id;
       }
       case "minecraft:painting_variant" -> {
+        return id;
       }
       case "minecraft:creative_mode_tab" -> {
+        return id;
       }
       default -> {
         return "";
       }
     }
-    return id;
   }
 
 
@@ -163,13 +170,13 @@ public class Registries
   { return getBlockEntityType("tet_"+block_name); }
 
   public static BlockEntityType<?> getBlockEntityTypeOfBlock(Block block)
-  { return getBlockEntityTypeOfBlock(BuiltInRegistries.BLOCK.getKey(block).getPath()); }
+  { return getBlockEntityTypeOfBlock(ForgeRegistries.BLOCKS.getKey(block).getPath()); }
 
   public static MenuType<?> getMenuTypeOfBlock(String name)
   { return getMenuType("ct_"+name); }
 
   public static MenuType<?> getMenuTypeOfBlock(Block block)
-  { return getMenuTypeOfBlock(BuiltInRegistries.BLOCK.getKey(block).getPath()); }
+  { return getMenuTypeOfBlock(ForgeRegistries.BLOCKS.getKey(block).getPath()); }
 
   public static TagKey<Block> getBlockTagKey(String name)
   { return registered_block_tag_keys.get(name); }
