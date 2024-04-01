@@ -7,7 +7,8 @@
   "authors": [ "wilechaote" ],
   "contact": {
     "homepage": "https://github.com/stfwi/redstonepen",
-    "sources": "https://github.com/stfwi/redstonepen"
+    "sources": "https://github.com/stfwi/redstonepen",
+    "issues": "https://github.com/stfwi/redstonepen/issues"
   },
   "license": "MIT",
   "icon": "assets/redstonepen/logo.png",

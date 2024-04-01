@@ -4,6 +4,12 @@
 ----
 ## Version history
 
+    - v1.8.31     [A] Mod startup GIT commit ID logging added.
+                  [A] Basic Lever, Button, and Pulse Button added.
+                  [M] TICKRATE=t now ignores signal interrupts (makes
+                      closed loop control simpler, issue #41).
+                  [M] Refactoring to improve loader compatibility.
+
     - v1.8.30     [F] Fixed RLC UI initialization locking (issue #40, ty shinchai).
                   [F] Fixed RLC RCA (Arduino % Co connector) sync.
                   [F] Bridge Relay to Track update fixed.

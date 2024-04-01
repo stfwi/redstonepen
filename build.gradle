@@ -21,6 +21,10 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
 	}
+  outputs.upToDateWhen { false }
+  doLast {
+    file("${sourceSets.main.output.resourcesDir}/.gitversion-${meta_modid}").text = 'git log "-1" "--format=%h"'.execute().in.text.trim()
+  }
 }
 
 tasks.withType(JavaCompile).configureEach {

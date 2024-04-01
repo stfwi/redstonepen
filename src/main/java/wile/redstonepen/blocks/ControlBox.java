@@ -161,7 +161,7 @@ public class ControlBox
     private boolean trace_ = false;
     private int tick_timer_ = 0;
     private int num_signal_updates_received_ = 0;
-    private int tick_interval_ = TICK_INTERVAL;
+    private int tick_interval_ = 0;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
     { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
@@ -238,7 +238,7 @@ public class ControlBox
     public void tick()
     {
       if(--tick_timer_ > 0) return;
-      tick_timer_ = tick_interval_;
+      tick_timer_ = (tick_interval_>0) ? tick_interval_ : TICK_INTERVAL;
       final long tick = System.nanoTime();
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
@@ -306,7 +306,10 @@ public class ControlBox
       }
       // Elision of signal updates during this tick, including after output setting
       {
-        if(logic_.symbols().containsKey("tickrate")) tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
+        if(logic_.symbols().containsKey("tickrate")) {
+          tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", 0), 0, 200);
+          if(tick_interval_ == 0) tick_interval_ = TICK_INTERVAL;
+        }
         tick_timer_ = tick_interval_;
         final int dl = logic_.symbol(".deadline");
         if((dl>0) && (dl<tick_timer_)) tick_timer_ = dl;
@@ -347,6 +350,7 @@ public class ControlBox
 
     public void signal_update(Direction from_world_side, Direction from_mapped_side)
     {
+      if(tick_interval_ > 0) return; // Fixed sample tick interval, RLC not reacting to signal edges.
       final int shift = 4*from_mapped_side.ordinal();
       final int mask = 0xf<<shift;
       if((logic_.input_mask & mask) == 0) return; // no input there

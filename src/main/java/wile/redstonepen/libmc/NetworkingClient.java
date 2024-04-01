@@ -19,13 +19,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import wile.redstonepen.ModConstants;
 
 
 @Environment(EnvType.CLIENT)
 public class NetworkingClient
 {
-  public static void clientInit(String modid)
+  public static void clientInit()
   {
+    final String modid = ModConstants.MODID;
     net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(Networking.PacketTileNotifyServerToClient.PACKET_ID, (client, handler, buf, responseSender)->{
       BlockPos pos = buf.readBlockPos();
       CompoundTag nbt = buf.readNbt();

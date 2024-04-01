@@ -26,6 +26,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import wile.redstonepen.ModConstants;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -34,7 +35,7 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static String modid = null;
+  private static final String modid = ModConstants.MODID;
   private static String creative_tab_icon = "";
   private static ResourceKey<CreativeModeTab> creative_tab = null;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
@@ -55,9 +56,8 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
-  public static void init(String mod_id, String creative_tab_icon_item_name)
+  public static void init(String creative_tab_icon_item_name)
   {
-    modid = mod_id;
     creative_tab_icon = creative_tab_icon_item_name;
   }
 
