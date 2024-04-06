@@ -40,6 +40,8 @@ import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
 import org.jetbrains.annotations.Nullable;
+import wile.redstonepen.ModConstants;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,21 +54,17 @@ import java.util.stream.Stream;
 
 public class Auxiliaries
 {
-  private static String modid;
-  private static Logger logger;
+  private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
 
-  public static void init(String modid, Logger logger)
-  {
-    Auxiliaries.modid = modid;
-    Auxiliaries.logger = logger;
-  }
+  public static void init()
+  {}
 
   // -------------------------------------------------------------------------------------------------------------------
   // Mod specific exports
   // -------------------------------------------------------------------------------------------------------------------
 
   public static String modid()
-  { return modid; }
+  { return ModConstants.MODID; }
 
   public static Logger logger()
   { return logger; }
@@ -130,11 +128,11 @@ public class Auxiliaries
    * translation keys. Forces formatting argument, nullable if no special formatting shall be applied..
    */
   public static MutableComponent localizable(String modtrkey, Object... args)
-  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid+"."+modtrkey), args); }
+  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid()+"."+modtrkey), args); }
 
   public static MutableComponent localizable(String modtrkey, @Nullable ChatFormatting color, Object... args)
   {
-    final MutableComponent tr = Component.translatable(modid+"."+modtrkey, args);
+    final MutableComponent tr = Component.translatable(modid()+"."+modtrkey, args);
     if(color!=null) tr.getStyle().applyFormat(color);
     return tr;
   }
@@ -143,14 +141,14 @@ public class Auxiliaries
   { return localizable(modtrkey, new Object[]{}); }
 
   public static Component localizable_block_key(String blocksubkey)
-  { return Component.translatable("block."+modid+"."+blocksubkey); }
+  { return Component.translatable("block."+modid()+"."+blocksubkey); }
 
   @OnlyIn(Dist.CLIENT)
   public static String localize(String translationKey, Object... args)
   {
     Component tr = Component.translatable(translationKey, args);
     tr.getStyle().applyFormat(ChatFormatting.RESET);
-    return tr.getString(); // Note: Dropped the whole dynamic config replacement stuff, this function can actually vanish completly now.
+    return tr.getString();
   }
 
   /**
@@ -204,8 +202,8 @@ public class Auxiliaries
       } else if(extendedTipCondition()) {
         if(tip_available) tip_text = localize(advancedTooltipTranslationKey + ".tip");
       } else if(addAdvancedTooltipHints) {
-        if(tip_available) tip_text += localize(modid + ".tooltip.hint.extended") + (help_available ? " " : "");
-        if(help_available) tip_text += localize(modid + ".tooltip.hint.help");
+        if(tip_available) tip_text += localize(modid() + ".tooltip.hint.extended") + (help_available ? " " : "");
+        if(help_available) tip_text += localize(modid() + ".tooltip.hint.help");
       }
       if(tip_text.isEmpty()) return false;
       String[] tip_list = tip_text.split("\\r?\\n");
@@ -504,12 +502,12 @@ public class Auxiliaries
   public static String loadResourceText(String path)
   { return loadResourceText(Auxiliaries.class.getResourceAsStream(path)); }
 
-  public static void logGitVersion(String mod_name)
+  public static void logGitVersion()
   {
     try {
       // Done during construction to have an exact version in case of a crash while registering.
-      String version = Auxiliaries.loadResourceText("/.gitversion-" + modid).trim();
-      logInfo(mod_name+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
+      String version = Auxiliaries.loadResourceText("/.gitversion-" + ModConstants.MODID).trim();
+      logInfo(ModConstants.MODNAME+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
     } catch(Throwable e) {
       // (void)e; well, then not. Priority is not to get unneeded crashes because of version logging.
     }

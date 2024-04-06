@@ -1,0 +1,10 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item": "minecraft:lever" },
+    { "item": "minecraft:iron_nugget" }
+  ],
+  "result": {
+    "item": "redstonepen:basic_lever"
+  }
+}

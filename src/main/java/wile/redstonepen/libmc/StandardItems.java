@@ -19,7 +19,7 @@ import net.minecraft.world.level.LevelReader;
 
 public class StandardItems
 {
-  public interface IStandardItem //extends IForgeItem
+  public interface IStandardItem
   {
   }
 

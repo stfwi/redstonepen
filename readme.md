@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.8.32     [A] Basic Lever, Button, and Pulse Button added.
+                  [M] TICKRATE=t now ignores signal interrupts (makes
+                      closed loop control simpler, issue #41).
+                  [M] Refactoring to improve loader compatibility.
+
     - v1.8.31     [F] Fixed RLC UI initialization locking (issue #40, ty shinchai).
                   [F] Bridge Relay to Track update fixed.
                   [F] RCA init order fixed.

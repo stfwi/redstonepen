@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import wile.redstonepen.ModConstants;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
 import net.neoforged.neoforge.network.handling.PlayPayloadContext;
@@ -33,8 +34,9 @@ import java.util.function.Consumer;
 
 public class Networking
 {
-  public static void init(String modid, final RegisterPayloadHandlerEvent event)
+  public static void init(final RegisterPayloadHandlerEvent event)
   {
+    final String modid = ModConstants.MODID;
     final IPayloadRegistrar registrar = event.registrar(modid);
 
     PacketTileNotifyClientToServer.PacketData.PACKET_ID = new ResourceLocation(modid, "tnc2s");

@@ -33,7 +33,7 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
+import wile.redstonepen.ModConstants;
 import wile.redstonepen.blocks.CircuitComponents;
 import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
@@ -59,9 +59,9 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag flag)
   {
     if(getMaxDamage()>0) {
-      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.numstored", getMaxDamage()-stack.getDamageValue()));
+      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.numstored", getMaxDamage()-stack.getDamageValue()));
     } else {
-      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.rsfrominventory"));
+      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.rsfrominventory"));
     }
     Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true);
   }

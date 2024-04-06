@@ -42,15 +42,12 @@ import wile.redstonepen.libmc.Registries;
 @Mod("redstonepen")
 public class ModRedstonePen
 {
-  public static final String MODID = "redstonepen";
-  public static final String MODNAME = "Redstone Pen";
-
   public ModRedstonePen(IEventBus bus)
   {
-    Auxiliaries.init(MODID, com.mojang.logging.LogUtils.getLogger());
-    Auxiliaries.logGitVersion(MODNAME);
-    Registries.init(MODID, "quill");
-    ModContent.init(MODID);
+    Auxiliaries.init();
+    Auxiliaries.logGitVersion();
+    Registries.init();
+    ModContent.init();
     bus.addListener(LiveCycleEvents::onConstruct);
     bus.addListener(LiveCycleEvents::onRegister);
     bus.addListener(LiveCycleEvents::onRegisterNetwork);
@@ -61,9 +58,9 @@ public class ModRedstonePen
   // Createive Mode Tab
   // -------------------------------------------------------------------------------------------------------------------
 
-  public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB, MODID);
+  public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB, ModConstants.MODID);
   public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register(
-    "tab_"+MODID, ()->CreativeModeTab.builder()
+    "tab_"+ModConstants.MODID, ()->CreativeModeTab.builder()
       .title(Component.translatable("itemGroup.tabredstonepen"))
       .withTabsBefore(CreativeModeTabs.COMBAT)
       .icon(() -> new ItemStack(Registries.getItem("pen")))
@@ -91,7 +88,7 @@ public class ModRedstonePen
 
     private static void onRegisterNetwork(final RegisterPayloadHandlerEvent event)
     {
-      wile.redstonepen.libmc.Networking.init(MODID, event);
+      wile.redstonepen.libmc.Networking.init(event);
     }
 
     private static void onLoadComplete(final FMLLoadCompleteEvent event)
@@ -99,7 +96,7 @@ public class ModRedstonePen
     }
   }
 
-  @Mod.EventBusSubscriber(modid=MODID, bus=Mod.EventBusSubscriber.Bus.MOD, value=Dist.CLIENT)
+  @Mod.EventBusSubscriber(modid=ModConstants.MODID, bus=Mod.EventBusSubscriber.Bus.MOD, value=Dist.CLIENT)
   public static class ClientEvents
   {
     @SubscribeEvent
@@ -132,7 +129,7 @@ public class ModRedstonePen
     }
   }
 
-  @Mod.EventBusSubscriber(modid=MODID, value=Dist.CLIENT)
+  @Mod.EventBusSubscriber(modid=ModConstants.MODID, value=Dist.CLIENT)
   public static class ClientGameEvents
   {
     @SubscribeEvent

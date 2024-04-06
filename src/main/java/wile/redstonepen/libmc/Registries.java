@@ -10,7 +10,6 @@ package wile.redstonepen.libmc;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
@@ -18,13 +17,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import wile.redstonepen.ModConstants;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -33,9 +31,7 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static String modid = null;
-  private static String creative_tab_icon = "";
-  private static ResourceKey<CreativeModeTab> creative_tab = null;
+  private static final String modid = ModConstants.MODID;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -54,11 +50,8 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
-  public static void init(String mod_id, String creative_tab_icon_item_name)
-  {
-    modid = mod_id;
-    creative_tab_icon = creative_tab_icon_item_name;
-  }
+  public static void init()
+  {}
 
   public static void instantiateAll()
   {
@@ -128,15 +121,6 @@ public class Registries
       }
     }
     return id;
-  }
-
-
-  public static ResourceKey<CreativeModeTab> getCreativeModeTab()
-  {
-    if(creative_tab==null) {
-      creative_tab = CreativeModeTabs.BUILDING_BLOCKS;
-    }
-    return creative_tab;
   }
 
   // -------------------------------------------------------------------------------------------------------------
