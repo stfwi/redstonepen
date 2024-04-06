@@ -2,12 +2,11 @@
   "schemaVersion": 1,
   "id": "redstonepen",
   "version": "${version}",
-
   "name": "Redstone Pen",
-  "description": "Adds a pen to draw detailed Redstone tracks.",
+  "description": "Adds a pen to draw detailed Redstone tracks, as well as Redstone relays, and the Redstone Logic Controller.",
   "authors": [ "wilechaote" ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen",
+    "homepage": "https://github.com/stfwi/redstonepen",
     "sources": "https://github.com/stfwi/redstonepen"
   },
   "license": "MIT",

@@ -11,7 +11,6 @@ package wile.redstonepen.libmc;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
@@ -19,13 +18,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import wile.redstonepen.ModConstants;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -34,9 +32,7 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static String modid = null;
-  private static String creative_tab_icon = "";
-  private static ResourceKey<CreativeModeTab> creative_tab = null;
+  private static final String modid = ModConstants.MODID;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -55,11 +51,8 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
-  public static void init(String mod_id, String creative_tab_icon_item_name)
-  {
-    modid = mod_id;
-    creative_tab_icon = creative_tab_icon_item_name;
-  }
+  public static void init()
+  {}
 
   public static void instantiateAll()
   {
@@ -93,15 +86,6 @@ public class Registries
       registered_recipe_serializers.put(reg.getA(), reg.getB().get());
       Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
     });
-  }
-
-
-  public static ResourceKey<CreativeModeTab> getCreativeModeTab()
-  {
-    if(creative_tab==null) {
-      creative_tab = CreativeModeTabs.BUILDING_BLOCKS;
-    }
-    return creative_tab;
   }
 
   // -------------------------------------------------------------------------------------------------------------
@@ -193,24 +177,6 @@ public class Registries
 
   public static void addRecipeSerializer(String registry_name, Supplier<? extends RecipeSerializer<?>> serializer_supplier)
   { recipe_serializers_suppliers.add(new Tuple<>(registry_name, serializer_supplier)); }
-
-/*
-  public static void addOptionalBlockTag(String tag_name, ResourceLocation... default_blocks)
-  {
-    final Set<Supplier<Block>> default_suppliers = new HashSet<>();
-    for(ResourceLocation rl: default_blocks) default_suppliers.add(()->ForgeRegistries.BLOCKS.getValue(rl));
-    final TagKey<Block> key = ForgeRegistries.BLOCKS.tags().createOptionalTagKey(new ResourceLocation(modid, tag_name), default_suppliers);
-    registered_block_tag_keys.put(tag_name, key);
-  }
-
-  public static void addOptionaItemTag(String tag_name, ResourceLocation... default_items)
-  {
-    final Set<Supplier<Item>> default_suppliers = new HashSet<>();
-    for(ResourceLocation rl: default_items) default_suppliers.add(()->ForgeRegistries.ITEMS.getValue(rl));
-    final TagKey<Item> key = ForgeRegistries.ITEMS.tags().createOptionalTagKey(new ResourceLocation(modid, tag_name), default_suppliers);
-    registered_item_tag_keys.put(tag_name, key);
-  }
-*/
 
   // -------------------------------------------------------------------------------------------------------------
 

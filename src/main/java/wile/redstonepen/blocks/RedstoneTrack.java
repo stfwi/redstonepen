@@ -59,7 +59,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@SuppressWarnings("deprecation")
 public class RedstoneTrack
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -414,22 +414,18 @@ public class RedstoneTrack
     { return !state.getValue(WATERLOGGED); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean useShapeForLightOcclusion(BlockState state)
     { return true; }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     public int getLightBlock(BlockState state, BlockGetter worldIn, BlockPos pos)
     { return 0; }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     public RenderShape getRenderShape(BlockState state)
     { return RenderShape.ENTITYBLOCK_ANIMATED; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos)
     { return true; }
 
@@ -441,24 +437,19 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean isSignalSource(BlockState state)
     { return can_provide_power_; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean hasAnalogOutputSignal(BlockState state)
     { return false; }
 
-    @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos)
     { return 0; }
 
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0) : 0; }
 
-    @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, false)).orElse(0) : 0; }
 
@@ -467,7 +458,6 @@ public class RedstoneTrack
     { return false; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
@@ -485,7 +475,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving)
     {}
 
@@ -499,7 +488,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -511,7 +499,6 @@ public class RedstoneTrack
       }
     }
 
-    @SuppressWarnings("deprecation")
     public InteractionResult onBlockActivated(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr, boolean remove_only)
     {
       {
@@ -553,7 +540,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     {
       if(world.isClientSide()) return;
@@ -575,7 +561,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void updateIndirectNeighbourShapes(BlockState state, LevelAccessor worldIn, BlockPos pos, int flags, int recursionLeft)
     {}
 
@@ -891,7 +876,6 @@ public class RedstoneTrack
     public void toggle_trace(@Nullable Player player)
     { trace_ = !trace_; if(player!=null) Auxiliaries.playerChatMessage(player, "Trace: " + trace_); }
 
-    @SuppressWarnings("deprecation")
     public int handleActivation(BlockPos pos, Player player, InteractionHand hand, Direction clicked_face, Vec3 hitvec, boolean remove_only)
     {
       final ItemStack used_stack = player.getItemInHand(hand);
@@ -1145,7 +1129,6 @@ public class RedstoneTrack
     private boolean isRedstoneInsulator(BlockState state, BlockPos pos)
     { return state.is(Blocks.GLASS); } // don't care about isRedstoneConductor(), messes up depending on block implementations.
 
-    @SuppressWarnings("deprecation")
     private void updateConnections(int recursion_left)
     {
       final Set<BlockPos> all_neighbours = new HashSet<>();

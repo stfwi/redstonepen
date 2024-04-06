@@ -36,7 +36,7 @@ public class ModRedstonePenClient implements ClientModInitializer
   @Override
   public void onInitializeClient()
   {
-    NetworkingClient.clientInit(ModRedstonePen.MODID);
+    NetworkingClient.clientInit();
     Overlay.register();
     registerMenuGuis();
     registerBlockEntityRenderers();

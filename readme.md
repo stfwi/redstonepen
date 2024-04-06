@@ -4,6 +4,19 @@
 ----
 ## Version history
 
+    - v1.5.31     [A] Mod startup GIT commit ID logging added.
+                  [A] Basic Lever, Button, and Pulse Button added.
+                  [M] TICKRATE=t now ignores signal interrupts (makes
+                      closed loop control simpler, issue #41).
+                  [M] Refactoring to improve loader compatibility.
+                  [F] Fixed RLC RCA (Arduino % Co connector) sync.
+                  [M] RLC editor cursor brightness increased.
+                  [M] Added RLC interval timer instance `TIV3`.
+                  [M] Added RLC TIVx enable signal (2nd argument).
+                  [M] Re-implemented/refactored Track optimizations.
+                  [M] Redstone Track color brightness adapted.
+                  [M] Redstone Relay stone texture edited.
+
     - v1.5.28     [R] Maintenance release.
                   [F] Fixed localization codec exception for RS signal inspection with the Pen.
                   [F] Adapted signal update ordering.

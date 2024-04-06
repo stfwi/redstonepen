@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import wile.redstonepen.ModConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +30,9 @@ import java.util.function.Consumer;
 
 public class Networking
 {
-  public static void init(String modid)
+  public static void init()
   {
+    final String modid = ModConstants.MODID;
     PacketTileNotifyClientToServer.PACKET_ID = new ResourceLocation(modid, "tenc2s");
     PacketTileNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "tens2c");
     ServerPlayNetworking.registerGlobalReceiver(PacketTileNotifyClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
@@ -56,7 +58,7 @@ public class Networking
       });
     });
     PacketNbtNotifyClientToServer.PACKET_ID = new ResourceLocation(modid, "nnc2s");
-    PacketNbtNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "css2c");
+    PacketNbtNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "nns2c");
     ServerPlayNetworking.registerGlobalReceiver(PacketNbtNotifyClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
       final CompoundTag nbt = buf.readNbt();
       if((player==null) || (nbt==null)) return;

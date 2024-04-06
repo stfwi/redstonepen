@@ -8,11 +8,11 @@ package wile.redstonepen;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
-import wile.redstonepen.blocks.CircuitComponents;
-import wile.redstonepen.blocks.ControlBox;
-import wile.redstonepen.blocks.RedstoneTrack;
+import wile.redstonepen.blocks.*;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.StandardBlocks;
 import wile.redstonepen.libmc.Auxiliaries;
@@ -21,7 +21,7 @@ import wile.redstonepen.libmc.Registries;
 
 public class ModContent
 {
-  public static void init(String modid)
+  public static void init()
   {
     initBlocks();
     initItems();
@@ -89,6 +89,24 @@ public class ModContent
       CircuitComponents.DirectedComponentBlockItem::new,
       ControlBox.ControlBoxBlockEntity::new,
       ControlBox.ControlBoxUiContainer::new
+    );
+    Registries.addBlock("basic_lever",
+      ()->new BasicLever.BasicLeverBlock(
+        new BasicLever.BasicLeverBlock.Config(0.8f, 0.9f),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
+    );
+    Registries.addBlock("basic_button",
+      ()->new BasicButton.BasicButtonBlock(
+        new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 20),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
+    );
+    Registries.addBlock("basic_pulse_button",
+      ()->new BasicButton.BasicButtonBlock(
+        new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 2),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
     );
   }
 

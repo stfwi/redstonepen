@@ -33,8 +33,10 @@ import net.minecraft.world.level.block.entity.ComparatorBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import wile.redstonepen.ModConstants;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.ModRedstonePen;
+import wile.redstonepen.blocks.CircuitComponents;
+import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.*;
@@ -45,10 +47,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
+@SuppressWarnings("deprecation")
 public class RedstonePenItem extends StandardItems.BaseItem
 {
   public RedstonePenItem(Item.Properties properties)
-  { super(properties); } //.setNoRepair()
+  { super(properties); }
 
   //------------------------------------------------------------------------------------------------------------------
 
@@ -57,9 +60,9 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag flag)
   {
     if(getMaxDamage()>0) {
-      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.numstored", getMaxDamage()-stack.getDamageValue()));
+      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.numstored", getMaxDamage()-stack.getDamageValue()));
     } else {
-      tooltip.add(Auxiliaries.localizable("item."+ ModRedstonePen.MODID + ".pen.tooltip.rsfrominventory"));
+      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.rsfrominventory"));
     }
     Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true);
   }
@@ -94,17 +97,24 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
-  { return false; }
+  {
+    if(state.getDestroySpeed(world, pos) > 0) return false;
+    if(state.getShape(world, pos).isEmpty()) return false;
+    if(state.getBlock() instanceof DiodeBlock) return false;
+    if(state.getBlock() instanceof CircuitComponents.DirectedComponentBlock) return false;
+    if(state.getBlock() instanceof ControlBox.ControlBoxBlock) return false;
+    return true;
+  }
 
   @Override // not really needed, canAttack=false
   public float getDestroySpeed(ItemStack stack, BlockState state)
   { return -1; }
 
-  @Override // Called after breaking, no use it seems. -> canAttackBlock()->false
+  @Override
   public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity entity)
   {
     if(!(entity instanceof Player player)) return true;
-    if(state.getBlock() instanceof RepeaterBlock) return false;
+    if(state.getBlock() instanceof DiodeBlock) return false;
     if(state.is(Blocks.REDSTONE_WIRE)) {
       pushRedstone(stack, 1, player);
       world.removeBlock(pos, false);
@@ -146,7 +156,6 @@ public class RedstonePenItem extends StandardItems.BaseItem
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context)
   {
     final Player player = context.getPlayer();
@@ -218,7 +227,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
       if(te==null) return;
       tc = Auxiliaries.localizable("overlay.track_power", powerFormatted(te.getSidePower(rs_side)));
       if(Auxiliaries.isDevelopmentMode()) {
-        tc.append(Component.literal(String.format(" | %016x | ", te.getStateFlags())));
+        tc.append(Component.literal(String.format(" | flags: %016x, p: ", te.getStateFlags())));
         tc.append(Component.literal(Arrays.stream(Direction.values()).map(side->side.toString().substring(0,1) + te.getRedstonePower(side.getOpposite(), false)).collect(Collectors.joining(","))));
       }
     } else if(state.is(Blocks.REPEATER)) {
@@ -280,7 +289,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
     if(amount <= 0) {
       return;
     } else if(isPen(stack)) {
-      if(!stack.isDamageableItem()) {
+      if(stack.getMaxDamage()<=0) {
         ItemStack remaining = Inventories.insert(player, new ItemStack(Items.REDSTONE, amount), false);
         if(!remaining.isEmpty()) Inventories.give(player, remaining); // also drops, but with sound.
       } else if(stack.getDamageValue() >= amount) {
@@ -307,7 +316,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
     if(amount <= 0) {
       return 0;
     } else if(isPen(stack)) {
-      if(stack.isDamageableItem()) {
+      if(stack.getMaxDamage() > 0) {
         int dmg = stack.getDamageValue()+amount;
         if(dmg >= stack.getMaxDamage()) {
           amount = stack.getMaxDamage()-stack.getDamageValue();
@@ -333,7 +342,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
   {
     if(player.isCreative()) return true;
     if(isPen(stack)) {
-      if(stack.isDamageableItem()) {
+      if(stack.getMaxDamage() > 0) {
         return stack.getDamageValue() < (stack.getMaxDamage()-amount);
       } else {
         return Inventories.extract(player, new ItemStack(Items.REDSTONE), amount, true).getCount() >= amount;

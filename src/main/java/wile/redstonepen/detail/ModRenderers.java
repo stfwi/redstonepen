@@ -21,7 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import wile.redstonepen.ModRedstonePen;
+import wile.redstonepen.ModConstants;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.libmc.Auxiliaries;
@@ -48,7 +48,7 @@ public class ModRenderers
       List<ModelResourceLocation> resources_to_register = new ArrayList<>();
 
       RedstoneTrack.defs.models.STATE_WIRE_MAPPING.entrySet().forEach((kv->{
-        final ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
+        final ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModConstants.MODID, kv.getValue()), "inventory");
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_WIR_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_WIR_POS+i))) != 0) {
             model_rls[i] = mrl;
@@ -58,7 +58,7 @@ public class ModRenderers
         resources_to_register.add(mrl); //  net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
-        ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
+        ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModConstants.MODID, kv.getValue()), "inventory");
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelc_rls[i] = mrl;
@@ -68,7 +68,7 @@ public class ModRenderers
         resources_to_register.add(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CNTWIRE_MAPPING.entrySet().forEach((kv->{
-        ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModRedstonePen.MODID, kv.getValue()), "inventory");
+        ModelResourceLocation mrl = new ModelResourceLocation(new ResourceLocation(ModConstants.MODID, kv.getValue()), "inventory");
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelm_rls[i] = mrl;
@@ -80,19 +80,11 @@ public class ModRenderers
       power_rgb.clear();
       for(int i = 0; i <= 15; ++i) {
         float f = (float)i / 15.0f;
-        if(false) {
-          power_rgb.add(new Vec3(
-            Mth.clamp(0.01f + f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
-            Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
-          ));
-        } else {
-          power_rgb.add(new Vec3(
-            Mth.clamp(f * 0.6F + (f > 0.0F ? 0.4F : 0.3F), 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.7F - 0.5F, 0.0F, 1.0F),
-            Mth.clamp(f * f * 0.6F - 0.7F, 0.0F, 1.0F)
-          ));
-        }
+        power_rgb.add(new Vec3(
+          Mth.clamp(0.01f + f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.3f, 0.0F, 1f),
+          Mth.clamp(0.01f + f * 0.4f-.2f, 0.0F, 1f)
+        ));
       }
       return resources_to_register;
     }

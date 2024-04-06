@@ -43,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 
+@SuppressWarnings("deprecation")
 public class ControlBox
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -122,7 +123,6 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -161,7 +161,7 @@ public class ControlBox
     private boolean trace_ = false;
     private int tick_timer_ = 0;
     private int num_signal_updates_received_ = 0;
-    private int tick_interval_ = TICK_INTERVAL;
+    private int tick_interval_ = 0;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
     { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
@@ -238,7 +238,7 @@ public class ControlBox
     public void tick()
     {
       if(--tick_timer_ > 0) return;
-      tick_timer_ = tick_interval_;
+      tick_timer_ = (tick_interval_>0) ? tick_interval_ : TICK_INTERVAL;
       final long tick = System.nanoTime();
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
@@ -262,7 +262,6 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  @SuppressWarnings("deprecation")
                   final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
                   logic_.symbol(port_name+".co", cov);
                 } else {
@@ -307,7 +306,10 @@ public class ControlBox
       }
       // Elision of signal updates during this tick, including after output setting
       {
-        if(logic_.symbols().containsKey("tickrate")) tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
+        if(logic_.symbols().containsKey("tickrate")) {
+          tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", 0), 0, 200);
+          if(tick_interval_ == 0) tick_interval_ = TICK_INTERVAL;
+        }
         tick_timer_ = tick_interval_;
         final int dl = logic_.symbol(".deadline");
         if((dl>0) && (dl<tick_timer_)) tick_timer_ = dl;
@@ -348,6 +350,7 @@ public class ControlBox
 
     public void signal_update(Direction from_world_side, Direction from_mapped_side)
     {
+      if(tick_interval_ > 0) return; // Fixed sample tick interval, RLC not reacting to signal edges.
       final int shift = 4*from_mapped_side.ordinal();
       final int mask = 0xf<<shift;
       if((logic_.input_mask & mask) == 0) return; // no input there
@@ -428,7 +431,7 @@ public class ControlBox
     public ItemStack quickMoveStack(Player player, int slot)
     { return ItemStack.EMPTY; }
 
-    // Container client/server synchronisation --------------------------------------------------
+    // Container client/server synchronization --------------------------------------------------
 
     @Environment(EnvType.CLIENT)
     public void onGuiAction(String message)
@@ -562,7 +565,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));//.onMouseMove((tb, xy)->{});
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setCursorColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -656,6 +659,7 @@ public class ControlBox
       }
       setInitialFocus(textbox);
       setFocused(textbox);
+      textbox.active = false;
       getMenu().onGuiAction("serverdata");
     }
 
@@ -748,7 +752,7 @@ public class ControlBox
         start_stop.active = errors_.isEmpty();
         if(!start_stop.active) { start_stop.checked(false); } else { cb_error_indicator.visible = false; }
         textbox.active = !start_stop.checked();
-        textbox.setFontColor(textbox.active ? 0xffeeeeee : 0xff999999);
+        textbox.setFontColor(textbox.active ? 0xeeeeee : 0x999999);
         cb_paste_all.visible = textbox.active && textbox.getValue().trim().isEmpty();
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
@@ -949,7 +953,9 @@ public class ControlBox
 
       private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
       {
-        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        if(x.length < 1 || x.length > 2) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int en = (x.length < 2) ? 15 : x[1].calc(m);
+        if(en <= 0) { m.remove(sym + ".clk"); return 0; } // Disabled by enable signal argument.
         final int pt = x[0].calc(m);
         if(pt <= 2) return MathExpr.Expr.bool_false();
         final int now = m.getOrDefault(".clock", 0);
@@ -976,8 +982,9 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
-          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
-          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv1", -1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2", -1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv3", -1, (x,m)->timer_interval_function(".tiv3", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
@@ -1429,7 +1436,7 @@ public class ControlBox
                 assign = exp.name.toLowerCase();
               }
             } catch(Exception e) {
-              err = e.getMessage();
+              err = "parse_error";
             }
           }
           this.expression = exp;

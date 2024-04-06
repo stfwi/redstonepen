@@ -232,24 +232,6 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       }
       // Recipe result
       final JsonObject res = GsonHelper.getAsJsonObject(json, "result");
-      if(res.has("tag")) {
-        // Tag based item picking
-        ResourceLocation rl = new ResourceLocation(res.get("tag").getAsString());
-        // yaa that is also gone already: final @Nullable Tag<Item> tag = ItemTags.getAllTags().getTag(rl); // there was something with reload tag availability, Smithies made a fix or so?:::: TagCollectionManager.getInstance().getItems().getAllTags().getOrDefault(rl, null);
-
-/* @TODO
-        final @Nullable TagKey<Item> key = ForgeRegistries.ITEMS.tags().getTagNames().filter((tag_key->tag_key.location().equals(rl))).findFirst().orElse(null);
-        if(key==null) throw new JsonParseException(recipeId.getPath() + ": Result tag does not exist: #" + rl);
-        final ITag<Item> tag = ForgeRegistries.ITEMS.tags().getTag(key);
-        final @Nullable Item item = tag.stream().findFirst().orElse(null);
-*/
-final @Nullable Item item = null;
-
-        if(item==null) throw new JsonParseException(recipeId.getPath() + ": Result tag has no items: #" + rl);
-        if(res.has("item")) res.remove("item");
-        resultTag = rl;
-        res.addProperty("item", Auxiliaries.getResourceLocation(item).toString());
-      }
       ItemStack result_stack = ShapedRecipe.itemStackFromJson(res);
       return new ExtendedShapelessRecipe(recipeId, group, CraftingBookCategory.MISC, result_stack, list, aspects_nbt, resultTag);
     }
