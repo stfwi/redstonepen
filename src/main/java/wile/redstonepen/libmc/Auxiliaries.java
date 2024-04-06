@@ -14,7 +14,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
@@ -41,38 +40,31 @@ import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
+import wile.redstonepen.ModConstants;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
 public class Auxiliaries
 {
-  private static String modid;
-  private static Logger logger;
-  private static Supplier<CompoundTag> server_config_supplier = CompoundTag::new;
+  private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
 
-  public static void init(String modid, Logger logger, Supplier<CompoundTag> server_config_supplier)
-  {
-    Auxiliaries.modid = modid;
-    Auxiliaries.logger = logger;
-    Auxiliaries.server_config_supplier = server_config_supplier;
-  }
+  public static void init()
+  {}
 
   // -------------------------------------------------------------------------------------------------------------------
   // Mod specific exports
   // -------------------------------------------------------------------------------------------------------------------
 
   public static String modid()
-  { return modid; }
+  { return ModConstants.MODID; }
 
   public static Logger logger()
   { return logger; }
@@ -136,11 +128,11 @@ public class Auxiliaries
    * translation keys. Forces formatting argument, nullable if no special formatting shall be applied..
    */
   public static MutableComponent localizable(String modtrkey, Object... args)
-  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid+"."+modtrkey), args); }
+  { return Component.translatable((modtrkey.startsWith("block.") || (modtrkey.startsWith("item."))) ? (modtrkey) : (modid()+"."+modtrkey), args); }
 
   public static MutableComponent localizable(String modtrkey, @Nullable ChatFormatting color, Object... args)
   {
-    final MutableComponent tr = Component.translatable(modid+"."+modtrkey, args);
+    final MutableComponent tr = Component.translatable(modid()+"."+modtrkey, args);
     if(color!=null) tr.getStyle().applyFormat(color);
     return tr;
   }
@@ -149,42 +141,14 @@ public class Auxiliaries
   { return localizable(modtrkey, new Object[]{}); }
 
   public static Component localizable_block_key(String blocksubkey)
-  { return Component.translatable("block."+modid+"."+blocksubkey); }
+  { return Component.translatable("block."+modid()+"."+blocksubkey); }
 
   @OnlyIn(Dist.CLIENT)
   public static String localize(String translationKey, Object... args)
   {
     Component tr = Component.translatable(translationKey, args);
     tr.getStyle().applyFormat(ChatFormatting.RESET);
-    final String ft = tr.getString();
-    if(ft.contains("${")) {
-      // Non-recursive, non-argument lang file entry cross referencing.
-      Pattern pt = Pattern.compile("\\$\\{([^}]+)\\}");
-      Matcher mt = pt.matcher(ft);
-      StringBuffer sb = new StringBuffer();
-      while(mt.find()) {
-        String m = mt.group(1);
-        if(m.contains("?")) {
-          String[] kv = m.split("\\?", 2);
-          String key = kv[0].trim();
-          boolean not = key.startsWith("!");
-          if(not) key = key.replaceFirst("!", "");
-          m = kv[1].trim();
-          if(!server_config_supplier.get().contains(key)) {
-            m = "";
-          } else {
-            boolean r = server_config_supplier.get().getBoolean(key);
-            if(not) r = !r;
-            if(!r) m = "";
-          }
-        }
-        mt.appendReplacement(sb, Matcher.quoteReplacement((Component.translatable(m)).getString().trim()));
-      }
-      mt.appendTail(sb);
-      return sb.toString();
-    } else {
-      return ft;
-    }
+    return tr.getString();
   }
 
   /**
@@ -238,8 +202,8 @@ public class Auxiliaries
       } else if(extendedTipCondition()) {
         if(tip_available) tip_text = localize(advancedTooltipTranslationKey + ".tip");
       } else if(addAdvancedTooltipHints) {
-        if(tip_available) tip_text += localize(modid + ".tooltip.hint.extended") + (help_available ? " " : "");
-        if(help_available) tip_text += localize(modid + ".tooltip.hint.help");
+        if(tip_available) tip_text += localize(modid() + ".tooltip.hint.extended") + (help_available ? " " : "");
+        if(help_available) tip_text += localize(modid() + ".tooltip.hint.help");
       }
       if(tip_text.isEmpty()) return false;
       String[] tip_list = tip_text.split("\\r?\\n");
@@ -282,22 +246,11 @@ public class Auxiliaries
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
 
-  @SuppressWarnings("deprecation")
-  public static boolean isInItemTag(Item item, ResourceLocation tag)
-  { return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item)); }
-
-  @SuppressWarnings("deprecation")
-  public static boolean isInBlockTag(Block block, ResourceLocation tag)
-  { return ForgeRegistries.BLOCKS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(block)); }
-
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Item item)
-  { return Registry.ITEM.getKey(item); }
+  { return ForgeRegistries.ITEMS.getKey(item); }
 
-  @SuppressWarnings("deprecation")
   public static ResourceLocation getResourceLocation(Block block)
-  { return Registry.BLOCK.getKey(block); }
-
+  { return ForgeRegistries.BLOCKS.getKey(block); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Item NBT data
@@ -549,12 +502,12 @@ public class Auxiliaries
   public static String loadResourceText(String path)
   { return loadResourceText(Auxiliaries.class.getResourceAsStream(path)); }
 
-  public static void logGitVersion(String mod_name)
+  public static void logGitVersion()
   {
     try {
       // Done during construction to have an exact version in case of a crash while registering.
-      String version = Auxiliaries.loadResourceText("/.gitversion-" + modid).trim();
-      logInfo(mod_name+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
+      String version = Auxiliaries.loadResourceText("/.gitversion-" + ModConstants.MODID).trim();
+      logInfo(ModConstants.MODNAME+((version.isEmpty())?(" (dev build)"):(" GIT id #"+version)) + ".");
     } catch(Throwable e) {
       // (void)e; well, then not. Priority is not to get unneeded crashes because of version logging.
     }

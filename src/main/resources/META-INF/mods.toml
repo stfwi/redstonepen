@@ -1,31 +1,31 @@
 # @file mods.toml
 # @spec TOML v0.5.0 (https://github.com/toml-lang/toml)
-modLoader="javafml" # forge FML java
-loaderVersion="[43,)"
-issueTrackerURL="https://github.com/stfwi/redstonepen/issues/"
-license="MIT"
+modLoader="javafml"
+loaderVersion="${version_range_loader}"
+issueTrackerURL="${meta_issues}"
+license="${meta_license}"
 
 [[mods]]
-modId="redstonepen"
-version="${file.jarVersion}"
-displayName="Redstone Pen"
-description="Adds a pen to draw detailed Redstone tracks."
-authors="wilechaote"
-credits=""
-updateJSONURL="https://raw.githubusercontent.com/stfwi/redstonepen/versions/1.19.json"
-displayURL="https://www.curseforge.com/minecraft/mc-mods/redstone-pen"
-logoFile="logo.png"
+modId="${meta_modid}"
+version="${version_mod}"
+displayName="${meta_modname}"
+description='''${meta_description}'''
+authors="${meta_author}"
+credits="The Smiths and Weavers of the World."
+updateJSONURL="${meta_updateurl}"
+displayURL="${meta_download}"
+logoFile="assets/${meta_modid}/logo.png"
 
-[[dependencies.redstonepen]]
+[[dependencies.${meta_modid}]]
   modId="forge"
   mandatory=true
-  versionRange="[43.0.16,)"
+  versionRange="${version_range_forge}"
   ordering="NONE"
   side="BOTH"
 
-[[dependencies.redstonepen]]
+[[dependencies.${meta_modid}]]
   modId="minecraft"
   mandatory=true
-  versionRange="[1.19.2]"
+  versionRange="[${version_minecraft}]"
   ordering="NONE"
   side="BOTH"

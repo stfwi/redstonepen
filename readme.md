@@ -4,6 +4,15 @@
 ----
 ## Version history
 
+    - v1.2.32     [R] Back-Port Release.
+                  [A] Basic Lever, Button, and Pulse Button added.
+                  [M] TICKRATE=t now ignores signal interrupts (makes
+                      closed loop control simpler, issue #41).
+                  [M] Added RLC interval timer instance `TIV3`.
+                  [M] Added RLC TIVx enable signal (2nd argument).
+                  [M] Redstone Track colour brightness adapted.
+                  [M] Redstone Relay stone texture edited.
+
     - v1.2.20     [F] Fixed Optifine related preview-rendering issue (#26, thx wisquimas).
 
     - v1.2.19     [M] RLC font size reduced, enabling to write 23 code lines.

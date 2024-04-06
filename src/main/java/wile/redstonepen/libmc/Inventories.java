@@ -87,6 +87,9 @@ public class Inventories
   public static boolean insertionPossible(Level world, BlockPos pos, @Nullable Direction side, boolean including_entities)
   { return itemhandler(world, pos, side, including_entities) != null; }
 
+  public static ItemStack insert(Player player, ItemStack stack , boolean simulate)
+  { return ItemHandlerHelper.insertItemStacked(itemhandler(player), stack, simulate); }
+
   public static ItemStack insert(IItemHandler handler, ItemStack stack , boolean simulate)
   { return ItemHandlerHelper.insertItemStacked(handler, stack, simulate); }
 
@@ -109,6 +112,9 @@ public class Inventories
 
   public static ItemStack insert(Level world, BlockPos pos, @Nullable Direction side, ItemStack stack, boolean simulate)
   { return insert(world, pos, side, stack, simulate, false); }
+
+  public static ItemStack extract(Player player, @Nullable ItemStack match, int amount, boolean simulate)
+  { return extract(itemhandler(player), match, amount, simulate); }
 
   public static ItemStack extract(IItemHandler inventory, @Nullable ItemStack match, int amount, boolean simulate)
   {

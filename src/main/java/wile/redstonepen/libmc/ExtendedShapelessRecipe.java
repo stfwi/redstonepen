@@ -91,8 +91,8 @@ public class ExtendedShapelessRecipe extends ShapelessRecipe implements Crafting
       final int min_repair_item_count = repair_items.values().stream().mapToInt(Integer::intValue).min().orElse(0);
       if(min_repair_item_count <= 0) return new Tuple<>(ItemStack.EMPTY, remaining);
       final int single_repair_dur = aspects.getBoolean("relative_repair_damage")
-        ? Math.max(1, -getToolDamage() * tool_item.getMaxDamage() / 100)
-        : Math.max(1, -getToolDamage());
+              ? Math.max(1, -getToolDamage() * tool_item.getMaxDamage() / 100)
+              : Math.max(1, -getToolDamage());
       int num_repairs = dmg/single_repair_dur;
       if(num_repairs*single_repair_dur < dmg) ++num_repairs;
       num_repairs = Math.min(num_repairs, min_repair_item_count);

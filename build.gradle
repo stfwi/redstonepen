@@ -7,9 +7,9 @@ plugins {
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 //-----------------------------------------------------------------------------
-version = "${version_redstonepen}"
-group = "wile.redstonepen"
-archivesBaseName = "redstonepen-${version_minecraft}-forge"
+version = "${version_mod}"
+group = "wile.${meta_modid}"
+archivesBaseName = "${meta_modid}-${version_minecraft}-forge"
 
 repositories {
   maven { name = "Progwml6 maven"; url = "https://dvs1.progwml6.com/files/maven/" } // JEI files
@@ -36,10 +36,25 @@ minecraft {
 }
 
 dependencies {
-  minecraft "net.minecraftforge:forge:${version_forge_minecraft}"
+  minecraft "net.minecraftforge:forge:${version_minecraft}-${version_forge}"
 }
 
 processResources {
+  var property_replacements = [
+    meta_modid:meta_modid, meta_modname:meta_modname, meta_author:meta_author, meta_license:meta_license,
+    meta_description:meta_description, meta_issues:meta_issues, meta_updateurl:meta_updateurl,
+    meta_download:meta_download,
+    version_mod: version_mod,
+    version_minecraft:version_minecraft,
+    version_forge:version_forge,
+    version_range_loader:version_range_loader,
+    version_range_forge:version_range_forge,
+    version_pack_format: version_pack_format,
+  ]
+  inputs.properties property_replacements
+  filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+    expand property_replacements + [project: project]
+  }
   outputs.upToDateWhen { false }
   doLast { file("${sourceSets.main.output.resourcesDir}/.gitversion-redstonepen").text = 'git log "-1" "--format=%h"'.execute().in.text.trim() }
 }
@@ -47,11 +62,11 @@ processResources {
 jar {
   manifest {
     attributes([
-      "Specification-Title": "redstonepen",
+      "Specification-Title": "${meta_modid}",
       "Specification-Vendor": "wilechaote",
       "Specification-Version": "1", // We are version 1 of ourselves
       "Implementation-Title": project.name,
-      "Implementation-Version": "${version_redstonepen}",
+      "Implementation-Version": "${version_mod}",
       "Implementation-Vendor" :"wilechaote",
       "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
     ])

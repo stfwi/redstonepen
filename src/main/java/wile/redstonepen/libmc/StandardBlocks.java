@@ -19,6 +19,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -34,7 +35,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -63,7 +63,7 @@ public class StandardBlocks
   public static final long CFG_HORIZIONTAL                = 0x0000000000000010L; // horizontal block, affects bounding box calculation at construction time and placement
   public static final long CFG_LOOK_PLACEMENT             = 0x0000000000000020L; // placed in direction the player is looking when placing.
   public static final long CFG_FACING_PLACEMENT           = 0x0000000000000040L; // placed on the facing the player has clicked.
-  public static final long CFG_OPPOSITE_PLACEMENT         = 0x0000000000000080L; // placed placed in the opposite direction of the face the player clicked.
+  public static final long CFG_OPPOSITE_PLACEMENT         = 0x0000000000000080L; // placed in the opposite direction of the face the player clicked.
   public static final long CFG_FLIP_PLACEMENT_IF_SAME     = 0x0000000000000100L; // placement direction flipped if an instance of the same class was clicked
   public static final long CFG_FLIP_PLACEMENT_SHIFTCLICK  = 0x0000000000000200L; // placement direction flipped if player is sneaking
   public static final long CFG_STRICT_CONNECTIONS         = 0x0000000000000400L; // blocks do not connect to similar blocks around (implementation details may vary a bit)
@@ -122,15 +122,10 @@ public class StandardBlocks
     { return getRenderTypeHint(config); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type)
     { return ((config & CFG_AI_PASSABLE)!=0) && (super.isPathfindable(state, world, pos, type)); }
 
-    public boolean hasSignalConnector(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
-    { return state.isSignalSource(); }
-
     @Override
-    @SuppressWarnings("deprecation")
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)
     {
       final boolean rsup = (state.hasBlockEntity() && (state.getBlock() != newState.getBlock()));
@@ -155,12 +150,10 @@ public class StandardBlocks
     { return (((config & CFG_WATERLOGGABLE)==0) || (!state.getValue(WATERLOGGED))) && super.propagatesSkylightDown(state, reader, pos); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public FluidState getFluidState(BlockState state)
     { return (((config & CFG_WATERLOGGABLE)!=0) && state.getValue(WATERLOGGED)) ? Fluids.WATER.getSource(false) : super.getFluidState(state); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
     {
       if(((config & CFG_WATERLOGGABLE)!=0) && (state.getValue(WATERLOGGED))) world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
@@ -182,6 +175,9 @@ public class StandardBlocks
     @Override // SimpleWaterloggedBlock
     public Optional<SoundEvent> getPickupSound()
     { return ((config & CFG_WATERLOGGABLE)!=0) ? (SimpleWaterloggedBlock.super.getPickupSound()) : Optional.empty(); }
+
+    public boolean shouldCheckWeakPower(BlockState state, LevelReader world, BlockPos pos, Direction side) // Forge Compliancy
+    { return state.isRedstoneConductor(world, pos); }
   }
 
   public static class Cutout extends BaseBlock implements IStandardBlock
@@ -201,12 +197,10 @@ public class StandardBlocks
     { super(conf, properties); vshape = voxel_shape; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, BlockGetter source, BlockPos pos, CollisionContext selectionContext)
     { return vshape; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos,  CollisionContext selectionContext)
     { return vshape; }
 
@@ -215,6 +209,7 @@ public class StandardBlocks
     public BlockState getStateForPlacement(BlockPlaceContext context)
     {
       BlockState state = super.getStateForPlacement(context);
+      if(state==null) return null;
       if((config & CFG_WATERLOGGABLE)!=0) {
         FluidState fs = context.getLevel().getFluidState(context.getClickedPos());
         state = state.setValue(WATERLOGGED,fs.getType()==Fluids.WATER);
@@ -227,11 +222,6 @@ public class StandardBlocks
     { return false; }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public PushReaction getPistonPushReaction(BlockState state)
-    { return PushReaction.NORMAL; }
-
-    @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
@@ -241,7 +231,6 @@ public class StandardBlocks
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public FluidState getFluidState(BlockState state)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
@@ -251,7 +240,6 @@ public class StandardBlocks
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
@@ -304,7 +292,7 @@ public class StandardBlocks
 
     public Directed(long config, BlockBehaviour.Properties properties, final AABB[] unrotatedAABBs)
     {
-      this(config, properties, (states)->{
+      this(config, properties.isValidSpawn((s,w,p,e)->false), (states)->{
         final boolean is_horizontal = ((config & CFG_HORIZIONTAL)!=0);
         Map<BlockState,VoxelShape> vshapes = new HashMap<>();
         for(BlockState state:states) {
@@ -315,7 +303,7 @@ public class StandardBlocks
     }
 
     public Directed(long config, BlockBehaviour.Properties properties, final AABB unrotatedAABB)
-    { this(config, properties.isValidSpawn((s,w,p,e)->false), new AABB[]{unrotatedAABB}); }
+    { this(config, properties, new AABB[]{unrotatedAABB}); }
 
     @Override
     public boolean isPossibleToRespawnInThis()
@@ -363,7 +351,7 @@ public class StandardBlocks
 
     public AxisAligned(long config, BlockBehaviour.Properties properties, final Supplier<ArrayList<VoxelShape>> shape_supplier)
     {
-      super(config, properties.isValidSpawn((s,w,p,e)->false));
+      super(config, properties);
       registerDefaultState(super.defaultBlockState().setValue(AXIS, Direction.Axis.X));
       vshapes = shape_supplier.get();
     }
@@ -379,7 +367,7 @@ public class StandardBlocks
     }
 
     public AxisAligned(long config, BlockBehaviour.Properties properties, final AABB unrotatedAABB)
-    { this(config, properties, new AABB[]{unrotatedAABB}); }
+    { this(config, properties.isValidSpawn((s,w,p,e)->false), new AABB[]{unrotatedAABB}); }
 
     @Override
     public boolean isPossibleToRespawnInThis()
@@ -407,11 +395,12 @@ public class StandardBlocks
       } else {
         facing = context.getClickedFace();
       }
-      return super.getStateForPlacement(context).setValue(AXIS, facing.getAxis());
+      final BlockState state = super.getStateForPlacement(context);
+      if(state==null) return null;
+      return state.setValue(AXIS, facing.getAxis());
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public BlockState rotate(BlockState state, Rotation rotation)
     {
       switch(rotation) {
@@ -496,12 +485,10 @@ public class StandardBlocks
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public BlockState rotate(BlockState state, Rotation rot)
     { return state.setValue(HORIZONTAL_FACING, rot.rotate(state.getValue(HORIZONTAL_FACING))); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public BlockState mirror(BlockState state, Mirror mirrorIn)
     { return state.rotate(mirrorIn.getRotation(state.getValue(HORIZONTAL_FACING))); }
   }
@@ -616,7 +603,11 @@ public class StandardBlocks
     @Override
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context)
-    { return super.getStateForPlacement(context).setValue(NORTH, false).setValue(EAST, false).setValue(SOUTH, false).setValue(WEST, false); }
+    {
+      final BlockState state = super.getStateForPlacement(context);
+      if(state==null) return null;
+      return state.setValue(NORTH, false).setValue(EAST, false).setValue(SOUTH, false).setValue(WEST, false);
+    }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context)

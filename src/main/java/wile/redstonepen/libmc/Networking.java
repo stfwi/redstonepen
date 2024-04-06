@@ -346,8 +346,8 @@ public class Networking
 
     public static void sendToPlayer(Player player, Component message, int delay)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || Auxiliaries.isEmpty(message)) return;
-      DEFAULT_CHANNEL.sendTo(new OverlayTextMessage(message, delay), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+      if((!(player instanceof ServerPlayer splayer)) || Auxiliaries.isEmpty(message)) return;
+      DEFAULT_CHANNEL.sendTo(new OverlayTextMessage(message, delay), splayer.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public OverlayTextMessage()
@@ -359,7 +359,7 @@ public class Networking
     public static OverlayTextMessage parse(final FriendlyByteBuf buf)
     {
       try {
-        return new OverlayTextMessage(buf.readComponent(), DISPLAY_TIME_MS);
+        return new OverlayTextMessage(buf.readComponent(), buf.readInt());
       } catch(Throwable e) {
         return new OverlayTextMessage(Component.translatable("[incorrect translation]"), DISPLAY_TIME_MS);
       }
@@ -369,6 +369,7 @@ public class Networking
     {
       try {
         buf.writeComponent(pkt.data());
+        buf.writeInt(pkt.delay());
       } catch(Throwable e) {
         Auxiliaries.logger().error("OverlayTextMessage.toBytes() failed: " + e);
       }

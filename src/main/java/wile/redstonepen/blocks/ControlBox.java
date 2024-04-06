@@ -35,13 +35,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.detail.RcaSync;
-import wile.redstonepen.libmc.StandardEntityBlocks;
-import wile.redstonepen.libmc.Auxiliaries;
-import wile.redstonepen.libmc.Networking;
-import wile.redstonepen.libmc.Registries;
-import wile.redstonepen.libmc.GuiTextEditing;
-import wile.redstonepen.libmc.Guis;
-import wile.redstonepen.libmc.TooltipDisplay;
+import wile.redstonepen.libmc.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -49,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 
+@SuppressWarnings("deprecation")
 public class ControlBox
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -107,7 +102,7 @@ public class ControlBox
       final BlockEntity te = world.getBlockEntity(pos);
       if(!(te instanceof ControlBoxBlockEntity cbe)) return;
       final CompoundTag nbt = stack.getTag();
-      if(nbt.contains("tedata")) {
+      if(nbt!=null && nbt.contains("tedata")) {
         CompoundTag te_nbt = nbt.getCompound("tedata");
         if(!te_nbt.isEmpty()) cbe.readnbt(te_nbt);
       }
@@ -128,7 +123,6 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -146,8 +140,9 @@ public class ControlBox
       if(world.isClientSide) return state;
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
-      Direction world_side = Direction.fromNormal(fromPos.subtract(pos));
-      cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
+      final BlockPos dp = fromPos.subtract(pos);
+      final Direction world_side = Direction.fromNormal(dp.getX(), dp.getY(), dp.getZ());
+      if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
   }
@@ -166,7 +161,7 @@ public class ControlBox
     private boolean trace_ = false;
     private int tick_timer_ = 0;
     private int num_signal_updates_received_ = 0;
-    private int tick_interval_ = TICK_INTERVAL;
+    private int tick_interval_ = 0;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
     { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
@@ -209,10 +204,6 @@ public class ControlBox
     { super.saveAdditional(nbt); writenbt(nbt); }
 
     @Override
-    public void setRemoved()
-    { super.setRemoved(); }
-
-    @Override
     public Component getName()
     {
       if(custom_name_ != null) return custom_name_;
@@ -243,7 +234,7 @@ public class ControlBox
     public void tick()
     {
       if(--tick_timer_ > 0) return;
-      tick_timer_ = tick_interval_;
+      tick_timer_ = (tick_interval_>0) ? tick_interval_ : TICK_INTERVAL;
       final long tick = System.nanoTime();
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
@@ -267,7 +258,6 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  @SuppressWarnings("deprecation")
                   final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
                   logic_.symbol(port_name+".co", cov);
                 } else {
@@ -312,7 +302,10 @@ public class ControlBox
       }
       // Elision of signal updates during this tick, including after output setting
       {
-        if(logic_.symbols().containsKey("tickrate")) tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", TICK_INTERVAL), 1, 20);
+        if(logic_.symbols().containsKey("tickrate")) {
+          tick_interval_ = Mth.clamp(logic_.symbols().getOrDefault("tickrate", 0), 0, 200);
+          if(tick_interval_ == 0) tick_interval_ = TICK_INTERVAL;
+        }
         tick_timer_ = tick_interval_;
         final int dl = logic_.symbol(".deadline");
         if((dl>0) && (dl<tick_timer_)) tick_timer_ = dl;
@@ -353,6 +346,7 @@ public class ControlBox
 
     public void signal_update(Direction from_world_side, Direction from_mapped_side)
     {
+      if(tick_interval_ > 0) return; // Fixed sample tick interval, RLC not reacting to signal edges.
       final int shift = 4*from_mapped_side.ordinal();
       final int mask = 0xf<<shift;
       if((logic_.input_mask & mask) == 0) return; // no input there
@@ -363,7 +357,7 @@ public class ControlBox
       if((signal_intr!=0) && (signal_data==0)) {
         logic_.intr_redges |= mask;
         tick_timer_ = 0;
-      } else if((signal_intr==0) && (signal_data!=0)) {
+      } else if(signal_intr==0) {
         logic_.intr_fedges |= mask;
         tick_timer_ = 0;
       }
@@ -403,7 +397,7 @@ public class ControlBox
 
     private ControlBoxUiContainer(int cid, Inventory player_inventory, Container block_inventory, ContainerLevelAccess wpc, ContainerData fields)
     {
-      super(ModContent.getMenuTypeOfBlock("control_box"), cid);
+      super(Registries.getMenuTypeOfBlock("control_box"), cid);
       player_ = player_inventory.player;
       inventory_ = block_inventory;
       wpc_ = wpc;
@@ -433,7 +427,7 @@ public class ControlBox
     public ItemStack quickMoveStack(Player player, int slot)
     { return ItemStack.EMPTY; }
 
-    // Container client/server synchronisation --------------------------------------------------
+    // Container client/server synchronization --------------------------------------------------
 
     @OnlyIn(Dist.CLIENT)
     public void onGuiAction(String message)
@@ -567,7 +561,7 @@ public class ControlBox
     {
       super.init();
       {
-        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
+        textbox.init(this, Guis.Coord2d.of(29, 12)).setFontColor(0xdddddd).setCursorColor(0xdddddd).setLineHeight(7).onValueChanged((tb)->push_code(textbox.getValue()));
         addRenderableWidget(textbox);
         start_stop.init(this, Guis.Coord2d.of(196, 14)).tooltip(Auxiliaries.localizable(tooltip_prefix+".tooltips.runstop"));
         start_stop.onclick((cb)->{
@@ -639,7 +633,8 @@ public class ControlBox
           symbols_.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach((kv)->{
             final String k = kv.getKey();
             if((!debug_enabled_) && (k.startsWith(".") || Defs.PORT_NAMES.contains(k) || k.endsWith(".re") || k.endsWith(".fe"))) return;
-            c.getSiblings().add(Component.literal(String.format("%s = %d", k.toUpperCase(), kv.getValue())));
+            final String lf = (c.getSiblings().isEmpty()) ? "" : "\n"; // bah, can't do Component.join(separator)
+            c.getSiblings().add(Component.literal(String.format("%s%s = %d", lf, k.toUpperCase(), kv.getValue())));
           });
           return c;
         }));
@@ -660,6 +655,7 @@ public class ControlBox
       }
       setInitialFocus(textbox);
       setFocused(textbox);
+      textbox.active = false;
       getMenu().onGuiAction("serverdata");
     }
 
@@ -752,21 +748,15 @@ public class ControlBox
         start_stop.active = errors_.isEmpty();
         if(!start_stop.active) { start_stop.checked(false); } else { cb_error_indicator.visible = false; }
         textbox.active = !start_stop.checked();
-        textbox.setFontColor(textbox.active ? 0xffeeeeee : 0xff999999);
+        textbox.setFontColor(textbox.active ? 0xeeeeee : 0x999999);
         cb_paste_all.visible = textbox.active && textbox.getValue().trim().isEmpty();
         cb_copy_all.visible = !cb_paste_all.visible;
         if(focus_editor_) {
           focus_editor_ = false;
           if(!isDragging() && !textbox.isFocused()) {
             children().forEach(child->{
-              if(child == textbox) {
-                if(!textbox.isFocused()) {
-                  textbox.changeFocus(true);
-                }
-              } else if(child instanceof AbstractWidget wg) {
-                if(wg.isFocused()) {
-                  wg.changeFocus(true);
-                }
+              if((child != textbox) && (child instanceof AbstractWidget wg)) {
+                wg.changeFocus(false);
               }
             });
             setFocused(textbox);
@@ -855,7 +845,7 @@ public class ControlBox
           return MathExpr.Expr.bool_false();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in>0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);
@@ -893,7 +883,7 @@ public class ControlBox
           return MathExpr.Expr.bool_true();
         } else if(pt <= 0) {
           // No time defined or changed.
-          return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
+          return MathExpr.Expr.bool_true(); // return (in<=0) ? MathExpr.Expr.bool_true() : MathExpr.Expr.bool_false();
         } else {
           final int now = m.getOrDefault(".clock", 0);
           int et = m.getOrDefault(sym + ".et", 0);
@@ -959,7 +949,9 @@ public class ControlBox
 
       private static int timer_interval_function(String sym, MathExpr.Expr[] x, Map<String, Integer> m)
       {
-        if(x.length != 1) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        if(x.length < 1 || x.length > 2) { m.remove(sym + ".clk"); return 0; } // Invalid.
+        final int en = (x.length < 2) ? 15 : x[1].calc(m);
+        if(en <= 0) { m.remove(sym + ".clk"); return 0; } // Disabled by enable signal argument.
         final int pt = x[0].calc(m);
         if(pt <= 2) return MathExpr.Expr.bool_false();
         final int now = m.getOrDefault(".clock", 0);
@@ -986,8 +978,9 @@ public class ControlBox
           new MathExpr.ExprFuncDef("rnd",  0, (x,m)->((int)(Math.random()*16.0))),
           new MathExpr.ExprFuncDef("clock",  0, (x,m)->m.getOrDefault(".clock", 0)),
           new MathExpr.ExprFuncDef("time",  0, (x,m)->m.getOrDefault(".time", 0)),
-          new MathExpr.ExprFuncDef("tiv1",  1, (x,m)->timer_interval_function(".tiv1", x, m)),
-          new MathExpr.ExprFuncDef("tiv2",  1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv1", -1, (x,m)->timer_interval_function(".tiv1", x, m)),
+          new MathExpr.ExprFuncDef("tiv2", -1, (x,m)->timer_interval_function(".tiv2", x, m)),
+          new MathExpr.ExprFuncDef("tiv3", -1, (x,m)->timer_interval_function(".tiv3", x, m)),
           new MathExpr.ExprFuncDef("cnt1", -1, (x,m)->counter_function(".cnt1", x, m)),
           new MathExpr.ExprFuncDef("cnt2", -1, (x,m)->counter_function(".cnt2", x, m)),
           new MathExpr.ExprFuncDef("cnt3", -1, (x,m)->counter_function(".cnt3", x, m)),
@@ -1439,7 +1432,7 @@ public class ControlBox
                 assign = exp.name.toLowerCase();
               }
             } catch(Exception e) {
-              err = e.getMessage();
+              err = "parse_error";
             }
           }
           this.expression = exp;

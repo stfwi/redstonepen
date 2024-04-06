@@ -9,6 +9,9 @@
 package wile.redstonepen.libmc;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -20,7 +23,6 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEventListener;
-import net.minecraftforge.common.util.FakePlayer;
 
 import javax.annotation.Nullable;
 
@@ -37,7 +39,7 @@ public class StandardEntityBlocks
     {
       if(world.isClientSide()) return InteractionResult.SUCCESS;
       final BlockEntity te = world.getBlockEntity(pos);
-      if(!(te instanceof MenuProvider) || ((player instanceof FakePlayer))) return InteractionResult.FAIL;
+      if(!(te instanceof MenuProvider)) return InteractionResult.FAIL;
       player.openMenu((MenuProvider)te);
       return InteractionResult.CONSUME;
     }
@@ -67,6 +69,12 @@ public class StandardEntityBlocks
     { super(type, pos, state); }
 
     public void tick()
+    {}
+
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) // on client
+    {}
+
+    public void handleUpdateTag(CompoundTag tag) // on client
     {}
   }
 

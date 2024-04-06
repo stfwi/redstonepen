@@ -46,10 +46,9 @@ clean:
 	@rm -rf src/generated
 	@rm -rf mcmodsrepo
 	@rm -f build/libs/*
-	@$(GRADLE) clean
 
 clean-all:
-	@echo "[1.19] Cleaning using gradle ..."
+	@echo "[1.19] Cleaning ..."
 	@rm -rf mcmodsrepo
 	@rm -f dist/*
 	@rm -rf build/
@@ -57,7 +56,6 @@ clean-all:
 	@rm -rf logs/
 	@rm -rf run/logs/
 	@rm -rf run/crash-reports/
-	@$(GRADLE) clean
 
 mrproper: clean-all
 	@rm -f meta/*.*

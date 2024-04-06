@@ -31,10 +31,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.piston.MovingPistonBlock;
@@ -51,22 +48,19 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.nbt.Tag;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraft.nbt.Tag;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
-import wile.redstonepen.libmc.StandardBlocks;
-import wile.redstonepen.libmc.Auxiliaries;
-import wile.redstonepen.libmc.Networking;
-
+import wile.redstonepen.libmc.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@SuppressWarnings("deprecation")
 public class RedstoneTrack
 {
   //--------------------------------------------------------------------------------------------------------------------
@@ -83,6 +77,8 @@ public class RedstoneTrack
     public static final int  STATE_FLAG_WIR_POS   = 0;
     public static final int  STATE_FLAG_CON_POS   = 24;
     public static final int  STATE_FLAG_PWR_POS   = 32;
+
+    public static final Direction[] REDSTONE_UPDATE_DIRECTIONS = new Direction[]{Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH};
 
     public static final class connections
     {
@@ -423,22 +419,18 @@ public class RedstoneTrack
     { return PushReaction.DESTROY; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean useShapeForLightOcclusion(BlockState state)
     { return true; }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     public int getLightBlock(BlockState state, BlockGetter worldIn, BlockPos pos)
     { return 0; }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     public RenderShape getRenderShape(BlockState state)
     { return RenderShape.ENTITYBLOCK_ANIMATED; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos)
     { return true; }
 
@@ -447,27 +439,19 @@ public class RedstoneTrack
     { return (side != null) && (tile(world,pos).map(te->te.hasVanillaRedstoneConnection(side.getOpposite()))).orElse(false); }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean isSignalSource(BlockState state)
     { return can_provide_power_; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean hasAnalogOutputSignal(BlockState state)
     { return false; }
 
-    @Deprecated
-    @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos)
     { return 0; }
 
-    @Deprecated
-    @SuppressWarnings("deprecation")
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, true)).orElse(0) : 0; }
 
-    @Deprecated
-    @SuppressWarnings("deprecation")
     public int getDirectSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     { return can_provide_power_ ? tile(world, pos).map(te->te.getRedstonePower(redstone_side, false)).orElse(0) : 0; }
 
@@ -476,7 +460,6 @@ public class RedstoneTrack
     { return false; }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rnd)
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
@@ -484,7 +467,7 @@ public class RedstoneTrack
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
     {
       if(!world.isClientSide()) {
-        if(tile(world, pos).map(te->te.handlePostPlacement(facing, facingState, facingPos)).orElse(true)) {
+        if(tile(world, pos).map(te->te.handleShapeUpdate(facing, facingState, facingPos)).orElse(true)) {
           world.scheduleTick(pos, this, 1);
         } else {
           world.removeBlock(pos, false);
@@ -494,13 +477,13 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving)
     {
-      if(oldState.is(state.getBlock()) || world.isClientSide()) return;
-      tile(world,pos).ifPresent(TrackBlockEntity::updateConnections);
-      updateNeighbourShapes(state, world, pos);
-      notifyAdjacent(world, pos);
+// @todo check if still needed
+// if(oldState.is(state.getBlock()) || world.isClientSide()) return;
+// tile(world,pos).ifPresent(TrackBlockEntity::updateConnections);
+// updateNeighbourShapes(state, world, pos);
+// notifyAdjacent(world, pos);
     }
 
     @Override
@@ -513,7 +496,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
@@ -525,7 +507,6 @@ public class RedstoneTrack
       }
     }
 
-    @SuppressWarnings("deprecation")
     public InteractionResult onBlockActivated(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr, boolean remove_only)
     {
       {
@@ -567,19 +548,18 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
     {
       if(world.isClientSide()) return;
-      final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
-      if(blocks_to_update.isEmpty()) return;
       try {
+        final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
+        if(blocks_to_update.isEmpty()) return;
         for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
-          //Auxiliaries.logWarn(String.format("NCUP:    [%d,%d,%d] -> [%d,%d,%d]", pos.getX(), pos.getY(), pos.getZ(), update_pos.getX(), update_pos.getY(), update_pos.getZ()));
+          if(update_pos.getKey().equals(update_pos.getValue())) continue;
           world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
         }
       } catch(Throwable ex) {
-        Auxiliaries.logger().error("Track neighborChanged recursion detected, dropping!");
+        Auxiliaries.logError("Track neighborChanged recursion detected, dropping!");
         final int num_redstone = tile(world, pos).map(TrackBlockEntity::getRedstoneDustCount).orElse(0);
         if(num_redstone > 0) {
           Vec3 p = Vec3.atCenterOf(pos);
@@ -590,7 +570,6 @@ public class RedstoneTrack
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void updateIndirectNeighbourShapes(BlockState state, LevelAccessor worldIn, BlockPos pos, int flags, int recursionLeft)
     {}
 
@@ -656,7 +635,7 @@ public class RedstoneTrack
         final Direction odir = dir.getOpposite();
         final BlockPos opos = pos.relative(odir);
         final BlockState ostate = world.getBlockState(opos);
-        if((!ostate.isSignalSource()) && (!ostate.isSignalSource())) {   /// @todo: CHECK WHEN FORGE HAS SIDE SELECTIVE canConnectRedstone like feature (world, pos, odir)
+        if(!RsSignals.hasSignalConnector(ostate, world, opos, dir)) {
           flags_to_add |= connections.getWireBit(face, odir);
           ++num_placed;
         }
@@ -701,7 +680,7 @@ public class RedstoneTrack
   // Tile entity
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class TrackBlockEntity extends BlockEntity implements Networking.IPacketTileNotifyReceiver
+  public static class TrackBlockEntity extends StandardEntityBlocks.StandardBlockEntity implements Networking.IPacketTileNotifyReceiver
   {
     public static class TrackNet
     {
@@ -712,10 +691,10 @@ public class RedstoneTrack
       public int power;
 
       public TrackNet(List<BlockPos> positions, List<Direction> ext_sides, List<Direction> int_sides, List<Direction> pwr_sides)
-      { neighbour_positions =positions; neighbour_sides =ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power = 0; }
+      { neighbour_positions=positions; neighbour_sides=ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power=0; }
 
       public TrackNet(List<BlockPos> positions, List<Direction> ext_sides, List<Direction> int_sides, List<Direction> pwr_sides, int power_setval)
-      { neighbour_positions =positions; neighbour_sides =ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power = power_setval; }
+      { neighbour_positions=positions; neighbour_sides=ext_sides; internal_sides=int_sides; power_sides=pwr_sides; power=power_setval; }
     }
 
     private long state_flags_ = 0;      // server/client
@@ -724,7 +703,7 @@ public class RedstoneTrack
     private boolean trace_ = false;
 
     public TrackBlockEntity(BlockPos pos, BlockState state)
-    { super(ModContent.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
+    { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
     public CompoundTag readnbt(CompoundTag nbt)
     {
@@ -776,17 +755,11 @@ public class RedstoneTrack
 
     @Override
     public void load(CompoundTag nbt)
-    {
-      super.load(nbt);
-      readnbt(nbt);
-    }
+    { super.load(nbt); readnbt(nbt); }
 
     @Override
     protected void saveAdditional(CompoundTag nbt)
-    {
-      super.saveAdditional(nbt);
-      writenbt(nbt);
-    }
+    { super.saveAdditional(nbt); writenbt(nbt); }
 
     @Override
     public CompoundTag getUpdateTag()
@@ -799,12 +772,19 @@ public class RedstoneTrack
 
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) // on client
-    { super.onDataPacket(net, pkt); readnbt(pkt.getTag()); }
+    { readnbt(pkt.getTag()); super.onDataPacket(net, pkt); }
 
+    @Override
+    public void handleUpdateTag(CompoundTag tag)
+    { load(tag); }
 
     @Override
     public void onServerPacketReceived(CompoundTag nbt)
     { readnbt(nbt); }
+
+    @Override
+    public void onClientPacketReceived(Player player, CompoundTag nbt)
+    {}
 
     @OnlyIn(Dist.CLIENT)
     public double getViewDistance()
@@ -875,6 +855,7 @@ public class RedstoneTrack
 
     public int getRedstonePower(Direction redstone_side, boolean weak)
     {
+      if(isRemoved()) return 0;
       final Direction own_side = redstone_side.getOpposite();
       int p = 0;
       for(TrackNet net:nets_) {
@@ -883,7 +864,7 @@ public class RedstoneTrack
         if(p >= 15) break;
       }
       p = ((p <= 0) || (!(getLevel().getBlockState(getBlockPos().relative(own_side)).is(Blocks.REDSTONE_WIRE)))) ? p : (p-1);
-      if(trace_) Auxiliaries.logWarn(String.format("POWR: %12s(%s)==%d", posstr(getBlockPos()), redstone_side, p));
+      if(trace_) Auxiliaries.logWarn(String.format("POWR: %s @%s==%d", posstr(getBlockPos()), redstone_side, p));
       return p;
     }
 
@@ -910,7 +891,6 @@ public class RedstoneTrack
     public void toggle_trace(@Nullable Player player)
     { trace_ = !trace_; if(player!=null) Auxiliaries.playerChatMessage(player, "Trace: " + trace_); }
 
-    @SuppressWarnings("deprecation")
     public int handleActivation(BlockPos pos, Player player, InteractionHand hand, Direction clicked_face, Vec3 hitvec, boolean remove_only)
     {
       final ItemStack used_stack = player.getItemInHand(hand);
@@ -1017,12 +997,16 @@ public class RedstoneTrack
     public Map<BlockPos,BlockPos> updateAllPowerValuesFromAdjacent()
     {
       if(updatepower_order.isEmpty()) {
-        for(Direction side:Direction.values())
-          updatepower_order.add(new Vec3i(0,0,0).relative(side,1));
-        for(int x=-1; x<=1; ++x)
-          for(int y=-1; y<=1; ++y)
-            for(int z=-1; z<=1; ++z)
+        for(Direction side:Direction.values()) {
+          updatepower_order.add(new Vec3i(0, 0, 0).relative(side, 1));
+        }
+        for(int x=-1; x<=1; ++x) {
+          for(int y=-1; y<=1; ++y) {
+            for(int z=-1; z<=1; ++z) {
               if(Math.abs(x)+Math.abs(y)+Math.abs(z) == 2) updatepower_order.add(new Vec3i(x,y,z));
+            }
+          }
+        }
       }
       final Map<BlockPos,BlockPos> all_change_notifications = new HashMap<>();
       for(Vec3i ofs:updatepower_order) {
@@ -1043,27 +1027,33 @@ public class RedstoneTrack
     private RedstoneTrackBlock getBlock()
     { return ModContent.references.TRACK_BLOCK; }
 
-    public boolean handlePostPlacement(Direction facing, BlockState facingState, BlockPos fromPos)
+    public boolean handleShapeUpdate(Direction facing, BlockState facingState, BlockPos fromPos)
     {
+      boolean update_neighbours = false;
       if(!RedstoneTrackBlock.canBePlacedOnFace(facingState, getLevel(), fromPos, facing.getOpposite())) {
         final long to_remove = defs.connections.getAllElementsOnFace(facing);
         final long new_flags = (state_flags_ & ~to_remove);
-        boolean update_connections = false;
         if(new_flags != state_flags_) {
-          //if(trace_) Auxiliaries.logWarn(String.format("PPLC: %s (<-%s.%s)", posstr(getPos()), posstr(fromPos), facingState.getBlock().getDescriptionId().getPath()));
+          if(trace_) Auxiliaries.logWarn(String.format("SHUP: %s <-%s(=%s) removed.", posstr(getBlockPos()), posstr(fromPos), facingState.getBlock().getDescriptionId()));
           int count = getRedstoneDustCount();
           state_flags_ = new_flags;
           count -= getRedstoneDustCount();
           spawnRedsoneItems(count);
-          update_connections = true;
-        } else if(block_change_tracking_[facing.get3DDataValue()] != facingState.getBlock()) {
-          block_change_tracking_[facing.get3DDataValue()] = facingState.getBlock();
-          update_connections = true;
+          updateConnections(1);
+          update_neighbours = true;
         }
-        if(update_connections) {
-          updateConnections();
-          handleNeighborChanged(fromPos);
-        }
+      }
+      Block bltv = block_change_tracking_[facing.get3DDataValue()];
+      if(bltv != facingState.getBlock()) {
+        if(bltv == null) bltv = Blocks.AIR;
+        if(trace_) Auxiliaries.logWarn(String.format("SHUP: %s <-%s changed (%s->%s).", posstr(getBlockPos()), posstr(fromPos), bltv.getDescriptionId(), facingState.getBlock().getDescriptionId()));
+        block_change_tracking_[facing.get3DDataValue()] = facingState.getBlock();
+        update_neighbours = true;
+      }
+      if(update_neighbours) {
+        final Level world = getLevel();
+        final Block block = getBlock();
+        handleNeighborChanged(fromPos).forEach((chpos, frpos)->world.neighborChanged(chpos, block, frpos));
       }
       return (getWireFlags()!=0);
     }
@@ -1075,8 +1065,8 @@ public class RedstoneTrack
       final BlockState state = world.getBlockState(pos);
       int p = (!state.is(Blocks.REDSTONE_WIRE) && (!state.is(getBlock()))) ? state.getSignal(world, pos, redstone_side) : 0;
       //if(trace_) Auxiliaries.logWarn(String.format("GETNWS from [%s @ %s] = %dw", posstr(getPos()), redstone_side, p));
-      if(!state.shouldCheckWeakPower(world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
-      // According to world.getStrongPower():
+      if(!RsSignals.canEmitWeakPower(state, world, pos, redstone_side)) { getBlock().disablePower(false); return p; }
+      // According to world.getDirectSignalTo():
       for(Direction rs_side: Direction.values()) {
         final BlockPos side_pos = pos.relative(rs_side);
         final BlockState side_state = world.getBlockState(side_pos);
@@ -1093,87 +1083,107 @@ public class RedstoneTrack
     }
 
     public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos)
+    { return handleNeighborChanged(fromPos, null); }
+
+    public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos, @Nullable Map<BlockPos,BlockPos> change_notifications)
     {
-      final Map<BlockPos,BlockPos> change_notifications = new HashMap<>();
-      boolean power_changed = false;
-      for(TrackNet net: nets_) {
-        if(!net.neighbour_positions.contains(fromPos)) continue;
-        //if(trace_) Auxiliaries.logWarn(String.format("CHNOT: (%s) from [%s]", posstr(getPos()), posstr(fromPos)));
-        int pmax = 0;
-        for(int i = 0; i<net.neighbour_positions.size(); ++i) {
-          final BlockPos ext_pos = net.neighbour_positions.get(i);
-          change_notifications.put(ext_pos, getBlockPos());
-          final Direction ext_side = net.neighbour_sides.get(i);
-          final BlockState ext_state = level.getBlockState(ext_pos);
-          if(ext_state.is(Blocks.REDSTONE_WIRE)) {
-            if(pmax < 15) {
-              final int p_vanilla_wire = Math.max(0, ext_state.getValue(RedStoneWireBlock.POWER)-1);
-              pmax = Math.max(pmax, p_vanilla_wire);
-            }
-          } else if(ext_state.is(getBlock())) {
-            if(pmax < 15) {
-              final int p_track = RedstoneTrackBlock.tile(getLevel(), ext_pos).map(te->Math.max(0, te.getSidePower(ext_side)-1)).orElse(0);
-              pmax = Math.max(pmax, p_track);
-            }
-          } else {
-            final Direction eside = ext_side.getOpposite();
-            final int p_nowire = getNonWireSignal(getLevel(), ext_pos, eside);
-            pmax = Math.max(pmax, p_nowire);
-            if((!ext_state.isSignalSource()) && (p_nowire == 0)) {
-              if(ext_side!=Direction.DOWN) change_notifications.putIfAbsent(ext_pos.relative(Direction.DOWN), ext_pos);
-              if(ext_side!=Direction.UP) change_notifications.putIfAbsent(ext_pos.relative(Direction.UP), ext_pos);
-              if(ext_side!=Direction.NORTH) change_notifications.putIfAbsent(ext_pos.relative(Direction.NORTH), ext_pos);
-              if(ext_side!=Direction.SOUTH) change_notifications.putIfAbsent(ext_pos.relative(Direction.SOUTH), ext_pos);
-              if(ext_side!=Direction.EAST) change_notifications.putIfAbsent(ext_pos.relative(Direction.EAST), ext_pos);
-              if(ext_side!=Direction.WEST) change_notifications.putIfAbsent(ext_pos.relative(Direction.WEST), ext_pos);
-            }
-          }
+      record Neighbor(BlockPos pos, Direction side, int power, boolean direct_update, boolean needs_indirect) {}
+      final Level world = getLevel();
+      final List<Neighbor> neighbors = new LinkedList<>();
+      final TrackNet net = nets_.stream().filter(n->n.neighbour_positions.contains(fromPos)).findFirst().orElse(null);
+      if(net == null) return Collections.emptyMap(); // Only one net can be affected.
+      if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s from %s", posstr(getBlockPos()), posstr(fromPos)));
+      int pmax = 0;
+      for(int i = 0; i<net.neighbour_positions.size(); ++i) {
+        final BlockPos ext_pos = net.neighbour_positions.get(i);
+        final Direction ext_side = net.neighbour_sides.get(i);
+        final BlockState ext_state = level.getBlockState(ext_pos);
+        if(ext_state.is(Blocks.REDSTONE_WIRE)) {
+          final int p_vanilla_wire = ext_state.getValue(RedStoneWireBlock.POWER);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_vanilla_wire, false, false));
+          pmax = Math.max(pmax, p_vanilla_wire-1);
+        } else if(ext_state.is(getBlock())) {
+          final int p_track = RedstoneTrackBlock.tile(world, ext_pos).map(te->Math.max(0, te.getSidePower(ext_side))).orElse(0);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_track, true, false));
+          pmax = Math.max(pmax, p_track-1);
+        } else if(ext_state.is(ModContent.references.BRIDGE_RELAY_BLOCK)) {
+          final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, true, false));
+          pmax = Math.max(pmax, p_nowire);
+        } else {
+          final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
+          final boolean weak_updates = (!ext_state.isSignalSource()) && (p_nowire == 0) && ext_state.isRedstoneConductor(world, ext_pos);
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, false, weak_updates));
+          pmax = Math.max(pmax, p_nowire);
         }
-        if(net.power != pmax) {
-          net.power = pmax;
+      }
+      boolean power_changed = false;
+      if(net.power != pmax) {
+        if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s net power %d->%d", posstr(getBlockPos()), net.power, pmax));
+        net.power = pmax;
+        power_changed = true;
+      }
+      for(Direction side: net.internal_sides) {
+        if(getSidePower(side) != pmax) {
+          setSidePower(side, pmax);
           power_changed = true;
         }
-        for(Direction side: net.internal_sides) {
-          if(getSidePower(side) != pmax) {
-            setSidePower(side, pmax);
-            power_changed = true;
+      }
+      if(!power_changed) {
+        return Collections.emptyMap();
+      }
+      final boolean emit_notification = change_notifications == null;
+      if(emit_notification) change_notifications = new LinkedHashMap<>();
+      for(Neighbor neighbor: neighbors) {
+        if(neighbor.direct_update) {
+          if(world.getBlockEntity(neighbor.pos) instanceof TrackBlockEntity te) {
+            te.handleNeighborChanged(getBlockPos(), change_notifications);
+          } else {
+            world.getBlockState(neighbor.pos).neighborChanged(world, neighbor.pos, getBlock(), getBlockPos(), false);
+          }
+        } else {
+          change_notifications.put(neighbor.pos, getBlockPos());
+          if(neighbor.needs_indirect) {
+            for(Direction update_direction: defs.REDSTONE_UPDATE_DIRECTIONS) {
+              if(neighbor.side == update_direction) continue;
+              change_notifications.putIfAbsent(neighbor.pos.relative(update_direction), neighbor.pos);
+            }
           }
         }
       }
-      if(power_changed) {
-        if(trace_ && change_notifications.size()>0) {
-          Auxiliaries.logWarn(String.format("CHNF (%s) updates: [%s]", posstr(getBlockPos()), change_notifications.entrySet().stream().map(kv-> posstr(kv.getKey())+">"+posstr(kv.getValue())).collect(Collectors.joining(" ; "))));
-        }
-        sync(true);
-        return change_notifications;
-      } else {
-        return Collections.emptyMap();
+      if(trace_ && emit_notification && change_notifications.size()>0) {
+        Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), change_notifications.entrySet().stream().map(kv-> posstr(kv.getValue())+">"+posstr(kv.getKey())).collect(Collectors.joining(", "))));
       }
+      sync(true);
+      return emit_notification ? change_notifications : Collections.emptyMap();
     }
 
     private String posstr(BlockPos pos)
     { return "[" +pos.getX()+ "," +pos.getY()+ "," +pos.getZ()+ "]"; }
 
     @SuppressWarnings("all")
-    private boolean isRedstoneInsulator(BlockState state)
+    private boolean isRedstoneInsulator(BlockState state, BlockPos pos)
     {
-      // if(state.isAir()) return false;
       if(state.getMaterial() == Material.GLASS) return true;
       return false;
     }
 
-    private void updateConnections()
-    { updateConnections(1); }
-
     private void updateConnections(int recursion_left)
     {
+      final Set<BlockPos> all_neighbours = new HashSet<>();
       final int[] current_side_powers = {0,0,0,0,0,0};
-      nets_.forEach((net)->net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power));
-      if(trace_) Auxiliaries.logWarn(String.format("UCON %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
-      nets_.clear();
       final Set<TrackBlockEntity> track_connection_updates = new HashSet<>();
       final long[] internal_connected_sides = {0,0,0,0,0,0};
       final long[] external_connected_routes = {0,0,0,0,0,0};
+      // Cache and reset current net data
+      {
+        nets_.forEach((net)->{
+          net.internal_sides.forEach(ps->current_side_powers[ps.ordinal()] = net.power);
+          all_neighbours.addAll(net.neighbour_positions);
+        });
+        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s SIDPW: [%01x %01x %01x %01x %01x %01x]", posstr(getBlockPos()), current_side_powers[0], current_side_powers[1], current_side_powers[2], current_side_powers[3], current_side_powers[4], current_side_powers[5]));
+        nets_.clear();
+      }
       // Own internal and external connections.
       {
         long external_connection_flags = getStateFlags() & (defs.STATE_FLAG_WIR_MASK|defs.STATE_FLAG_CON_MASK);
@@ -1186,7 +1196,7 @@ public class RedstoneTrack
             internal_connected_sides[i] |= wire_bit_pair;
           }
         }
-        if(trace_) Auxiliaries.logWarn(String.format("UCON %s CONFL: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getBlockPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
+        if(trace_) Auxiliaries.logWarn(String.format("UCON: %s CONFL: ext:%08x | int:[%08x %08x %08x %08x %08x %08x]", posstr(getBlockPos()), external_connection_flags, internal_connected_sides[0], internal_connected_sides[1], internal_connected_sides[2], internal_connected_sides[3], internal_connected_sides[4], internal_connected_sides[5]));
         // Condense internal connections.
         for(int k=0; k<2; ++k) {
           for(int i=0; i<6; ++i) {
@@ -1302,7 +1312,7 @@ public class RedstoneTrack
                   }
                 }
                 // air or full block
-                if(!isRedstoneInsulator(wire_state)) {
+                if(!isRedstoneInsulator(wire_state, wire_pos)) {
                   block_positions.add(wire_pos);
                   block_sides.add(tdir.getOpposite());
                   internal_sides.add(side);
@@ -1315,7 +1325,7 @@ public class RedstoneTrack
             if((external_connected_routes[i] & bulk) != 0) {
               final BlockPos bulk_pos = getBlockPos().relative(side);
               final BlockState bulk_state = getLevel().getBlockState(bulk_pos);
-              if(isRedstoneInsulator(bulk_state)) continue;
+              if(isRedstoneInsulator(bulk_state, bulk_pos)) continue;
               block_positions.add(bulk_pos);
               block_sides.add(side.getOpposite()); // NOT the redstone side, the real face.
               internal_sides.add(side);
@@ -1331,23 +1341,52 @@ public class RedstoneTrack
           }
         }
         Arrays.stream(Direction.values()).filter(side->!used_sides.contains(side)).forEach(side->setSidePower(side, 0));
+        setChanged();
       }
-      setChanged();
-      if(trace_) {
-        final String poss = posstr(getBlockPos());
-        for(TrackNet net:nets_) {
-          final List<String> ss = new ArrayList<>();
-          for(int i = 0; i<net.neighbour_positions.size(); ++i) ss.add(posstr(net.neighbour_positions.get(i)) + ":" + net.neighbour_sides.get(i).toString());
-          String int_sides = net.internal_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
-          String pwr_sides = net.power_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
-          Auxiliaries.logWarn(String.format("UCON %s: adj:%s | ints:%s | pwrs:%s", poss, String.join(", ", ss), int_sides, pwr_sides));
+      // -- Prepare neighbour updates
+      {
+        final Set<BlockPos> disconnected_neighbours = new HashSet<>(all_neighbours);
+        final Set<BlockPos> connected_neighbours = new HashSet<>();
+        nets_.forEach(net->net.neighbour_positions.forEach(disconnected_neighbours::remove));
+        nets_.forEach(net->connected_neighbours.addAll(net.neighbour_positions));
+        all_neighbours.forEach(connected_neighbours::remove);
+        if(trace_) {
+          final String poss = posstr(getBlockPos());
+          for(TrackNet net:nets_) {
+            final List<String> ss = new ArrayList<>();
+            for(int i = 0; i<net.neighbour_positions.size(); ++i) ss.add(posstr(net.neighbour_positions.get(i)) + ":" + net.neighbour_sides.get(i).toString());
+            String int_sides = net.internal_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
+            String pwr_sides = net.power_sides.stream().map(Direction::toString).collect(Collectors.joining(","));
+            Auxiliaries.logWarn(String.format("UCON: %s adj:%s | ints:%s | pwrs:%s", poss, String.join(", ", ss), int_sides, pwr_sides));
+          }
+          if(!disconnected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s DISCONNECTED NEIGHBOURS: %s", posstr(getBlockPos()), disconnected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
+          if(!connected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s CONNECTED NEIGHBOURS: %s", posstr(getBlockPos()), connected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
+        }
+        (new HashSet<>(disconnected_neighbours)).forEach(p->RedstoneTrackBlock.tile(getLevel(), p).ifPresent(te->{ track_connection_updates.add(te); disconnected_neighbours.remove(p); }));
+        if(trace_) {
+          if(!disconnected_neighbours.isEmpty()) Auxiliaries.logWarn(String.format("UCON: %s DISCONNECTED NONTRACK: %s", posstr(getBlockPos()), disconnected_neighbours.stream().map(this::posstr).collect(Collectors.joining(","))));
         }
       }
-      if(recursion_left > 0) {
-        for(TrackBlockEntity te:track_connection_updates) {
-          if(trace_) Auxiliaries.logWarn(String.format("UCON %s: UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
-          te.updateConnections(recursion_left-1);
+      // Update neighbour tracks
+      {
+        if(recursion_left > 0) {
+          for(TrackBlockEntity te:track_connection_updates) {
+            if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE NET OF %s", posstr(getBlockPos()), posstr(te.getBlockPos())));
+            te.updateConnections(recursion_left-1);
+          }
         }
+      }
+      // Update removed/added non-track connections
+      {
+        nets_.stream().filter((net)->net.power > 0).forEach((net)->all_neighbours.addAll(net.neighbour_positions));
+        final Level world = getLevel();
+        final BlockState state = getBlockState();
+        all_neighbours.forEach((pos)->{
+          final BlockState st = world.getBlockState(pos);
+          if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE TRACK CHANGES TO %s.", posstr(getBlockPos()), posstr(pos)));
+          st.neighborChanged(world, pos, state.getBlock(), getBlockPos(), false);
+          world.updateNeighborsAt(pos, st.getBlock());
+        });
       }
     }
   }
