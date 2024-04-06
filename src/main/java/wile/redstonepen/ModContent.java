@@ -11,17 +11,13 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ObjectHolder;
-import wile.redstonepen.blocks.CircuitComponents;
-import wile.redstonepen.blocks.ControlBox;
-import wile.redstonepen.blocks.RedstoneTrack;
+import wile.redstonepen.blocks.*;
 import wile.redstonepen.items.RedstonePenItem;
 import wile.redstonepen.libmc.StandardBlocks;
 import wile.redstonepen.libmc.Auxiliaries;
@@ -30,13 +26,8 @@ import wile.redstonepen.libmc.Registries;
 
 public class ModContent
 {
-  private static class detail {
-    public static String MODID = "";
-  }
-
-  public static void init(String modid)
+  public static void init()
   {
-    detail.MODID = modid;
     initBlocks();
     initItems();
     Registries.addRecipeSerializer("crafting_extended_shapeless", ()->wile.redstonepen.libmc.ExtendedShapelessRecipe.SERIALIZER);
@@ -104,43 +95,45 @@ public class ModContent
       ControlBox.ControlBoxBlockEntity::new,
       ControlBox.ControlBoxUiContainer::new
     );
+    Registries.addBlock("basic_lever",
+      ()->new BasicLever.BasicLeverBlock(
+        new BasicLever.BasicLeverBlock.Config(0.8f, 0.9f),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
+    );
+    Registries.addBlock("basic_button",
+      ()->new BasicButton.BasicButtonBlock(
+        new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 20),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
+    );
+    Registries.addBlock("basic_pulse_button",
+      ()->new BasicButton.BasicButtonBlock(
+        new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 2),
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+      )
+    );
   }
 
   public static void initItems()
   {
     Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(0)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(64).defaultDurability(0)
     ));
     Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(0).defaultDurability(256)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(256)
     ));
   }
 
-  //--------------------------------------------------------------------------------------------------------------------
-  // Initialisation events
-  //--------------------------------------------------------------------------------------------------------------------
-
-  @OnlyIn(Dist.CLIENT)
-  @SuppressWarnings("unchecked")
-  public static void registerMenuGuis(final FMLClientSetupEvent event)
+  public static void initReferences(String registry_name)
   {
-    MenuScreens.register((MenuType<ControlBox.ControlBoxUiContainer>)Registries.getMenuTypeOfBlock("control_box"), ControlBox.ControlBoxGui::new);
-  }
-
-  @OnlyIn(Dist.CLIENT)
-  public static void processContentClientSide()
-  {
-    //net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(Registries.getBlock("track"), net.minecraft.client.renderer.RenderType.cutout());
-  }
-
-  @OnlyIn(Dist.CLIENT)
-  @SuppressWarnings("unchecked")
-  public static void registerBlockEntityRenderers()
-  {
-    BlockEntityRenderers.register(
-      (BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"),
-      wile.redstonepen.detail.ModRenderers.TrackTer::new
-    );
+    switch(registry_name) {
+      case "minecraft:block" -> {
+        references.TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)Registries.getBlock("track");
+        references.BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)Registries.getBlock("bridge_relay");
+        references.CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)Registries.getBlock("control_box");
+      }
+    }
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -161,9 +154,9 @@ public class ModContent
 
   public static final class references
   {
-    @ObjectHolder(registryName="block", value="redstonepen:track") public static final RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
-    @ObjectHolder(registryName="block", value="redstonepen:bridge_relay") public static final CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
-    @ObjectHolder(registryName="block", value="redstonepen:control_box") public static final ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
+    public static RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
+    public static CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
+    public static ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
   }
 
 }

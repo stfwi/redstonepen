@@ -8,39 +8,17 @@
  */
 package wile.redstonepen.libmc;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.*;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.nbt.Tag;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.wrapper.InvWrapper;
-import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
-import net.minecraftforge.items.wrapper.SidedInvWrapper;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 
@@ -53,82 +31,23 @@ public class Inventories
   { return (a.getItem()!=b.getItem()) || (!ItemStack.isSameItemSameTags(a, b)); }
 
   public static boolean isItemStackableOn(ItemStack a, ItemStack b)
-  { return (!a.isEmpty()) && (ItemStack.isSameItem(a,b)) && (a.hasTag() == b.hasTag()) && (!a.hasTag() || a.getTag().equals(b.getTag())) && a.areCapsCompatible(b); }
+  { return (!a.isEmpty()) && (ItemStack.isSameItem(a,b)) && (a.hasTag() == b.hasTag()) && (!a.hasTag() || a.getTag().equals(b.getTag())); }
 
-  public static IItemHandler itemhandler(Level world, BlockPos pos, @Nullable Direction side)
+  public static ItemStack extract(Player player, @Nullable ItemStack match, int amount, boolean simulate)
   {
-    BlockEntity te = world.getBlockEntity(pos);
-    if(te==null) return null;
-    IItemHandler ih = te.getCapability(ForgeCapabilities.ITEM_HANDLER, side).orElse(null);
-    if(ih!=null) return ih;
-    if((side!=null) && (te instanceof WorldlyContainer)) return new SidedInvWrapper((WorldlyContainer)te, side);
-    if(te instanceof Container) return new InvWrapper((Container)te);
-    return null;
-  }
-
-  public static IItemHandler itemhandler(Level world, BlockPos pos, @Nullable Direction side, boolean including_entities)
-  {
-    IItemHandler ih = itemhandler(world, pos, side);
-    if(ih != null) return ih;
-    if(!including_entities) return null;
-    Entity entity = world.getEntitiesOfClass(Entity.class, new AABB(pos), (e)->(e instanceof Container)).stream().findFirst().orElse(null);
-    return (entity==null) ? (null) : (itemhandler(entity,side));
-  }
-
-  public static IItemHandler itemhandler(Entity entity)
-  { return (entity instanceof Container) ? (new InvWrapper((Container)entity)) : null; }
-
-  public static IItemHandler itemhandler(Player player)
-  { return new PlayerMainInvWrapper(player.getInventory()); }
-
-  public static IItemHandler itemhandler(Entity entity, @Nullable Direction side)
-  { return (entity instanceof Container) ? (new InvWrapper((Container)entity)) : null; }
-
-  public static boolean insertionPossible(Level world, BlockPos pos, @Nullable Direction side, boolean including_entities)
-  { return itemhandler(world, pos, side, including_entities) != null; }
-
-  public static ItemStack insert(IItemHandler handler, ItemStack stack , boolean simulate)
-  { return ItemHandlerHelper.insertItemStacked(handler, stack, simulate); }
-
-  public static ItemStack insert(BlockEntity te, @Nullable Direction side, ItemStack stack, boolean simulate)
-  {
-    if(te == null) return stack;
-    IItemHandler hnd = te.getCapability(ForgeCapabilities.ITEM_HANDLER, side).orElse(null);
-    if(hnd == null) {
-      if((side != null) && (te instanceof WorldlyContainer)) {
-        hnd = new SidedInvWrapper((WorldlyContainer)te, side);
-      } else if(te instanceof Container) {
-        hnd = new InvWrapper((Container)te);
-      }
+    if(amount <= 0) return ItemStack.EMPTY;
+    final InventoryRange ir = InventoryRange.fromPlayerInventory(player);
+    if(match == null) {
+      return ir.extract(amount, false, simulate);
+    } else {
+      ItemStack mstack = match.copy();
+      mstack.setCount(amount);
+      return ir.extract(mstack, simulate);
     }
-    return (hnd==null) ? stack : insert(hnd, stack, simulate);
   }
 
-  public static ItemStack insert(Level world, BlockPos pos, @Nullable Direction side, ItemStack stack, boolean simulate, boolean including_entities)
-  { return insert(itemhandler(world, pos, side, including_entities), stack, simulate); }
-
-  public static ItemStack insert(Level world, BlockPos pos, @Nullable Direction side, ItemStack stack, boolean simulate)
-  { return insert(world, pos, side, stack, simulate, false); }
-
-  public static ItemStack extract(IItemHandler inventory, @Nullable ItemStack match, int amount, boolean simulate)
-  {
-    if((inventory==null) || (amount<=0) || ((match!=null) && (match.isEmpty()))) return ItemStack.EMPTY;
-    final int max = inventory.getSlots();
-    ItemStack out_stack = ItemStack.EMPTY;
-    for(int i=0; i<max; ++i) {
-      final ItemStack stack = inventory.getStackInSlot(i);
-      if(stack.isEmpty()) continue;
-      if(out_stack.isEmpty()) {
-        if((match!=null) && areItemStacksDifferent(stack, match)) continue;
-        out_stack = inventory.extractItem(i, amount, simulate);
-      } else if(areItemStacksIdentical(stack, out_stack)) {
-        ItemStack es = inventory.extractItem(i, (amount-out_stack.getCount()), simulate);
-        out_stack.grow(es.getCount());
-      }
-      if(out_stack.getCount() >= amount) break;
-    }
-    return out_stack;
-  }
+  public static ItemStack insert(Player player, ItemStack stack, boolean simulate)
+  { return InventoryRange.fromPlayerInventory(player).insert(stack, simulate); }
 
   private static ItemStack checked(ItemStack stack)
   { return stack.isEmpty() ? ItemStack.EMPTY : stack; }
@@ -136,7 +55,7 @@ public class Inventories
   public static Container copyOf(Container src)
   {
     final int size = src.getContainerSize();
-    SimpleContainer dst = new SimpleContainer(size);
+    final SimpleContainer dst = new SimpleContainer(size);
     for(int i=0; i<size; ++i) dst.setItem(i, src.getItem(i).copy());
     return dst;
   }
@@ -152,188 +71,6 @@ public class Inventories
     }
     return remaining;
   }
-
-  //--------------------------------------------------------------------------------------------------------------------
-
-  public static class MappedItemHandler implements IItemHandler
-  {
-    private final BiPredicate<Integer, ItemStack> extraction_predicate_;
-    private final BiPredicate<Integer, ItemStack> insertion_predicate_;
-    private final BiConsumer<Integer, ItemStack> insertion_notifier_;
-    private final BiConsumer<Integer, ItemStack> extraction_notifier_;
-    private final List<Integer> slot_map_;
-    private final Container inv_;
-
-    public MappedItemHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate, BiConsumer<Integer, ItemStack> insertion_notifier, BiConsumer<Integer, ItemStack> extraction_notifier)
-    { inv_ = inv; extraction_predicate_ = extraction_predicate; insertion_predicate_ = insertion_predicate; insertion_notifier_=insertion_notifier; extraction_notifier_=extraction_notifier;  slot_map_ = IntStream.range(0, inv.getContainerSize()).boxed().collect(Collectors.toList()); }
-
-    public MappedItemHandler(Container inv, List<Integer> slot_map, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate, BiConsumer<Integer, ItemStack> insertion_notifier, BiConsumer<Integer, ItemStack> extraction_notifier)
-    { inv_ = inv; extraction_predicate_ = extraction_predicate; insertion_predicate_ = insertion_predicate; insertion_notifier_=insertion_notifier; extraction_notifier_=extraction_notifier;  slot_map_ = slot_map; }
-
-    public MappedItemHandler(Container inv, List<Integer> slot_map, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate)
-    { this(inv, slot_map, extraction_predicate, insertion_predicate, (i,s)->{}, (i,s)->{}); }
-
-    public MappedItemHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate)
-    { this(inv, IntStream.range(0, inv.getContainerSize()).boxed().collect(Collectors.toList()), extraction_predicate, insertion_predicate); }
-
-    public MappedItemHandler(Container inv)
-    { this(inv, (i,s)->true, (i,s)->true); }
-
-    @Override
-    public int hashCode()
-    { return inv_.hashCode(); }
-
-    @Override
-    public boolean equals(Object o)
-    { return (o==this) || ((o!=null) && (getClass()==o.getClass()) && (inv_.equals(((MappedItemHandler)o).inv_))); }
-
-    // IItemHandler -----------------------------------------------------------------------------------------------
-
-    @Override
-    public int getSlots()
-    { return slot_map_.size(); }
-
-    @Override
-    @Nonnull
-    public ItemStack getStackInSlot(int slot)
-    { return (slot >= slot_map_.size()) ? ItemStack.EMPTY : inv_.getItem(slot_map_.get(slot)); }
-
-    @Override
-    public int getSlotLimit(int slot)
-    { return inv_.getMaxStackSize(); }
-
-    @Override
-    public boolean isItemValid(int slot, @Nonnull ItemStack stack)
-    {
-      if(slot >= slot_map_.size()) return false;
-      slot = slot_map_.get(slot);
-      return insertion_predicate_.test(slot, stack) && inv_.canPlaceItem(slot, stack);
-    }
-
-    @Override
-    @Nonnull
-    public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate)
-    {
-      if(stack.isEmpty()) return ItemStack.EMPTY;
-      if(slot >= slot_map_.size()) return stack;
-      slot = slot_map_.get(slot);
-      if(!insertion_predicate_.test(slot, stack)) return stack;
-      if(!inv_.canPlaceItem(slot, stack)) return stack;
-      ItemStack sst = inv_.getItem(slot);
-      final int slot_limit = inv_.getMaxStackSize();
-      if(!sst.isEmpty()) {
-        if(sst.getCount() >= Math.min(sst.getMaxStackSize(), slot_limit)) return stack;
-        if(!isItemStackableOn(stack, sst)) return stack;
-        final int limit = Math.min(stack.getMaxStackSize(), slot_limit) - sst.getCount();
-        if(stack.getCount() <= limit) {
-          if(!simulate) {
-            stack = stack.copy();
-            stack.grow(sst.getCount());
-            inv_.setItem(slot, stack);
-            inv_.setChanged();
-            insertion_notifier_.accept(slot, sst);
-          }
-          return ItemStack.EMPTY;
-        } else {
-          stack = stack.copy();
-          if(simulate) {
-            stack.shrink(limit);
-          } else {
-            final ItemStack diff = stack.split(limit);
-            sst.grow(diff.getCount());
-            inv_.setItem(slot, sst);
-            inv_.setChanged();
-            insertion_notifier_.accept(slot, diff);
-          }
-          return stack;
-        }
-      } else {
-        final int limit = Math.min(slot_limit, stack.getMaxStackSize());
-        if(stack.getCount() >= limit) {
-          stack = stack.copy();
-          final ItemStack ins = stack.split(limit);
-          if(!simulate) {
-            inv_.setItem(slot, ins);
-            inv_.setChanged();
-            insertion_notifier_.accept(slot, ins.copy());
-          }
-          if(stack.isEmpty()) {
-            stack = ItemStack.EMPTY;
-          }
-          return stack;
-        } else {
-          if(!simulate) {
-            inv_.setItem(slot, stack.copy());
-            inv_.setChanged();
-            insertion_notifier_.accept(slot, stack.copy());
-          }
-          return ItemStack.EMPTY;
-        }
-      }
-    }
-
-    @Override
-    public ItemStack extractItem(int slot, int amount, boolean simulate)
-    {
-      if(amount <= 0) return ItemStack.EMPTY;
-      if(slot >= slot_map_.size()) return ItemStack.EMPTY;
-      slot = slot_map_.get(slot);
-      ItemStack stack = inv_.getItem(slot);
-      if(!extraction_predicate_.test(slot, stack)) return ItemStack.EMPTY;
-      if(simulate) {
-        stack = stack.copy();
-        if(amount < stack.getCount()) stack.setCount(amount);
-      } else {
-        stack = inv_.removeItem(slot, Math.min(stack.getCount(), amount));
-        inv_.setChanged();
-        extraction_notifier_.accept(slot, stack.copy());
-      }
-      return stack;
-    }
-
-    // Factories --------------------------------------------------------------------------------------------
-
-    public static LazyOptional<IItemHandler> createGenericHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate, BiConsumer<Integer, ItemStack> insertion_notifier, BiConsumer<Integer, ItemStack> extraction_notifier)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, extraction_predicate, insertion_predicate, insertion_notifier, extraction_notifier)); }
-
-    public static LazyOptional<IItemHandler> createGenericHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate, BiConsumer<Integer, ItemStack> insertion_notifier, BiConsumer<Integer, ItemStack> extraction_notifier, List<Integer> slot_map)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, slot_map, extraction_predicate, insertion_predicate, insertion_notifier, extraction_notifier)); }
-
-    public static LazyOptional<IItemHandler> createGenericHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate, List<Integer> slot_map)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, slot_map, extraction_predicate, insertion_predicate)); }
-
-    public static LazyOptional<IItemHandler> createGenericHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, BiPredicate<Integer, ItemStack> insertion_predicate)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, extraction_predicate, insertion_predicate)); }
-
-    public static LazyOptional<IItemHandler> createGenericHandler(Container inv)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv)); }
-
-    public static LazyOptional<IItemHandler> createExtractionHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate, List<Integer> slot_map)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, slot_map, extraction_predicate, (i, s)->false)); }
-
-    public static LazyOptional<IItemHandler> createExtractionHandler(Container inv, BiPredicate<Integer, ItemStack> extraction_predicate)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, extraction_predicate, (i, s)->false)); }
-
-    public static LazyOptional<IItemHandler> createExtractionHandler(Container inv, Integer... slots)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, Arrays.asList(slots), (i, s)->true, (i, s)->false)); }
-
-    public static LazyOptional<IItemHandler> createExtractionHandler(Container inv)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, (i, s)->true, (i, s)->false)); }
-
-    public static LazyOptional<IItemHandler> createInsertionHandler(Container inv, BiPredicate<Integer, ItemStack> insertion_predicate, List<Integer> slot_map)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, slot_map, (i, s)->false, insertion_predicate)); }
-
-    public static LazyOptional<IItemHandler> createInsertionHandler(Container inv, Integer... slots)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, Arrays.asList(slots), (i, s)->false, (i, s)->true)); }
-
-    public static LazyOptional<IItemHandler> createInsertionHandler(Container inv, BiPredicate<Integer, ItemStack> insertion_predicate)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, (i, s)->false, insertion_predicate)); }
-
-    public static LazyOptional<IItemHandler> createInsertionHandler(Container inv)
-    { return LazyOptional.of(() -> new MappedItemHandler(inv, (i, s)->false, (i, s)->true)); }
-  }
-
-  //--------------------------------------------------------------------------------------------------------------------
 
   public static class InventoryRange implements Container, Iterable<ItemStack>
   {
@@ -445,10 +182,7 @@ public class Inventories
 
     //------------------------------------------------------------------------------------------------------------------
 
-    /**
-     * Iterates using a function (slot, stack) -> bool until the function matches (returns true).
-     */
-    public boolean iterate(BiPredicate<Integer,ItemStack> fn)
+    public boolean iterate(BiPredicate<Integer,ItemStack> fn) // Iterates using a function (slot, stack) -> bool until the function matches (returns true).
     { for(int i=0; i<size_; ++i) { if(fn.test(i, getItem(i))) { return true; } } return false; }
 
     public boolean contains(ItemStack stack)
@@ -501,10 +235,7 @@ public class Inventories
 
     //------------------------------------------------------------------------------------------------------------------
 
-    /**
-     * Returns the number of stacks that match the given stack with NBT.
-     */
-    public int stackMatchCount(final ItemStack ref_stack)
+    public int stackMatchCount(final ItemStack ref_stack) // Returns the number of stacks that match the given stack with NBT.
     {
       int n = 0; // ... std::accumulate() the old school way.
       for(int i=0; i<size_; ++i) {
@@ -534,7 +265,6 @@ public class Inventories
     public ItemStack insert(final ItemStack input_stack, boolean only_fillup, int limit, boolean reverse, boolean force_group_stacks)
     {
       final ItemStack mvstack = input_stack.copy();
-      //final int end_slot = offset_ + size;
       if(mvstack.isEmpty()) return checked(mvstack);
       int limit_left = (limit>0) ? (Math.min(limit, mvstack.getMaxStackSize())) : (mvstack.getMaxStackSize());
       boolean[] matches = new boolean[size_];
@@ -561,10 +291,10 @@ public class Inventories
           setItem(sno, stack);
           return ItemStack.EMPTY;
         } else {
-          stack.grow(nmax);
           mvstack.shrink(nmax);
-          setItem(sno, stack);
           limit_left -= nmax;
+          stack.grow(nmax);
+          setItem(sno, stack);
         }
       }
       if(only_fillup) return checked(mvstack);
@@ -625,6 +355,21 @@ public class Inventories
       return checked(mvstack);
     }
 
+    public ItemStack insert(ItemStack input_stack, boolean simulate)
+    {
+      if(input_stack.isEmpty()) return ItemStack.EMPTY;
+      if(!simulate) return insert(input_stack);
+      input_stack = input_stack.copy();
+      for(ItemStack stack: this) {
+        if(stack.isEmpty()) return ItemStack.EMPTY;
+        final int nleft = stack.getCount() - stack.getMaxStackSize();
+        if((nleft <= 0) || (!isItemStackableOn(stack, input_stack))) continue;
+        if(nleft >= input_stack.getCount()) return ItemStack.EMPTY;
+        input_stack.shrink(nleft);
+      }
+      return input_stack;
+    }
+
     public ItemStack insert(final ItemStack stack_to_move)
     { return insert(stack_to_move, false, 0, false, true); }
 
@@ -657,6 +402,9 @@ public class Inventories
     { return extract(amount, false); }
 
     public ItemStack extract(int amount, boolean random)
+    { return extract(amount, false, false); }
+
+    public ItemStack extract(int amount, boolean random, boolean simulate)
     {
       ItemStack out_stack = ItemStack.EMPTY;
       int offset = random ? (int)(Math.random()*size_) : 0;
@@ -667,35 +415,41 @@ public class Inventories
         if(out_stack.isEmpty()) {
           if(stack.getCount() < amount) {
             out_stack = stack;
-            setItem(i, ItemStack.EMPTY);
+            if(!simulate) setItem(i, ItemStack.EMPTY);
             if(!out_stack.isStackable()) break;
             amount -= out_stack.getCount();
           } else {
-            out_stack = stack.split(amount);
+            if(!simulate) {
+              out_stack = stack.split(amount);
+            } else {
+              out_stack = stack.copy();
+              out_stack.setCount(amount);
+            }
             break;
           }
         } else if(areItemStacksIdentical(stack, out_stack)) {
           if(stack.getCount() <= amount) {
             out_stack.grow(stack.getCount());
             amount -= stack.getCount();
-            setItem(i, ItemStack.EMPTY);
+            if(!simulate) setItem(i, ItemStack.EMPTY);
           } else {
             out_stack.grow(amount);
-            stack.shrink(amount);
-            if(stack.isEmpty()) setItem(i, ItemStack.EMPTY);
+            if(!simulate) {
+              stack.shrink(amount);
+              if(stack.isEmpty()) setItem(i, ItemStack.EMPTY);
+            }
             break;
           }
         }
       }
-      if(!out_stack.isEmpty()) setChanged();
+      if((!out_stack.isEmpty()) && (!simulate)) setChanged();
       return out_stack;
     }
 
-    /**
-     * Moves as much items from the slots in range [offset_, end_slot] of the inventory_ into a new stack.
-     * Implicitly shrinks the inventory_ stacks and the `request_stack`.
-     */
     public ItemStack extract(final ItemStack request_stack)
+    { return extract(request_stack, false); }
+
+    public ItemStack extract(final ItemStack request_stack, boolean simulate)
     {
       if(request_stack.isEmpty()) return ItemStack.EMPTY;
       List<ItemStack> matches = new ArrayList<>();
@@ -713,15 +467,24 @@ public class Inventories
       }
       matches.sort(Comparator.comparingInt(ItemStack::getCount));
       if(matches.isEmpty()) return ItemStack.EMPTY;
-      int n_left = request_stack.getCount();
-      ItemStack fetched_stack = matches.get(0).split(n_left);
-      n_left -= fetched_stack.getCount();
-      for(int i=1; (i<matches.size()) && (n_left>0); ++i) {
-        ItemStack stack = matches.get(i).split(n_left);
-        n_left -= stack.getCount();
-        fetched_stack.grow(stack.getCount());
+      if(!simulate) {
+        int n_left = request_stack.getCount();
+        ItemStack fetched_stack = matches.get(0).split(n_left);
+        n_left -= fetched_stack.getCount();
+        for(int i=1; (i<matches.size()) && (n_left>0); ++i) {
+          ItemStack stack = matches.get(i).split(n_left);
+          n_left -= stack.getCount();
+          fetched_stack.grow(stack.getCount());
+        }
+        return checked(fetched_stack);
+      } else {
+        int amount = 0;
+        for(ItemStack match: matches) amount += match.getCount();
+        if(amount == 0) return ItemStack.EMPTY;
+        final ItemStack stack = request_stack.copy();
+        if(amount < stack.getCount()) stack.setCount(amount);
+        return stack;
       }
-      return checked(fetched_stack);
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -777,238 +540,8 @@ public class Inventories
 
   }
 
-  //--------------------------------------------------------------------------------------------------------------------
-
-  public static class StorageInventory implements Container, Iterable<ItemStack>
-  {
-    protected final NonNullList<ItemStack> stacks_;
-    protected final BlockEntity te_;
-    protected final int size_;
-    protected final int num_rows_;
-    protected int stack_limit_ = 64;
-    protected BiPredicate<Integer, ItemStack> validator_ = (index, stack)->true;
-    protected Consumer<Player> open_action_ = (player)->{};
-    protected Consumer<Player> close_action_ = (player)->{};
-    protected BiConsumer<Integer,ItemStack> slot_set_action_ = (index, stack)->{};
-
-    public StorageInventory(BlockEntity te, int size)
-    { this(te, size, 1); }
-
-    public StorageInventory(BlockEntity te, int size, int num_rows)
-    {
-      te_ = te;
-      size_ = Math.max(size, 1);
-      stacks_ = NonNullList.withSize(size_, ItemStack.EMPTY);
-      num_rows_ = Mth.clamp(num_rows, 1, size_);
-    }
-    public CompoundTag save(CompoundTag nbt, String key)
-    { nbt.put(key, save(new CompoundTag(), false)); return nbt; }
-
-    public CompoundTag save(CompoundTag nbt)
-    { return ContainerHelper.saveAllItems(nbt, stacks_); }
-
-    public CompoundTag save(CompoundTag nbt, boolean save_empty)
-    { return ContainerHelper.saveAllItems(nbt, stacks_, save_empty); }
-
-    public CompoundTag save(boolean save_empty)
-    { return save(new CompoundTag(), save_empty); }
-
-    public StorageInventory load(CompoundTag nbt, String key)
-    {
-      if(!nbt.contains("key", Tag.TAG_COMPOUND)) {
-        stacks_.clear();
-        return this;
-      } else {
-        return load(nbt.getCompound(key));
-      }
-    }
-
-    public StorageInventory load(CompoundTag nbt)
-    { stacks_.clear(); ContainerHelper.loadAllItems(nbt, stacks_); return this; }
-
-    public List<ItemStack> stacks()
-    { return stacks_; }
-
-    public BlockEntity getBlockEntity()
-    { return te_; }
-
-    public StorageInventory setOpenAction(Consumer<Player> fn)
-    { open_action_ = fn; return this; }
-
-    public StorageInventory setCloseAction(Consumer<Player> fn)
-    { close_action_ = fn; return this; }
-
-    public StorageInventory setSlotChangeAction(BiConsumer<Integer,ItemStack> fn)
-    { slot_set_action_ = fn; return this; }
-
-    public StorageInventory setStackLimit(int max_slot_stack_size)
-    { stack_limit_ = Math.max(max_slot_stack_size, 1); return this; }
-
-    public StorageInventory setValidator(BiPredicate<Integer, ItemStack> validator)
-    { validator_ = validator; return this; }
-
-    public BiPredicate<Integer, ItemStack> getValidator()
-    { return validator_; }
-
-    // Iterable<ItemStack> ---------------------------------------------------------------------
-
-    public Iterator<ItemStack> iterator()
-    { return stacks_.iterator(); }
-
-    public Stream<ItemStack> stream()
-    { return stacks_.stream(); }
-
-    // Container ------------------------------------------------------------------------------
-
-    @Override
-    public int getContainerSize()
-    { return size_; }
-
-    @Override
-    public boolean isEmpty()
-    { for(ItemStack stack: stacks_) { if(!stack.isEmpty()) return false; } return true; }
-
-    @Override
-    public ItemStack getItem(int index)
-    { return (index < size_) ? stacks_.get(index) : ItemStack.EMPTY; }
-
-    @Override
-    public ItemStack removeItem(int index, int count)
-    { return ContainerHelper.removeItem(stacks_, index, count); }
-
-    @Override
-    public ItemStack removeItemNoUpdate(int index)
-    { return ContainerHelper.takeItem(stacks_, index); }
-
-    @Override
-    public void setItem(int index, ItemStack stack)
-    {
-      stacks_.set(index, stack);
-      if((stack.getCount() != stacks_.get(index).getCount()) || !areItemStacksDifferent(stacks_.get(index),stack)) {
-        slot_set_action_.accept(index, stack);
-      }
-    }
-
-    @Override
-    public int getMaxStackSize()
-    { return stack_limit_; }
-
-    @Override
-    public void setChanged()
-    { te_.setChanged(); }
-
-    @Override
-    public boolean stillValid(Player player)
-    { return ((te_.getLevel().getBlockEntity(te_.getBlockPos()) == te_)) && (te_.getBlockPos().distSqr(player.blockPosition()) < 64); }
-
-    @Override
-    public void startOpen(Player player)
-    { open_action_.accept(player); }
-
-    @Override
-    public void stopOpen(Player player)
-    { setChanged(); close_action_.accept(player); }
-
-    @Override
-    public boolean canPlaceItem(int index, ItemStack stack)
-    { return validator_.test(index, stack); }
-
-    @Override
-    public void clearContent()
-    { stacks_.clear(); setChanged(); }
-
-  }
-
-  //--------------------------------------------------------------------------------------------------------------------
-
   public static void give(Player entity, ItemStack stack)
-  { ItemHandlerHelper.giveItemToPlayer(entity, stack); }
-
-  public static void setItemInPlayerHand(Player player, InteractionHand hand, ItemStack stack)
   {
-    if(stack.isEmpty()) stack = ItemStack.EMPTY;
-    if(hand == InteractionHand.MAIN_HAND) {
-      player.getInventory().items.set(player.getInventory().selected, stack);
-    } else {
-      player.getInventory().offhand.set(0, stack);
-    }
+    entity.getInventory().placeItemBackInInventory(stack);
   }
-
-  //--------------------------------------------------------------------------------------------------------------------
-
-  public static Container readNbtStacks(CompoundTag nbt, String key, Container target)
-  {
-    NonNullList<ItemStack> stacks = Inventories.readNbtStacks(nbt, key, target.getContainerSize());
-    for(int i=0; i<stacks.size(); ++i) target.setItem(i, stacks.get(i));
-    return target;
-  }
-
-  public static NonNullList<ItemStack> readNbtStacks(CompoundTag nbt, String key, int size)
-  {
-    NonNullList<ItemStack> stacks = NonNullList.withSize(size, ItemStack.EMPTY);
-    if((nbt == null) || (!nbt.contains(key, Tag.TAG_COMPOUND))) return stacks;
-    CompoundTag stacknbt = nbt.getCompound(key);
-    ContainerHelper.loadAllItems(stacknbt, stacks);
-    return stacks;
-  }
-
-  public static NonNullList<ItemStack> readNbtStacks(CompoundTag nbt, int size)
-  {
-    NonNullList<ItemStack> stacks = NonNullList.withSize(size, ItemStack.EMPTY);
-    if((nbt == null) || (!nbt.contains("Items", Tag.TAG_LIST))) return stacks;
-    ContainerHelper.loadAllItems(nbt, stacks);
-    return stacks;
-  }
-
-  public static CompoundTag writeNbtStacks(CompoundTag nbt, String key, NonNullList<ItemStack> stacks, boolean omit_trailing_empty)
-  {
-    CompoundTag stacknbt = new CompoundTag();
-    if(omit_trailing_empty) {
-      for(int i=stacks.size()-1; i>=0; --i) {
-        if(!stacks.get(i).isEmpty()) break;
-        stacks.remove(i);
-      }
-    }
-    ContainerHelper.saveAllItems(stacknbt, stacks);
-    if(nbt == null) nbt = new CompoundTag();
-    nbt.put(key, stacknbt);
-    return nbt;
-  }
-
-  public static CompoundTag writeNbtStacks(CompoundTag nbt, String key, NonNullList<ItemStack> stacks)
-  { return writeNbtStacks(nbt, key, stacks, false); }
-
-  //--------------------------------------------------------------------------------------------------------------------
-
-  public static void dropStack(Level world, Vec3 pos, ItemStack stack, Vec3 velocity, double position_noise, double velocity_noise)
-  {
-    if(stack.isEmpty()) return;
-    if(position_noise > 0) {
-      position_noise = Math.min(position_noise, 0.8);
-      pos = pos.add(
-        position_noise * (world.getRandom().nextDouble()-.5),
-        position_noise * (world.getRandom().nextDouble()-.5),
-        position_noise * (world.getRandom().nextDouble()-.5)
-      );
-    }
-    if(velocity_noise > 0) {
-      velocity_noise = Math.min(velocity_noise, 1.0);
-      velocity = velocity.add(
-        (velocity_noise) * (world.getRandom().nextDouble()-.5),
-        (velocity_noise) * (world.getRandom().nextDouble()-.5),
-        (velocity_noise) * (world.getRandom().nextDouble()-.5)
-      );
-    }
-    ItemEntity e = new ItemEntity(world, pos.x, pos.y, pos.z, stack);
-    e.setDeltaMovement((float)velocity.x, (float)velocity.y, (float)velocity.z);
-    e.setDefaultPickUpDelay();
-    world.addFreshEntity(e);
-  }
-
-  public static void dropStack(Level world, Vec3 pos, ItemStack stack, Vec3 velocity)
-  { dropStack(world, pos, stack, velocity, 0.3, 0.2); }
-
-  public static void dropStack(Level world, Vec3 pos, ItemStack stack)
-  { dropStack(world, pos, stack, Vec3.ZERO, 0.3, 0.2); }
-
 }

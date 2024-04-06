@@ -4,6 +4,22 @@
 ----
 ## Version history
 
+    - v1.3.32     [A] Basic Lever, Button, and Pulse Button added.
+                  [M] TICKRATE=t now ignores signal interrupts (makes
+                      closed loop control simpler, issue #41).
+                  [M] Refactoring to improve loader compatibility.
+
+    - v1.3.29     [M] Added RLC interval timer instance `TIV3`.
+                  [M] Added RLC TIVx enable signal (2nd argument).
+                  [M] Redstone Track colour brightness adapted.
+                  [M] Redstone Relay stone texture edited.
+
+    - v1.3.28     [R] Maintenance Release
+                  [F] Adapted signal update ordering.
+                  [F] Fixed neighbour updates of removed track segments (issue #32, ty lukescott)
+
+    - v1.3.22     [F] Fixed connection update for Redstone Tracks (issue #28, ty fluppkin).
+
     - v1.3.21     [U] Initial port to NeoForged 1.20.1.
 
     - v1.3.20     [U] Initial Forge port to 1.20.1.

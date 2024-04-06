@@ -13,8 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -102,12 +101,11 @@ public class TooltipDisplay
     } else if(ranges.stream().noneMatch(
       (tip)->{
         if((x<tip.x0) || (x>tip.x1) || (y<tip.y0) || (y>tip.y1)) return false;
-        Component tip_component = tip.text.get();
-        final String text = tip_component.getString();
-        if(text.isEmpty()) return false;
+        final Component tip_component = tip.text.get();
+        if(tip_component.getString().isEmpty()) return false;
         try {
-          List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
-          gg.renderTooltip(this.font, tip.text.get().toFlatList(Style.EMPTY), Optional.empty(), x, y);
+          final List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
+          gg.renderTooltip(this.font, lines, Optional.empty(), x, y);
         } catch(Exception ex) {
           had_render_exception = true;
           Auxiliaries.logError("Tooltip rendering disabled due to exception: '" + ex.getMessage() + "'");

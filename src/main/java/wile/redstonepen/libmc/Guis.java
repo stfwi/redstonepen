@@ -28,11 +28,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-
+@SuppressWarnings("deprecation")
 public class Guis
 {
   // -------------------------------------------------------------------------------------------------------------------
@@ -85,7 +85,6 @@ public class Guis
     {}
 
     @Override
-    @SuppressWarnings("deprecation")
     protected final void renderBg(GuiGraphics gg, float partialTicks, int mouseX, int mouseY)
     {
       RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -107,25 +106,6 @@ public class Guis
     protected void renderItemTemplate(GuiGraphics gg, ItemStack stack, int x, int y)
     {
       gg.renderItem(stack, x, y);
-      //      final ItemRenderer ir = itemRenderer;
-      //      final int main_zl = getBlitOffset();
-      //      final float zl = ir.blitOffset;
-      //      final int x0 = getGuiLeft();
-      //      final int y0 = getGuiTop();
-      //      ir.blitOffset = -80;
-      //      ir.renderGuiItem(stack, x0+x, y0+y);
-      //      RenderSystem.disableColorLogicOp(); //RenderSystem.disableColorMaterial();
-      //      RenderSystem.enableDepthTest(); //RenderSystem.enableAlphaTest();
-      //      RenderSystem.defaultBlendFunc();
-      //      RenderSystem.enableBlend();
-      //      ir.blitOffset = zl;
-      //      setBlitOffset(100);
-      //      RenderSystem.colorMask(true, true, true, true);
-      //      RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.8f);
-      //      RenderSystem.setShaderTexture(0, background_image_);
-      //      blit(mx, x0+x, y0+y, x, y, 16, 16);
-      //      RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-      //      setBlitOffset(main_zl);
     }
   }
 
@@ -212,13 +192,12 @@ public class Guis
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
 
-    @SuppressWarnings("all")
     public void renderToolTip(GuiGraphics gg, int mouseX, int mouseY)
     {
       if(!visible || (!active) || (tooltip_ == NO_TOOLTIP)) return;
       final Component tip = tooltip_.apply(this);
       if(tip.getString().trim().isEmpty()) return;
-      gg.renderTooltip(mc_.font, Arrays.asList(tip.getVisualOrderText()), mouseX, mouseY);
+      gg.renderTooltip(mc_.font, List.of(tip.getVisualOrderText()), mouseX, mouseY);
     }
   }
 

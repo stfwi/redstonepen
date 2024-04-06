@@ -46,10 +46,9 @@ clean:
 	@rm -rf src/generated
 	@rm -rf mcmodsrepo
 	@rm -f build/libs/*
-	@$(GRADLE) clean
 
 clean-all:
-	@echo "[1.20] Cleaning using gradle ..."
+	@echo "[1.20] Cleaning ..."
 	@rm -rf mcmodsrepo
 	@rm -f dist/*
 	@rm -rf build/
@@ -57,7 +56,6 @@ clean-all:
 	@rm -rf logs/
 	@rm -rf run/logs/
 	@rm -rf run/crash-reports/
-	@$(GRADLE) clean
 
 mrproper: clean-all
 	@rm -f meta/*.*
@@ -67,8 +65,7 @@ mrproper: clean-all
 
 init:
 	@echo "[1.20] Initialising eclipse workspace using gradle ..."
-	@$(GRADLE) genIntellijRuns
-	-@$(GRADLE) hideOfficialWarningUntilChanged
+	@$(GRADLE) idea
 
 sanitize:
 	@echo "[1.20] Running sanitising tasks ..."
@@ -95,6 +92,7 @@ dist-files: clean-all init mod
 	@$(TASK) dist
 
 dist: sanitize dist-check dist-files
+	@$(TASK) dist-sign
 
 run:
 	@$(GRADLE) runClient
