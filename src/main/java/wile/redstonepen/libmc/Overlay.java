@@ -105,12 +105,10 @@ public class Overlay
 
     public void onRenderGui(final net.minecraft.client.gui.GuiGraphics gg)
     {
-      var a = deadline()-System.currentTimeMillis();
       if(deadline() < System.currentTimeMillis()) return;
       if(text()==EMPTY_TEXT) return;
       String txt = text().getString();
       if(txt.isEmpty()) return;
-System.out.println(a);
       final net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
       final Window win = mc.getWindow();
       final Font fr = mc.font;

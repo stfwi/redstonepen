@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.3.33     [F] Removed Overlay Debug tracing.
+
     - v1.3.32     [A] Basic Lever, Button, and Pulse Button added.
                   [M] TICKRATE=t now ignores signal interrupts (makes
                       closed loop control simpler, issue #41).
