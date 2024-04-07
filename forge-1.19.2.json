@@ -1,6 +1,7 @@
 {
- "homepage": "https://www.curseforge.com/minecraft/mc-mods/redstone-pen/",
+ "homepage": "https://raw.githubusercontent.com/stfwi/redstonepen/",
  "1.19.2": {
+  "1.2.32": "[R] Back-Port Release.\n[A] Basic Lever, Button, and Pulse Button added.\n[M] TICKRATE=t now ignores signal interrupts (makes closed loop control simpler, issue #41).\n[M] Added RLC interval timer instance `TIV3`.\n[M] Added RLC TIVx enable signal (2nd argument).\n[M] Redstone Track colour brightness adapted.\n[M] Redstone Relay stone texture edited.",
   "1.2.20": "[F] Fixed Optifine related preview-rendering issue (#26, thx wisquimas).",
   "1.2.19": "[M] RLC font size reduced, enabling to write 23 code lines.",
   "1.2.18": "[F] Fixed RLC tickrate=1 TON operation.\n[A] Added deadline based RLC tick adaption.\n[A] Added RLC TIV1/2 function blocks (Interval timed pulse every N ticks, two instances TIV1 and TIV2).\n[A] Added RLC comparator signal capture on redstone outputs.",
@@ -36,7 +37,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.19.2-recommended": "1.2.20",
-  "1.19.2-latest": "1.2.20"
+  "1.19.2-recommended": "1.2.32",
+  "1.19.2-latest": "1.2.32"
  }
 }
