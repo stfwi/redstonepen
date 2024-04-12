@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.8.32     [F] Timer documentation edited (issue #42).
+
     - v1.8.31     [A] Mod startup GIT commit ID logging added.
                   [A] Basic Lever, Button, and Pulse Button added.
                   [M] TICKRATE=t now ignores signal interrupts (makes
