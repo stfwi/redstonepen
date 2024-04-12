@@ -11,17 +11,13 @@ package wile.redstonepen.libmc;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -35,9 +31,6 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static final String modid = ModConstants.MODID;
-  private static String creative_tab_icon = "";
-  private static ResourceKey<CreativeModeTab> creative_tab = null;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -56,9 +49,9 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
-  public static void init(String creative_tab_icon_item_name)
+
+  public static void init()
   {
-    creative_tab_icon = creative_tab_icon_item_name;
   }
 
   public static void instantiateAll()
@@ -66,42 +59,33 @@ public class Registries
     registered_blocks.clear();
     block_suppliers.forEach((reg)->{
       registered_blocks.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
     });
     registered_items.clear();
     item_suppliers.forEach((reg)->{
       registered_items.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
     });
     registered_block_entity_types.clear();
     block_entity_type_suppliers.forEach((reg)->{
       registered_block_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
     });
     registered_entity_types.clear();
     entity_type_suppliers.forEach((reg)->{
       registered_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ENTITY_TYPE, new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ENTITY_TYPE, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
     });
     registered_menu_types.clear();
     menu_type_suppliers.forEach((reg)->{
       registered_menu_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.MENU, new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.MENU, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
     });
     registered_recipe_serializers.clear();
     recipe_serializers_suppliers.forEach((reg)->{
       registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
     });
-  }
-
-
-  public static ResourceKey<CreativeModeTab> getCreativeModeTab()
-  {
-    if(creative_tab==null) {
-      creative_tab = CreativeModeTabs.BUILDING_BLOCKS;
-    }
-    return creative_tab;
   }
 
   // -------------------------------------------------------------------------------------------------------------
@@ -193,24 +177,6 @@ public class Registries
 
   public static void addRecipeSerializer(String registry_name, Supplier<? extends RecipeSerializer<?>> serializer_supplier)
   { recipe_serializers_suppliers.add(new Tuple<>(registry_name, serializer_supplier)); }
-
-/*
-  public static void addOptionalBlockTag(String tag_name, ResourceLocation... default_blocks)
-  {
-    final Set<Supplier<Block>> default_suppliers = new HashSet<>();
-    for(ResourceLocation rl: default_blocks) default_suppliers.add(()->ForgeRegistries.BLOCKS.getValue(rl));
-    final TagKey<Block> key = ForgeRegistries.BLOCKS.tags().createOptionalTagKey(new ResourceLocation(modid, tag_name), default_suppliers);
-    registered_block_tag_keys.put(tag_name, key);
-  }
-
-  public static void addOptionaItemTag(String tag_name, ResourceLocation... default_items)
-  {
-    final Set<Supplier<Item>> default_suppliers = new HashSet<>();
-    for(ResourceLocation rl: default_items) default_suppliers.add(()->ForgeRegistries.ITEMS.getValue(rl));
-    final TagKey<Item> key = ForgeRegistries.ITEMS.tags().createOptionalTagKey(new ResourceLocation(modid, tag_name), default_suppliers);
-    registered_item_tag_keys.put(tag_name, key);
-  }
-*/
 
   // -------------------------------------------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@
     { "item": "redstonepen:bistable_relay" }
   ],
   "result": {
-    "item": "redstonepen:pulse_relay"
+    "id": "redstonepen:pulse_relay",
+    "count": 1
   }
 }

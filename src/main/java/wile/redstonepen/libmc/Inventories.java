@@ -8,7 +8,8 @@
  */
 package wile.redstonepen.libmc;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Inventory;
@@ -25,13 +26,25 @@ import java.util.stream.Stream;
 public class Inventories
 {
   public static boolean areItemStacksIdentical(ItemStack a, ItemStack b)
-  { return (a.getItem()==b.getItem()) && ItemStack.isSameItemSameTags(a, b); }
+  { return (a.getItem()==b.getItem()) && ItemStack.isSameItemSameComponents(a, b); }
 
   public static boolean areItemStacksDifferent(ItemStack a, ItemStack b)
-  { return (a.getItem()!=b.getItem()) || (!ItemStack.isSameItemSameTags(a, b)); }
+  { return (a.getItem()!=b.getItem()) || (!ItemStack.isSameItemSameComponents(a, b)); }
+
+  public static boolean areItemStacksIdenticalIgnoreDamage(ItemStack a, ItemStack b)
+  {
+    if(a.getItem() != b.getItem()) return false;
+    if(!a.isDamageableItem()) return ItemStack.isSameItemSameComponents(a, b);
+    final DataComponentMap bc = b.getComponents();
+    return a.getComponents().stream().allMatch(a_tdc->{
+      if(!bc.has(a_tdc.type())) return false;
+      if(a_tdc.value().equals(bc.get(a_tdc.type()))) return true;
+      return a_tdc.type().equals(DataComponents.DAMAGE);
+    });
+  }
 
   public static boolean isItemStackableOn(ItemStack a, ItemStack b)
-  { return (!a.isEmpty()) && (ItemStack.isSameItem(a,b)) && (a.hasTag() == b.hasTag()) && (!a.hasTag() || a.getTag().equals(b.getTag())); }
+  { return (!a.isEmpty()) && (a.isStackable()) && (ItemStack.isSameItem(a,b)); }
 
   public static ItemStack extract(Player player, @Nullable ItemStack match, int amount, boolean simulate)
   {
@@ -455,13 +468,7 @@ public class Inventories
       List<ItemStack> matches = new ArrayList<>();
       for(int i=0; i<size_; ++i) {
         final ItemStack stack = getItem(i);
-        if((!stack.isEmpty()) && (areItemStacksIdentical(stack, request_stack))) {
-          if(stack.hasTag()) {
-            final CompoundTag nbt = stack.getOrCreateTag();
-            int n = nbt.size();
-            if((n > 0) && (nbt.contains("Damage"))) --n;
-            if(n > 0) continue;
-          }
+        if((!stack.isEmpty()) && (areItemStacksIdenticalIgnoreDamage(stack, request_stack))) {
           matches.add(stack);
         }
       }

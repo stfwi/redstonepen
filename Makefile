@@ -8,8 +8,8 @@
 #
 MOD_JAR_PREFIX=redstonepen-
 MOD_JAR=$(filter-out %-sources.jar,$(wildcard build/libs/${MOD_JAR_PREFIX}*.jar))
-export JAVA_HOME=$(JDK_HOME_17_3)
-export JDK_HOME=$(JDK_HOME_17_3)
+export JAVA_HOME=$(JDK_HOME_21_0)
+export JDK_HOME=$(JDK_HOME_21_0)
 
 ifeq ($(OS),Windows_NT)
 GRADLE=gradlew.bat --no-daemon
@@ -32,19 +32,19 @@ default: mod
 all: clean clean-all mod | install
 
 mod:
-	@echo "[1.20] Building mod using gradle ..."
+	@echo "[1.21] Building mod using gradle ..."
 	@$(GRADLE) build $(GRADLE_OPTS)
 
 assets:
-	@echo "[1.20] Running asset generators ..."
+	@echo "[1.21] Running asset generators ..."
 	@$(TASK) assets
 
 data:
-	@echo "[1.20] Running data generators ..."
+	@echo "[1.21] Running data generators ..."
 	@$(TASK) datagen
 
 clean:
-	@echo "[1.20] Cleaning ..."
+	@echo "[1.21] Cleaning ..."
 	@rm -f dist/*
 	@rm -rf src/generated
 	@rm -rf mcmodsrepo
@@ -52,7 +52,7 @@ clean:
 	@$(GRADLE) clean
 
 clean-all:
-	@echo "[1.20] Cleaning using gradle ..."
+	@echo "[1.21] Cleaning using gradle ..."
 	@rm -rf mcmodsrepo
 	@rm -rf build/
 	@rm -rf out/
@@ -69,22 +69,23 @@ mrproper: clean-all
 	@rm -f .classpath
 
 init:
-	@echo "[1.20] Initialising eclipse workspace using gradle ..."
+	@echo "[1.21] Initialising eclipse workspace using gradle ..."
+	@echo "[info] Java used is JAVA_HOME=$(JAVA_HOME), JDK_HOME=$(JDK_HOME);"
 	@$(GRADLE) genSources
 
 sanitize:
-	@echo "[1.20] Running sanitising tasks ..."
+	@echo "[1.21] Running sanitising tasks ..."
 	@$(TASK) sanitize
 	@$(TASK) version-check
 	@$(TASK) update-json
 	@git status -s .
 
 dist-check:
-	@echo "[1.20] Running dist checks ..."
+	@echo "[1.21] Running dist checks ..."
 	@$(TASK) dist-check
 
 dist-files: clean init mod
-	@echo "[1.20] Distribution files ..."
+	@echo "[1.21] Distribution files ..."
 	@mkdir -p dist
 	@cp build/libs/$(MOD_JAR_PREFIX)* dist/
 	@rm -f dist/*-sources.jar

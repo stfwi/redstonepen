@@ -2,7 +2,7 @@
   "parent": "minecraft:recipes/root",
   "display": {
     "icon": {
-      "item": "redstonepen:quill",
+      "id": "redstonepen:quill",
       "nbt": "{Damage:0}"
     },
     "title": {

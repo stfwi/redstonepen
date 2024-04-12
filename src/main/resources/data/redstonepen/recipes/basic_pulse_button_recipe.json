@@ -6,6 +6,7 @@
     { "item": "minecraft:bone" }
   ],
   "result": {
-    "item": "redstonepen:basic_pulse_button"
+    "id": "redstonepen:basic_pulse_button",
+    "count": 1
   }
 }

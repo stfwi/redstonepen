@@ -10,6 +10,7 @@
     "D": { "item": "minecraft:redstone" }
   },
   "result": {
-    "item": "redstonepen:relay"
+    "id": "redstonepen:relay",
+    "count": 1
   }
 }

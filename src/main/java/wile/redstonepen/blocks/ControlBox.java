@@ -13,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
@@ -69,10 +71,9 @@ public class ControlBox
     {
       final ItemStack stack = new ItemStack(this.asItem());
       if(te instanceof ControlBoxBlockEntity cb) {
-        final CompoundTag tedata = new CompoundTag();
-        cb.saveAdditional(tedata);
+        final CompoundTag tedata = cb.writenbt(world.registryAccess(), new CompoundTag());
         if(tedata.contains("logic") && !tedata.getCompound("logic").getString("code").trim().isEmpty()) {
-          stack.getOrCreateTag().put("tedata", tedata);
+          Auxiliaries.setItemStackNbt(stack, "tedata", tedata);
         }
       }
       return Collections.singletonList(stack);
@@ -84,11 +85,14 @@ public class ControlBox
 
     @Override
     @Environment(EnvType.CLIENT)
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter world, List<Component> tooltip, TooltipFlag flag)
+    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
     {
-      if(Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, true)) return;
-      if((stack.getTag()==null) || (!stack.getTag().contains("tedata")) || (!stack.getTag().getCompound("tedata").contains("logic"))) return;
-      Arrays.stream(stack.getTag().getCompound("tedata").getCompound("logic").getString("code").split("\\n"))
+      Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true);
+      if(!Auxiliaries.Tooltip.extendedTipCondition()) return;
+      final CompoundTag nbt = Auxiliaries.getItemStackNbt(stack, "tedata");
+      final CompoundTag nbt_logic = nbt.getCompound("tedata").getCompound("logic");
+      if(nbt_logic.isEmpty()) return;
+      Arrays.stream(nbt_logic.getString("code").split("\\n"))
         .map(s->s.replaceAll("#.*$", "").trim())
         .filter(s->!s.isEmpty())
         .map(s->(Component.literal(s).withStyle(ChatFormatting.DARK_GREEN)))
@@ -98,23 +102,21 @@ public class ControlBox
     @Override
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack)
     {
-      if((world.isClientSide) || (!stack.hasTag())) return;
+      if(world.isClientSide) return;
+      final CompoundTag nbt = Auxiliaries.getItemStackNbt(stack, "tedata");
+      if(nbt.isEmpty()) return;
       final BlockEntity te = world.getBlockEntity(pos);
       if(!(te instanceof ControlBoxBlockEntity cbe)) return;
-      final CompoundTag nbt = stack.getTag();
-      if(nbt!=null && nbt.contains("tedata")) {
-        CompoundTag te_nbt = nbt.getCompound("tedata");
-        if(!te_nbt.isEmpty()) cbe.readnbt(te_nbt);
-      }
+      cbe.readnbt(world.registryAccess(), nbt);
       cbe.setCustomName(Auxiliaries.getItemLabel(stack));
       te.setChanged();
-    }
+     }
 
     @Override
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
     {
       if(!(world.getBlockEntity(pos) instanceof ControlBoxBlockEntity cb)) return 0;
-      Direction internal_side = getReverseStateMappedFacing(state, redstone_side.getOpposite()); // @todo: mapping.
+      final Direction internal_side = getReverseStateMappedFacing(state, redstone_side.getOpposite());
       return (cb.logic_.output_data >> (4*internal_side.ordinal())) & 0xf;
     }
 
@@ -123,14 +125,20 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
     {
-      if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return InteractionResult.SUCCESS;
+      return useOpenGui(state, world, pos, player);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    {
+      if(stack.is(Items.DEBUG_STICK)) {
+        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof ControlBoxBlockEntity te) te.toggle_trace(player);
-        return InteractionResult.CONSUME;
+        return ItemInteractionResult.CONSUME;
       } else {
-        return useOpenGui(state, world, pos, player);
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
       }
     }
 
@@ -166,9 +174,10 @@ public class ControlBox
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
     { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
-    public void readnbt(CompoundTag nbt)
+    @Override
+    public CompoundTag readnbt(HolderLookup.Provider hlp, CompoundTag nbt)
     {
-      if(nbt.contains("name", Tag.TAG_STRING)) custom_name_ = Auxiliaries.unserializeTextComponent(nbt.getString("name"));
+      if(nbt.contains("name", Tag.TAG_STRING)) custom_name_ = Auxiliaries.unserializeTextComponent(nbt.getString("name"), hlp);
       final CompoundTag logic_data = nbt.contains("logic", Tag.TAG_COMPOUND) ? nbt.getCompound("logic") : new CompoundTag();
       logic_.code(logic_data.getString("code"));
       logic_.input_data = logic_data.getInt("input");
@@ -177,11 +186,13 @@ public class ControlBox
       logic_.symbols_.clear();
       logic_symbols.getAllKeys().forEach(k->logic_.symbols_.put(k, logic_symbols.getInt(k)));
       activating_player_ = nbt.hasUUID("player") ? nbt.getUUID("player") : null;
+      return nbt;
     }
 
-    private void writenbt(CompoundTag nbt)
+    @Override
+    public CompoundTag writenbt(HolderLookup.Provider hlp, CompoundTag nbt, boolean sync_packet)
     {
-      if(custom_name_ != null) nbt.putString("name", Auxiliaries.serializeTextComponent(custom_name_));
+      if(custom_name_ != null) nbt.putString("name", Auxiliaries.serializeTextComponent(custom_name_, hlp));
       final CompoundTag logic_data = new CompoundTag();
       logic_data.putString("code", logic_.code());
       logic_data.putInt("input", logic_.input_data);
@@ -191,21 +202,10 @@ public class ControlBox
       logic_data.put("symbols", logic_symbols);
       nbt.put("logic", logic_data);
       if(activating_player_ != null) nbt.putUUID("player", activating_player_);
+      return nbt;
     }
 
     // BlockEntity/MenuProvider -------------------------------------------------------
-
-    @Override
-    public void load(CompoundTag nbt)
-    { super.load(nbt); readnbt(nbt); }
-
-    @Override
-    protected void saveAdditional(CompoundTag nbt)
-    { super.saveAdditional(nbt); writenbt(nbt); }
-
-    @Override
-    public void setRemoved()
-    { super.setRemoved(); }
 
     @Override
     public Component getName()
@@ -262,7 +262,7 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  final int cov = target_state.getBlock().getAnalogOutputSignal(target_state, world, target_pos);
+                  final int cov = target_state.getAnalogOutputSignal(world, target_pos);
                   logic_.symbol(port_name+".co", cov);
                 } else {
                   logic_.symbol(port_name+".co", 0);
@@ -321,7 +321,7 @@ public class ControlBox
 
     @Override
     public void onServerPacketReceived(CompoundTag nbt)
-    { readnbt(nbt); }
+    { readnbt(getLevel().registryAccess(), nbt); }
 
     // -------------------------------------------------------------------------------------------
 

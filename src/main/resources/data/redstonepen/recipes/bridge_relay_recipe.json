@@ -4,6 +4,7 @@
     { "item": "redstonepen:pulse_relay" }
   ],
   "result": {
-    "item": "redstonepen:bridge_relay"
+    "id": "redstonepen:bridge_relay",
+    "count": 1
   }
 }

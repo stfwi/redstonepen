@@ -14,5 +14,9 @@ public class GuiRenderingMixin
 {
   @Inject(at=@At("TAIL"), method="render(Lnet/minecraft/client/gui/GuiGraphics;F)V")
   private void render(net.minecraft.client.gui.GuiGraphics gg, float partialTicks, CallbackInfo info)
-  { Overlay.TextOverlayGui.INSTANCE.onRenderGui(gg); }
+  {
+    if(Overlay.TextOverlayGui.deadline() < System.currentTimeMillis()) return;
+    if(Overlay.TextOverlayGui.text() == Overlay.TextOverlayGui.EMPTY_TEXT) return;
+    Overlay.TextOverlayGui.INSTANCE.onRenderGui(gg);
+  }
 }

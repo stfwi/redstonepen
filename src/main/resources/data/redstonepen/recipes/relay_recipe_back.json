@@ -4,6 +4,7 @@
     { "item": "redstonepen:bridge_relay" }
   ],
   "result": {
-    "item": "redstonepen:relay"
+    "id": "redstonepen:relay",
+    "count": 1
   }
 }

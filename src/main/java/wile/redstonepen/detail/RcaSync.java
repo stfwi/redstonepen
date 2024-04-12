@@ -26,7 +26,6 @@ public class RcaSync
   {
     public final UUID puid;
     public long client_inputs_ = 0;
-    public long client_outputs_ = 0;
     public long server_outputs_ = 0;
 
     public RcaData(UUID puid)
@@ -50,8 +49,7 @@ public class RcaSync
     public String toString()
     {
       return "{player:\"" + ((puid == null) ? ("") : (puid.toString())) +
-        ", ci:" + String.format("%016x", client_inputs_) + ", co:" + String.format("%016x", client_outputs_) +
-        ", so:" + String.format("%016x", server_outputs_) + "}";
+        ", ci:" + String.format("%016x", client_inputs_) + ", so:" + String.format("%016x", server_outputs_) + "}";
     }
   }
 

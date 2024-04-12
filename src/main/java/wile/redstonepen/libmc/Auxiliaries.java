@@ -16,22 +16,32 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -51,6 +61,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+@SuppressWarnings("deprecation")
 public class Auxiliaries
 {
   private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
@@ -117,6 +128,9 @@ public class Auxiliaries
   public static void logError(final String msg)
   { logger.error(msg); }
 
+  public static void logDebug(final String msg)
+  {}
+
   // -------------------------------------------------------------------------------------------------------------------
   // Localization, text formatting
   // -------------------------------------------------------------------------------------------------------------------
@@ -144,10 +158,9 @@ public class Auxiliaries
   @Environment(EnvType.CLIENT)
   public static String localize(String translationKey, Object... args)
   {
-    Component tr = Component.translatable(translationKey, args);
+    final Component tr = Component.translatable(translationKey, args);
     tr.getStyle().applyFormat(ChatFormatting.RESET);
-    final String ft = tr.getString().trim();
-    return ft;
+    return tr.getString().trim();
   }
 
   @Environment(EnvType.CLIENT)
@@ -176,7 +189,7 @@ public class Auxiliaries
   {
     @Environment(EnvType.CLIENT)
     public static boolean extendedTipCondition()
-    { return isShiftDown(); }
+    { return isShiftDown() && !isCtrlDown(); }
 
     @Environment(EnvType.CLIENT)
     public static boolean helpCondition()
@@ -204,7 +217,7 @@ public class Auxiliaries
     }
 
     @Environment(EnvType.CLIENT)
-    public static boolean addInformation(ItemStack stack, @Nullable BlockGetter world, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
+    public static boolean addInformation(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
     { return addInformation(stack.getDescriptionId(), stack.getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
   }
 
@@ -212,11 +225,11 @@ public class Auxiliaries
   public static void playerChatMessage(final Player player, final String message)
   { player.displayClientMessage(Component.translatable(message.trim()), true); }
 
-  public static @Nullable Component unserializeTextComponent(String serialized)
-  { return Component.Serializer.fromJson(serialized); }
+  public static @Nullable Component unserializeTextComponent(String serialized, HolderLookup.Provider ra)
+  { return Component.Serializer.fromJson(serialized, ra); }
 
-  public static String serializeTextComponent(Component tc)
-  { return (tc==null) ? ("") : (Component.Serializer.toJson(tc)); }
+  public static String serializeTextComponent(Component tc, HolderLookup.Provider ra)
+  { return (tc==null) ? ("") : (Component.Serializer.toJson(tc, ra)); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Tag Handling
@@ -232,31 +245,54 @@ public class Auxiliaries
   // Item NBT data
   // -------------------------------------------------------------------------------------------------------------------
 
+  public static boolean hasItemStackNbt(ItemStack stack, String key)
+  {
+    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
+    return (nbt != null) && (nbt.contains(key, CompoundTag.TAG_COMPOUND));
+  }
+
+  /**
+   * Returns a *copy* of the custom data compound NBT entry selected via `key`,
+   * or an empty CompoundTag if not existing.
+   */
+  public static CompoundTag getItemStackNbt(ItemStack stack, String key)
+  {
+    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
+    if(nbt==null) return new CompoundTag();
+    final Tag data = nbt.get(key);
+    if((data==null) || (data.getId() != CompoundTag.TAG_COMPOUND)) return new CompoundTag();
+    return (CompoundTag)data.copy();
+  }
+
+  public static void setItemStackNbt(ItemStack stack, String key, CompoundTag nbt)
+  {
+    if(key.isEmpty()) return;
+    final CustomData cd = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.of(new CompoundTag()));
+    final CompoundTag cdt = cd.copyTag();
+    if((nbt==null) || (nbt.isEmpty())) {
+      cdt.remove(key);
+    } else {
+      cdt.put(key, nbt);
+    }
+    CustomData.set(DataComponents.CUSTOM_DATA, stack, cdt);
+  }
+
   /**
    * Equivalent to getDisplayName(), returns null if no custom name is set.
    */
   public static @Nullable Component getItemLabel(ItemStack stack)
   {
-    CompoundTag nbt = stack.getTagElement("display");
-    if(nbt != null && nbt.contains("Name", 8)) {
-      try {
-        Component tc = unserializeTextComponent(nbt.getString("Name"));
-        if(tc != null) return tc;
-        nbt.remove("Name");
-      } catch(Exception e) {
-        nbt.remove("Name");
-      }
-    }
-    return null;
+    return stack.getComponents().getOrDefault(DataComponents.CUSTOM_NAME, Component.empty());
   }
 
   public static ItemStack setItemLabel(ItemStack stack, @Nullable Component name)
   {
-    if(name != null) {
-      CompoundTag nbt = stack.getOrCreateTagElement("display");
-      nbt.putString("Name", serializeTextComponent(name));
+    if((name==null) || StringUtil.isBlank(name.getString())) {
+      if(stack.has(DataComponents.CUSTOM_NAME)) {
+        stack.remove(DataComponents.CUSTOM_NAME);
+      }
     } else {
-      if(stack.hasTag()) stack.removeTagKey("display");
+      stack.set(DataComponents.CUSTOM_NAME, name.copy());
     }
     return stack;
   }
@@ -488,4 +524,34 @@ public class Auxiliaries
       // (void)e; well, then not. Priority is not to get unneeded crashes because of version logging.
     }
   }
+
+  // -------------------------------------------------------------------------------------------------------------------
+  // Particle spawning
+  // -------------------------------------------------------------------------------------------------------------------
+
+  public static void particles(Level world, BlockPos pos, ParticleOptions type)
+  { particles(world, Vec3.atCenterOf(pos).add(0.0, 0.4, 0.0), type, 1); }
+
+  public static void particles(Level world, Vec3 pos, ParticleOptions type, float velocity)
+  {
+    final RandomSource rand = world.getRandom();
+    if(!(world instanceof ServerLevel sl)) return;
+    sl.sendParticles(type,
+      pos.x()+rand.nextGaussian()*0.2, pos.y()+rand.nextGaussian()*0.2, pos.z()+rand.nextGaussian()*0.2,
+      1,
+      rand.nextDouble() * 2e-2,
+      rand.nextDouble() * 2e-2,
+      rand.nextDouble() * 2e-2,
+      velocity * 0.1
+    );
+  }
+
+  public static Optional<net.fabricmc.fabric.api.entity.FakePlayer> getFakePlayer(Level world)
+  {
+    if(world.isClientSide()) return Optional.empty();
+    //FORGE: var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft((ServerLevel)world);
+    var player = net.fabricmc.fabric.api.entity.FakePlayer.get((ServerLevel)world); // fabric
+    return (player==null) ? Optional.empty() : Optional.of(player);
+  }
+
 }

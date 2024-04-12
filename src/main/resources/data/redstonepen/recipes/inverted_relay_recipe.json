@@ -4,6 +4,7 @@
     { "item": "redstonepen:relay" }
   ],
   "result": {
-    "item": "redstonepen:inverted_relay"
+    "id": "redstonepen:inverted_relay",
+    "count": 1
   }
 }

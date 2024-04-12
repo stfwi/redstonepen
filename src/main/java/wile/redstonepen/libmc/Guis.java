@@ -110,7 +110,22 @@ public class Guis
     {}
 
     protected void renderItemTemplate(GuiGraphics gg, ItemStack stack, int x, int y)
-    { gg.renderItem(stack, x, y); }
+    {
+      final int x0 = getGuiLeft();
+      final int y0 = getGuiTop();
+      RenderSystem.disableColorLogicOp();
+      RenderSystem.enableDepthTest();
+      RenderSystem.defaultBlendFunc();
+      RenderSystem.setShaderColor(0.8f, 0.8f, 0.8f, 0.4f);
+      RenderSystem.enableBlend();
+      gg.renderItem(stack, x0+x, y0+y);
+      RenderSystem.colorMask(true, true, true, true);
+      RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.4f);
+      RenderSystem.setShaderTexture(0, background_image_);
+      gg.blit(background_image_, x0+x, y0+y, x, y, 16, 16);
+      RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+      RenderSystem.disableBlend();
+    }
   }
 
   // -------------------------------------------------------------------------------------------------------------------

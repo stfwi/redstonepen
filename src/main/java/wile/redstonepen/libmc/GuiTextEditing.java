@@ -16,7 +16,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
@@ -30,6 +29,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
+import net.minecraft.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -162,7 +162,7 @@ public class GuiTextEditing
     }
 
     public String getWordAtPosition(Guis.Coord2d xy)
-    { return ""; } // implement
+    { return ""; } // todo: implement
 
     //---------------------------------------------------------------------------------
 
@@ -223,7 +223,7 @@ public class GuiTextEditing
     {
       if(super.charTyped(key, code)) return true;
       if((!active) || (!visible)) return false;
-      if(!SharedConstants.isAllowedChatCharacter(key)) return false;
+      if(!StringUtil.isAllowedChatCharacter(key)) return false;
       edit_.insertText(Character.toString(key));
       clearDisplayCache();
       on_changed_.accept(this);

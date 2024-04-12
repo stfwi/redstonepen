@@ -8,13 +8,16 @@
  */
 package wile.redstonepen.libmc;
 
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -22,8 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import wile.redstonepen.ModConstants;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -32,41 +34,73 @@ public class Networking
 {
   public static void init()
   {
-    final String modid = ModConstants.MODID;
-    PacketTileNotifyClientToServer.PACKET_ID = new ResourceLocation(modid, "tenc2s");
-    PacketTileNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "tens2c");
-    ServerPlayNetworking.registerGlobalReceiver(PacketTileNotifyClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
-      final BlockPos pos = buf.readBlockPos();
-      final CompoundTag nbt = buf.readNbt();
-      server.execute(()->{
-        if(player==null) return;
-        Level world = player.level();
-        final BlockEntity te = world.getBlockEntity(pos);
-        if(!(te instanceof IPacketTileNotifyReceiver)) return;
-        ((IPacketTileNotifyReceiver)te).onClientPacketReceived(player, nbt);
+    PayloadTypeRegistry.playC2S().register(UnifiedPayload.TYPE, UnifiedPayload.STREAM_CODEC);
+    PayloadTypeRegistry.playS2C().register(UnifiedPayload.TYPE, UnifiedPayload.STREAM_CODEC);
+    ServerPlayNetworking.registerGlobalReceiver(UnifiedPayload.TYPE, (unifed_payload, context)->{
+      final ServerPlayer player = context.player();
+      final ServerLevel world = player.serverLevel();
+      if(player==null) return;
+      final CompoundTag payload = unifed_payload.data().nbt();
+      player.server.execute(()->{
+        switch(unifed_payload.data().id()) {
+          case PacketTileNotifyClientToServer.PACKET_ID -> {
+            final BlockPos pos = BlockPos.of(payload.getLong("pos"));
+            final CompoundTag nbt = payload.getCompound("nbt");
+            final BlockEntity te = world.getBlockEntity(pos);
+            if(!(te instanceof IPacketTileNotifyReceiver)) return;
+            ((IPacketTileNotifyReceiver)te).onClientPacketReceived(player, nbt);
+          }
+          case PacketContainerSyncClientToServer.PACKET_ID -> {
+            final int container_id = payload.getInt("cid");
+            final CompoundTag nbt = payload.getCompound("nbt");
+            if(!(player.containerMenu instanceof INetworkSynchronisableContainer nsc)) return;
+            if(player.containerMenu.containerId != container_id) return;
+            nsc.onClientPacketReceived(container_id, player, nbt);
+          }
+          case PacketNbtNotifyClientToServer.PACKET_ID -> {
+            final String hnd = payload.getString("hnd");
+            final CompoundTag nbt = payload.getCompound("nbt");
+            if(hnd.isEmpty() || (!PacketNbtNotifyClientToServer.handlers.containsKey(hnd))) return;
+            PacketNbtNotifyClientToServer.handlers.get(hnd).accept(player, nbt);
+          }
+        }
       });
     });
-    PacketContainerSyncClientToServer.PACKET_ID = new ResourceLocation(modid, "csc2s");
-    PacketContainerSyncServerToClient.PACKET_ID = new ResourceLocation(modid, "css2c");
-    ServerPlayNetworking.registerGlobalReceiver(PacketContainerSyncClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
-      final int container_id = buf.readInt();
-      final CompoundTag nbt = buf.readNbt();
-      server.execute(()->{
-        if((player==null) || !(player.containerMenu instanceof INetworkSynchronisableContainer)) return;
-        if(player.containerMenu.containerId != container_id) return;
-        ((INetworkSynchronisableContainer)player.containerMenu).onClientPacketReceived(container_id, player, nbt);
-      });
-    });
-    PacketNbtNotifyClientToServer.PACKET_ID = new ResourceLocation(modid, "nnc2s");
-    PacketNbtNotifyServerToClient.PACKET_ID = new ResourceLocation(modid, "nns2c");
-    ServerPlayNetworking.registerGlobalReceiver(PacketNbtNotifyClientToServer.PACKET_ID, (server, player, handler, buf, responseSender)->{
-      final CompoundTag nbt = buf.readNbt();
-      if((player==null) || (nbt==null)) return;
-      final String hnd = nbt.getString("hnd");
-      if(hnd.isEmpty() || (!PacketNbtNotifyClientToServer.handlers.containsKey(hnd))) return;
-      server.execute(()->PacketNbtNotifyClientToServer.handlers.get(hnd).accept(player, nbt));
-    });
-    OverlayTextMessage.PACKET_ID = new ResourceLocation(modid, "otms2c");
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  // Unified Packet Handling
+  //--------------------------------------------------------------------------------------------------------------------
+
+  public record UnifiedPayload(UnifiedData data) implements CustomPacketPayload
+  {
+    private static final StreamCodec<FriendlyByteBuf,UnifiedPayload> STREAM_CODEC = CustomPacketPayload.codec(UnifiedPayload::write, UnifiedPayload::new);
+    private static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(new ResourceLocation(ModConstants.MODID, "unpnbt"));
+
+    public static CustomPacketPayload.Type<UnifiedPayload> getTYPE() { return TYPE; }
+    private UnifiedPayload(FriendlyByteBuf buf) { this(new UnifiedData(buf.readUtf(), buf.readNbt())); }
+    private void write(FriendlyByteBuf buf) {
+      data.write(buf);
+    }
+    public CustomPacketPayload.Type<UnifiedPayload> type() { return TYPE; }
+
+    public record UnifiedData(String id, CompoundTag nbt)
+    {
+      public UnifiedData(FriendlyByteBuf buf) { this(buf.readUtf(), buf.readNbt()); }
+      public void write(FriendlyByteBuf buf) { buf.writeUtf(id); buf.writeNbt(nbt); }
+      @Override public String toString() { return id + ": " + nbt.toString(); }
+    }
+  }
+
+  private static void sendToClient(ServerPlayer player, String packet_id, CompoundTag payload_nbt)
+  {
+    ServerPlayNetworking.send(player, new UnifiedPayload(new UnifiedPayload.UnifiedData(packet_id, payload_nbt)));
+  }
+
+  private static void sendToClients(ServerLevel world, String packet_id, CompoundTag payload_nbt)
+  {
+    final var payload = new UnifiedPayload(new UnifiedPayload.UnifiedData(packet_id, payload_nbt));
+    for(ServerPlayer player: world.players()) ServerPlayNetworking.send(player, payload);
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -81,31 +115,29 @@ public class Networking
 
   public static class PacketTileNotifyClientToServer
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "tnc2s";
   }
 
   public static class PacketTileNotifyServerToClient
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "tns2c";
 
     public static void sendToPlayer(ServerPlayer player, BlockEntity te, CompoundTag nbt)
     {
       if((te==null) || (nbt==null)) return;
-      FriendlyByteBuf buf = PacketByteBufs.create();
-      buf.writeBlockPos(te.getBlockPos());
-      buf.writeNbt(nbt);
-      ServerPlayNetworking.send(player, PACKET_ID, buf);
+      final CompoundTag payload = new CompoundTag();
+      payload.putLong("pos", te.getBlockPos().asLong());
+      payload.put("nbt", nbt);
+      sendToClient(player, PACKET_ID, payload);
     }
 
     public static void sendToPlayers(BlockEntity te, CompoundTag nbt)
     {
-      if((te==null) || (te.getLevel()==null) || te.getLevel().isClientSide()) return;
-      for(Player player: te.getLevel().players()) {
-        FriendlyByteBuf buf = PacketByteBufs.create();
-        buf.writeBlockPos(te.getBlockPos());
-        buf.writeNbt(nbt);
-        ServerPlayNetworking.send((ServerPlayer)player, PACKET_ID, buf);
-      }
+      if((te==null) || (!(te.getLevel() instanceof ServerLevel sworld))) return;
+      final CompoundTag payload = new CompoundTag();
+      payload.putLong("pos", te.getBlockPos().asLong());
+      payload.put("nbt", nbt);
+      sendToClients(sworld, PACKET_ID, payload);
     }
   }
 
@@ -121,20 +153,20 @@ public class Networking
 
   public static class PacketContainerSyncClientToServer
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "csc2s";
   }
 
   public static class PacketContainerSyncServerToClient
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "css2c";
 
     public static void sendToPlayer(ServerPlayer player, int windowId, CompoundTag nbt)
     {
       if(nbt==null || player==null) return;
-      FriendlyByteBuf buf = PacketByteBufs.create();
-      buf.writeInt(windowId);
-      buf.writeNbt(nbt);
-      ServerPlayNetworking.send(player, PACKET_ID, buf);
+      final CompoundTag payload = new CompoundTag();
+      payload.putInt("cid", windowId);
+      payload.put("nbt", nbt);
+      sendToClient(player, PACKET_ID, payload);
     }
 
     public static void sendToPlayer(ServerPlayer player, AbstractContainerMenu container, CompoundTag nbt)
@@ -156,24 +188,22 @@ public class Networking
 
   public static class PacketNbtNotifyClientToServer
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "nnc2s";
     public static final Map<String, BiConsumer<Player, CompoundTag>> handlers = new HashMap<>();
   }
 
   public static class PacketNbtNotifyServerToClient
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "nns2c";
     public static final Map<String, Consumer<CompoundTag>> handlers = new HashMap<>();
 
     public static void sendToPlayer(Player player, CompoundTag nbt)
     {
-      if((nbt==null) || (!(player instanceof ServerPlayer))) return;
-      FriendlyByteBuf buf = PacketByteBufs.create();
-      buf.writeNbt(nbt);
-      ServerPlayNetworking.send((ServerPlayer)player, PACKET_ID, buf);
+      if((nbt==null) || (!(player instanceof ServerPlayer splayer))) return;
+      sendToClient(splayer, PACKET_ID, nbt);
     }
 
-    public static void sendToPlayers(Level world, CompoundTag nbt)
+    public static void sendToPlayers(Level world, String handler, CompoundTag nbt)
     { if(world!=null) for(Player player: world.players()) sendToPlayer(player, nbt); }
   }
 
@@ -183,7 +213,7 @@ public class Networking
 
   public static class OverlayTextMessage
   {
-    protected static ResourceLocation PACKET_ID;
+    protected static final String PACKET_ID = "otms2c";
     protected static BiConsumer<Component, Integer> handler_ = null;
     public static final int DISPLAY_TIME_MS = 3000;
 
@@ -197,10 +227,10 @@ public class Networking
     {
       if(Auxiliaries.isEmpty(message)) return;
       try {
-        FriendlyByteBuf buf = PacketByteBufs.create();
-        buf.writeComponent(message);
-        buf.writeInt(delay);
-        ServerPlayNetworking.send(player, PACKET_ID, buf);
+        final CompoundTag payload = new CompoundTag();
+        payload.putInt("delay", delay);
+        payload.putString("msg", Auxiliaries.serializeTextComponent(message, player.registryAccess()));
+        sendToClient(player, PACKET_ID, payload);
       } catch(Throwable e) {
         Auxiliaries.logger().error("OverlayTextMessage.toBytes() failed: " + e);
       }

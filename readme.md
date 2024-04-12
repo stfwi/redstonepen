@@ -1,8 +1,10 @@
 
-## Redstone Pen (MC1.20.x)
+## Redstone Pen (MC1.21.x)
 
 ----
 ## Version history
+
+    - v1.9.32     [U] Updated to 1.20.5-pre fabric.
 
     - v1.8.32     [F] Timer documentation edited (issue #42).
 

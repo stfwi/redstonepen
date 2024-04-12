@@ -113,10 +113,10 @@ public class ModContent
   public static void initItems()
   {
     Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(0)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).durability(0)
     ));
     Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(0).defaultDurability(256)
+      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(0).durability(256)
     ));
   }
 

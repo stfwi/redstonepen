@@ -4,6 +4,7 @@
     { "item": "redstonepen:control_box" }
   ],
   "result": {
-    "item": "redstonepen:control_box"
+    "id": "redstonepen:control_box",
+    "count": 1
   }
 }

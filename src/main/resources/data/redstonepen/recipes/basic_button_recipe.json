@@ -5,6 +5,7 @@
     { "item": "minecraft:iron_nugget" }
   ],
   "result": {
-    "item": "redstonepen:basic_button"
+    "id": "redstonepen:basic_button",
+    "count": 1
   }
 }

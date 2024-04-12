@@ -204,7 +204,7 @@ public class CircuitComponents
     { return Collections.singletonList(new ItemStack(this.asItem())); }
 
     @Override
-    public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type)
+    public boolean isPathfindable(BlockState state, PathComputationType type)
     { return true; }
 
     @Override
@@ -409,7 +409,7 @@ public class CircuitComponents
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
-        adjacent_state.neighborChanged(world, adjacent_pos, this, pos, false);
+        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, pos, false);
         if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
         }
@@ -728,7 +728,7 @@ public class CircuitComponents
         if((redstone_side != left) && (redstone_side != right)) return state;
         power_update_recursion_level_ = 0;
         final BlockPos npos = pos.relative(redstone_side);
-        world.getBlockState(npos).neighborChanged(world, npos, this, pos, false);
+        world.getBlockState(npos).handleNeighborChanged(world, npos, this, pos, false);
         final int pr = getInputPower(world, pos, right);
         final int pl = getInputPower(world, pos, left);
         final boolean track_powered = (pr>0) || (pl>0);
