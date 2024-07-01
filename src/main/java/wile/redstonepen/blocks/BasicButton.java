@@ -23,7 +23,6 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -57,9 +56,8 @@ public class BasicButton
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult brh)
     {
       if(state.getValue(POWERED)) return InteractionResult.CONSUME;
-      this.press(state, world, pos);
-      this.playSound(player, world, pos, true);
-      world.gameEvent(player, GameEvent.BLOCK_ACTIVATE, pos);
+      world.setBlock(pos, state.setValue(POWERED, true), 1|2);
+      this.press(state, world, pos, player);
       if(world.isClientSide) makeParticle(state, world, pos, 1.0f);
       return InteractionResult.sidedSuccess(world.isClientSide);
     }

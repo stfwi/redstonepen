@@ -35,7 +35,7 @@ public class ModRedstonePen implements ModInitializer
     ModContent.init();
     ModContent.initReferences();
     wile.redstonepen.detail.RcaSync.CommonRca.init();
-    Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, new ResourceLocation(ModConstants.MODID, "creative_tab"), CREATIVE_TAB);
+    Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, "creative_tab"), CREATIVE_TAB);
   }
 
   private static final CreativeModeTab CREATIVE_TAB = FabricItemGroup.builder()

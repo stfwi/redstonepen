@@ -4,7 +4,9 @@
 ----
 ## Version history
 
-    - v1.10.33    [F] Updated to 1.20.6 fabric.
+    - v1.11.33    [U] Updated to 1.21 fabric.
+
+    - v1.10.33    [U] Updated to 1.20.6 fabric.
 
     - v1.9.33     [U] Updated to 1.20.5 fabric.
 

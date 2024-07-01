@@ -432,7 +432,6 @@ public class RedstoneTrack
     @Deprecated
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
     {
-      // @todo: fabric: not available, need to hook into `RedstoneWireBlock.shouldConnectTo(BlockState blockState, @Nullable Direction direction)` or leave it as it is.
       return (side != null) && (tile(world,pos).map(te->te.hasVanillaRedstoneConnection(side.getOpposite()))).orElse(false);
     }
 

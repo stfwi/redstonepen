@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -59,7 +60,10 @@ public class BasicLever
         if(new_state.getValue(POWERED)) makeParticle(new_state, world, pos, 1.0f);
         return InteractionResult.SUCCESS;
       } else {
-        final BlockState new_state = pull(state, world, pos);
+        final BlockState new_state = state.cycle(POWERED);
+        world.setBlock(pos, new_state, 1|2);
+        world.updateNeighborsAt(pos, this);
+        world.updateNeighborsAt(pos.relative(LeverBlock.getConnectedDirection(new_state).getOpposite()), this);
         world.playSound(null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, new_state.getValue(POWERED) ? config.sound_pitch_powered() : config.sound_pitch_unpowered());
         world.gameEvent(player, new_state.getValue(POWERED) ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
         return InteractionResult.CONSUME;

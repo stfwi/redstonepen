@@ -12,8 +12,8 @@ import wile.redstonepen.libmc.Overlay;
 @Mixin(net.minecraft.client.gui.Gui.class)
 public class GuiRenderingMixin
 {
-  @Inject(at=@At("TAIL"), method="render(Lnet/minecraft/client/gui/GuiGraphics;F)V")
-  private void render(net.minecraft.client.gui.GuiGraphics gg, float partialTicks, CallbackInfo info)
+  @Inject(at=@At("TAIL"), method="render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V")
+  private void render(net.minecraft.client.gui.GuiGraphics gg, net.minecraft.client.DeltaTracker partialTicks, CallbackInfo info)
   {
     if(Overlay.TextOverlayGui.deadline() < System.currentTimeMillis()) return;
     if(Overlay.TextOverlayGui.text() == Overlay.TextOverlayGui.EMPTY_TEXT) return;

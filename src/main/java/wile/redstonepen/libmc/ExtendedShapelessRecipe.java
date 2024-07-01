@@ -18,7 +18,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.StackedContents;
-import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -82,7 +81,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   { return i * j >= this.ingredients.size(); }
 
   @Override
-  public NonNullList<ItemStack> getRemainingItems(CraftingContainer inv)
+  public NonNullList<ItemStack> getRemainingItems(CraftingInput inv)
   {
     if(isRepair()) {
       NonNullList<ItemStack> remaining = getRepaired(inv).getB();
@@ -93,13 +92,13 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
         if(!rem_stack.isEmpty() && !inv.getItem(i).is(rem_stack.getItem())) continue;
         remaining.set(i, ItemStack.EMPTY);
         rem_stack.grow(1);
-        inv.setItem(i, rem_stack);
+        inv.items().set(i, rem_stack);
       }
       return remaining;
     } else {
       final String tool_name = aspects.getString("tool");
       final int tool_damage = getToolDamage();
-      NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
+      NonNullList<ItemStack> remaining = NonNullList.withSize(inv.size(), ItemStack.EMPTY);
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = inv.getItem(i);
         if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) {
@@ -121,12 +120,12 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   }
 
   @Override
-  public boolean matches(CraftingContainer container, Level world)
+  public boolean matches(CraftingInput input, Level world)
   {
     final StackedContents stacked = new StackedContents();
     int i = 0;
-    for(int j=0; j<container.getContainerSize(); ++j) {
-      final ItemStack ingr = container.getItem(j);
+    for(int j=0; j<input.size(); ++j) {
+      final ItemStack ingr = input.getItem(j);
       if(ingr.isEmpty()) continue;
       stacked.accountStack(ingr, 1);
       ++i;
@@ -135,7 +134,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   }
 
   @Override
-  public ItemStack assemble(CraftingContainer inv, HolderLookup.Provider ra)
+  public ItemStack assemble(CraftingInput inv, HolderLookup.Provider ra)
   {
     if(isRepair()) {
       return getRepaired(inv).getA();
@@ -166,13 +165,13 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   private boolean isRepair()
   { return getToolDamage() < 0; }
 
-  private Tuple<ItemStack, NonNullList<ItemStack>> getRepaired(CraftingContainer inv)
+  private Tuple<ItemStack, NonNullList<ItemStack>> getRepaired(CraftingInput inv)
   {
     final String tool_name = aspects.getString("tool");
     final Map<Item, Integer> repair_items = new HashMap<>();
-    final NonNullList<ItemStack> remaining = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
+    final NonNullList<ItemStack> remaining = NonNullList.withSize(inv.size(), ItemStack.EMPTY);
     ItemStack tool_item = ItemStack.EMPTY;
-    for(int i=0; i<inv.getContainerSize(); ++i) {
+    for(int i=0; i<inv.size(); ++i) {
       final ItemStack stack = inv.getItem(i);
       if(stack.isEmpty()) {
         continue;

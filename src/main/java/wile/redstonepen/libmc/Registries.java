@@ -8,7 +8,6 @@
  */
 package wile.redstonepen.libmc;
 
-import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -59,32 +58,32 @@ public class Registries
     registered_blocks.clear();
     block_suppliers.forEach((reg)->{
       registered_blocks.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
     });
     registered_items.clear();
     item_suppliers.forEach((reg)->{
       registered_items.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ITEM, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
     });
     registered_block_entity_types.clear();
     block_entity_type_suppliers.forEach((reg)->{
       registered_block_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
     });
     registered_entity_types.clear();
     entity_type_suppliers.forEach((reg)->{
       registered_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ENTITY_TYPE, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
     });
     registered_menu_types.clear();
     menu_type_suppliers.forEach((reg)->{
       registered_menu_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.MENU, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.MENU, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
     });
     registered_recipe_serializers.clear();
     recipe_serializers_suppliers.forEach((reg)->{
       registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, new ResourceLocation(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
     });
   }
 
@@ -157,7 +156,7 @@ public class Registries
     item_suppliers.add(new Tuple<>(registry_name, item_supplier));
   }
 
-  public static <T extends BlockEntity> void addBlockEntityType(String registry_name, FabricBlockEntityTypeBuilder.Factory<T> ctor, String... block_names)
+  public static <T extends BlockEntity> void addBlockEntityType(String registry_name, BlockEntityType.BlockEntitySupplier<T> ctor, String... block_names)
   {
     block_entity_type_suppliers.add(new Tuple<>(registry_name, ()->{
       final Block[] blocks = Arrays.stream(block_names).map(s -> {
@@ -165,7 +164,7 @@ public class Registries
         if (b == null) Auxiliaries.logError("registered_blocks does not encompass '" + s + "'");
         return b;
       }).filter(Objects::nonNull).toList().toArray(new Block[]{});
-      return FabricBlockEntityTypeBuilder.create(ctor, blocks).build(null);
+      return BlockEntityType.Builder.of(ctor, blocks).build(null);
     }));
   }
 
@@ -183,20 +182,20 @@ public class Registries
   public static <TB extends Block, TI extends Item> void addBlock(String registry_name, Supplier<TB> block_supplier, BiFunction<Block, Item.Properties, Item> item_builder)
   { addBlock(registry_name, block_supplier, ()->item_builder.apply(registered_blocks.get(registry_name), new Item.Properties())); }
 
-  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, FabricBlockEntityTypeBuilder.Factory<?> block_entity_ctor)
+  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, BlockEntityType.BlockEntitySupplier<?> block_entity_ctor)
   {
     addBlock(registry_name, block_supplier);
     addBlockEntityType("tet_"+registry_name, block_entity_ctor, registry_name);
   }
 
-  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, BiFunction<Block, Item.Properties, Item> item_builder, FabricBlockEntityTypeBuilder.Factory<?> block_entity_ctor, MenuType.MenuSupplier<?> menu_type_supplier)
+  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, BiFunction<Block, Item.Properties, Item> item_builder, BlockEntityType.BlockEntitySupplier<?> block_entity_ctor, MenuType.MenuSupplier<?> menu_type_supplier)
   {
     addBlock(registry_name, block_supplier, item_builder);
     addBlockEntityType("tet_"+registry_name, block_entity_ctor, registry_name);
     addMenuType("ct_"+registry_name, menu_type_supplier);
   }
 
-  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, FabricBlockEntityTypeBuilder.Factory<?> block_entity_ctor, MenuType.MenuSupplier<?> menu_type_supplier)
+  public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, BlockEntityType.BlockEntitySupplier<?> block_entity_ctor, MenuType.MenuSupplier<?> menu_type_supplier)
   {
     addBlock(registry_name, block_supplier, block_entity_ctor);
     addMenuType("ct_"+registry_name, menu_type_supplier);

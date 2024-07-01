@@ -75,7 +75,7 @@ public class Networking
   public record UnifiedPayload(UnifiedData data) implements CustomPacketPayload
   {
     private static final StreamCodec<FriendlyByteBuf,UnifiedPayload> STREAM_CODEC = CustomPacketPayload.codec(UnifiedPayload::write, UnifiedPayload::new);
-    private static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(new ResourceLocation(ModConstants.MODID, "unpnbt"));
+    private static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, "unpnbt"));
 
     public static CustomPacketPayload.Type<UnifiedPayload> getTYPE() { return TYPE; }
     private UnifiedPayload(FriendlyByteBuf buf) { this(new UnifiedData(buf.readUtf(), buf.readNbt())); }
