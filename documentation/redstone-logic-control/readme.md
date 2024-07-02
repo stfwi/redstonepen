@@ -705,13 +705,13 @@ to the output, unless a "HOLD" input is active. In this case
 the output signal is frozen. The "reset to 0" input is optional.
 
 ```
-# Inputs: Y: Input signal, B: Hold, G: Reset/force 0
+# Inputs: Y: Input signal, B: Hold, G: #Reset/force 0
 # Output: R
-R = IF(G, 0, IF(B, R, Y))
+#R = IF(G, 0, IF(B, Y, R))
 
 # Alternatively:
-R = IF(B, R, Y)
-R = IF(G, R, 0)
+R = IF(B, Y, R)
+R = IF(G, 0, R)
 ```
 
 #### Hysteresis Control
