@@ -10,7 +10,7 @@ import wile.redstonepen.libmc.Overlay;
 
 @Environment(EnvType.CLIENT)
 @Mixin(net.minecraft.client.gui.Gui.class)
-public class GuiRenderingMixin
+abstract public class GuiRenderingMixin
 {
   @Inject(at=@At("TAIL"), method="render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V")
   private void render(net.minecraft.client.gui.GuiGraphics gg, net.minecraft.client.DeltaTracker partialTicks, CallbackInfo info)

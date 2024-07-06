@@ -91,8 +91,8 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
         if(inv_stack.isEmpty()) continue;
         if(!rem_stack.isEmpty() && !inv.getItem(i).is(rem_stack.getItem())) continue;
         remaining.set(i, ItemStack.EMPTY);
-        rem_stack.grow(1);
-        inv.items().set(i, rem_stack);
+        if(!rem_stack.isEmpty()) rem_stack.grow(1);
+        inv_stack.setCount(rem_stack.getCount());
       }
       return remaining;
     } else {

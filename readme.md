@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.11.34    [F] Fixed Pen recipes.
+                  [M] Moved RCA (Redstone Client Adapter) memory map file
+                      root from the tmpdir to the game directory, @see
+                      https://github.com/stfwi/redstonepen/tree/redstone-client-adapter.
+
     - v1.11.33    [U] Updated to 1.21 fabric.
 
     - v1.10.33    [U] Updated to 1.20.6 fabric.
