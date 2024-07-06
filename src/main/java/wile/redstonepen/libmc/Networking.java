@@ -8,10 +8,13 @@
  */
 package wile.redstonepen.libmc;
 
+import net.minecraft.client.player.LocalPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -21,41 +24,125 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import wile.redstonepen.ModConstants;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
-import net.neoforged.neoforge.network.handling.PlayPayloadContext;
-import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 
 public class Networking
 {
-  public static void init(final RegisterPayloadHandlerEvent event)
+  public static void init(net.neoforged.neoforge.network.registration.PayloadRegistrar registrar)
   {
-    final String modid = ModConstants.MODID;
-    final IPayloadRegistrar registrar = event.registrar(modid);
+    registrar.playBidirectional(UnifiedPayload.TYPE, UnifiedPayload.STREAM_CODEC, (unifed_payload, context)->{
+      if(context.player() instanceof ServerPlayer player) {
+        //final ServerPlayer player = (ServerPlayer)context.player();
+        final ServerLevel world = player.serverLevel();
+        if(player==null) return;
+        final CompoundTag payload = unifed_payload.data().nbt();
+        player.server.execute(()->{
+          switch(unifed_payload.data().id()) {
+            case PacketTileNotifyClientToServer.PACKET_ID -> {
+              final BlockPos pos = BlockPos.of(payload.getLong("pos"));
+              final CompoundTag nbt = payload.getCompound("nbt");
+              final BlockEntity te = world.getBlockEntity(pos);
+              if(!(te instanceof IPacketTileNotifyReceiver)) return;
+              ((IPacketTileNotifyReceiver)te).onClientPacketReceived(player, nbt);
+            }
+            case PacketContainerSyncClientToServer.PACKET_ID -> {
+              final int container_id = payload.getInt("cid");
+              final CompoundTag nbt = payload.getCompound("nbt");
+              if(!(player.containerMenu instanceof INetworkSynchronisableContainer nsc)) return;
+              if(player.containerMenu.containerId != container_id) return;
+              nsc.onClientPacketReceived(container_id, player, nbt);
+            }
+            case PacketNbtNotifyClientToServer.PACKET_ID -> {
+              final String hnd = payload.getString("hnd");
+              final CompoundTag nbt = payload.getCompound("nbt");
+              if(hnd.isEmpty() || (!PacketNbtNotifyClientToServer.handlers.containsKey(hnd))) return;
+              PacketNbtNotifyClientToServer.handlers.get(hnd).accept(player, nbt);
+            }
+          }
+        });
+      } else {
+        final LocalPlayer player = (LocalPlayer)context.player();
+        final Level world = player.level();
+        final CompoundTag payload = unifed_payload.data().nbt();
+        context.enqueueWork(()->{
+          switch(unifed_payload.data().id()) {
+            case Networking.PacketTileNotifyServerToClient.PACKET_ID -> {
+              final BlockPos pos = BlockPos.of(payload.getLong("pos"));
+              final CompoundTag nbt = payload.getCompound("nbt");
+              final BlockEntity te = world.getBlockEntity(pos);
+              if(!(te instanceof Networking.IPacketTileNotifyReceiver nte)) return;
+              nte.onServerPacketReceived(nbt);
+            }
+            case Networking.PacketContainerSyncServerToClient.PACKET_ID -> {
+              final int container_id = payload.getInt("cid");
+              final CompoundTag nbt = payload.getCompound("nbt");
+              if(!(player.containerMenu instanceof Networking.INetworkSynchronisableContainer nsc)) return;
+              if(player.containerMenu.containerId != container_id) return;
+              nsc.onServerPacketReceived(container_id, nbt);
+            }
+            case Networking.PacketNbtNotifyServerToClient.PACKET_ID -> {
+              final String hnd = payload.getString("hnd");
+              final CompoundTag nbt = payload.getCompound("nbt");
+              if(hnd.isEmpty() || (!Networking.PacketNbtNotifyServerToClient.handlers.containsKey(hnd))) return;
+              Networking.PacketNbtNotifyServerToClient.handlers.get(hnd).accept(nbt);
+            }
+            case Networking.OverlayTextMessage.PACKET_ID -> {
+              if(Networking.OverlayTextMessage.handler_ == null) return;
+              final int delay = payload.getInt("delay");
+              if(delay<=0) return;
+              final String deserialized = payload.getString("msg");
+              Component m;
+              try {
+                m = Auxiliaries.unserializeTextComponent(deserialized, world.registryAccess());
+              } catch(Throwable e) {
+                m = Component.translatable("[incorrect translation]");
+              }
+              final Component message = m;
+              Networking.OverlayTextMessage.handler_.accept(message, delay);
+            }
+          }
+        });
+      }
+    });
+  }
 
-    PacketTileNotifyClientToServer.PacketData.PACKET_ID = new ResourceLocation(modid, "tnc2s");
-    registrar.play(PacketTileNotifyClientToServer.PacketData.PACKET_ID, PacketTileNotifyClientToServer.PacketData::new, hnd->hnd.server(PacketTileNotifyClientToServer::onReceive));
-    PacketTileNotifyServerToClient.PacketData.PACKET_ID = new ResourceLocation(modid, "tns2c");
-    registrar.play(PacketTileNotifyServerToClient.PacketData.PACKET_ID, PacketTileNotifyServerToClient.PacketData::new, hnd->hnd.client(PacketTileNotifyServerToClient::onReceive));
+  //--------------------------------------------------------------------------------------------------------------------
+  // Unified Packet Handling
+  //--------------------------------------------------------------------------------------------------------------------
 
-    PacketContainerSyncClientToServer.PacketData.PACKET_ID = new ResourceLocation(modid, "csc2s");
-    registrar.play(PacketContainerSyncClientToServer.PacketData.PACKET_ID, PacketContainerSyncClientToServer.PacketData::new, hnd->hnd.server(PacketContainerSyncClientToServer::onReceive));
-    PacketContainerSyncServerToClient.PacketData.PACKET_ID = new ResourceLocation(modid, "css2c");
-    registrar.play(PacketContainerSyncServerToClient.PacketData.PACKET_ID, PacketContainerSyncServerToClient.PacketData::new, hnd->hnd.client(PacketContainerSyncServerToClient::onReceive));
+  public record UnifiedPayload(UnifiedData data) implements CustomPacketPayload
+  {
+    public static final StreamCodec<FriendlyByteBuf,UnifiedPayload> STREAM_CODEC = CustomPacketPayload.codec(UnifiedPayload::write, UnifiedPayload::new);
+    public static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, "unpnbt"));
 
-    PacketNbtNotifyClientToServer.PacketData.PACKET_ID = new ResourceLocation(modid, "nnc2s");
-    registrar.play(PacketNbtNotifyClientToServer.PacketData.PACKET_ID, PacketNbtNotifyClientToServer.PacketData::new, hnd->hnd.server(PacketNbtNotifyClientToServer::onReceive));
-    PacketNbtNotifyServerToClient.PacketData.PACKET_ID = new ResourceLocation(modid, "nns2c");
-    registrar.play(PacketNbtNotifyServerToClient.PacketData.PACKET_ID, PacketNbtNotifyServerToClient.PacketData::new, hnd->hnd.client(PacketNbtNotifyServerToClient::onReceive));
+    public static CustomPacketPayload.Type<UnifiedPayload> getTYPE() { return TYPE; }
+    private UnifiedPayload(FriendlyByteBuf buf) { this(new UnifiedData(buf.readUtf(), buf.readNbt())); }
+    private void write(FriendlyByteBuf buf) {
+      data.write(buf);
+    }
+    public CustomPacketPayload.Type<UnifiedPayload> type() { return TYPE; }
 
-    OverlayTextMessage.PacketData.PACKET_ID = new ResourceLocation(modid, "ols2c");
-    registrar.play(OverlayTextMessage.PacketData.PACKET_ID, OverlayTextMessage.PacketData::new, hnd->hnd.client(OverlayTextMessage::onReceive));
+    public record UnifiedData(String id, CompoundTag nbt)
+    {
+      public UnifiedData(FriendlyByteBuf buf) { this(buf.readUtf(), buf.readNbt()); }
+      public void write(FriendlyByteBuf buf) { buf.writeUtf(id); buf.writeNbt(nbt); }
+      @Override public String toString() { return id + ": " + nbt.toString(); }
+    }
+  }
+
+  private static void sendToClient(ServerPlayer player, String packet_id, CompoundTag payload_nbt)
+  {
+    PacketDistributor.sendToPlayer(player, new UnifiedPayload(new UnifiedPayload.UnifiedData(packet_id, payload_nbt)));
+  }
+
+  private static void sendToClients(ServerLevel world, String packet_id, CompoundTag payload_nbt)
+  {
+    final var payload = new UnifiedPayload(new UnifiedPayload.UnifiedData(packet_id, payload_nbt));
+    for(ServerPlayer player: world.players()) PacketDistributor.sendToPlayer(player, payload);
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -70,75 +157,29 @@ public class Networking
 
   public static class PacketTileNotifyClientToServer
   {
-    private record PacketData(BlockPos pos, CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readBlockPos(), buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeBlockPos(pos()); buffer.writeNbt(nbt()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final BlockPos pos = data.pos();
-      final CompoundTag nbt = data.nbt();
-      final Player player = context.player().orElse(null);
-      final Level world = context.level().orElse(null);
-      if((world==null) || (player==null)) return;
-      context.workHandler().submitAsync(() -> {
-        final BlockEntity te = world.getBlockEntity(pos);
-        if(!(te instanceof IPacketTileNotifyReceiver tnr)) return;
-        tnr.onClientPacketReceived(player, nbt);
-      });
-    }
-
-    public static void sendToServer(BlockPos pos, CompoundTag nbt)
-    {
-      if((pos==null) || (nbt==null)) return;
-      PacketDistributor.SERVER.noArg().send(new PacketData(pos, nbt));
-    }
-
-    public static void sendToServer(BlockEntity te, CompoundTag nbt)
-    {
-      if(te!=null) sendToServer(te.getBlockPos(), nbt);
-    }
+    protected static final String PACKET_ID = "tnc2s";
   }
 
   public static class PacketTileNotifyServerToClient
   {
-    private record PacketData(BlockPos pos, CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readBlockPos(), buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeBlockPos(pos()); buffer.writeNbt(nbt()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final BlockPos pos = data.pos();
-      final CompoundTag nbt = data.nbt();
-      final Level world = context.level().orElse(null);
-      if(world == null) return;
-      context.workHandler().submitAsync(() -> {
-        final BlockEntity te = world.getBlockEntity(pos);
-        if(!(te instanceof Networking.IPacketTileNotifyReceiver tnr)) return;
-        tnr.onServerPacketReceived(nbt);
-      });
-    }
+    protected static final String PACKET_ID = "tns2c";
 
     public static void sendToPlayer(ServerPlayer player, BlockEntity te, CompoundTag nbt)
     {
-      if((te==null) || (nbt==null) || te.getLevel().isClientSide()) return;
-      PacketDistributor.PLAYER.with(player).send(new PacketData(te.getBlockPos(), nbt));
+      if((te==null) || (nbt==null)) return;
+      final CompoundTag payload = new CompoundTag();
+      payload.putLong("pos", te.getBlockPos().asLong());
+      payload.put("nbt", nbt);
+      sendToClient(player, PACKET_ID, payload);
     }
 
     public static void sendToPlayers(BlockEntity te, CompoundTag nbt)
     {
-      if((te==null) || (!(te.getLevel() instanceof ServerLevel sl))) return;
-      for(ServerPlayer player: sl.players()) {
-        sendToPlayer(player, te, nbt);
-      }
+      if((te==null) || (!(te.getLevel() instanceof ServerLevel sworld))) return;
+      final CompoundTag payload = new CompoundTag();
+      payload.putLong("pos", te.getBlockPos().asLong());
+      payload.put("nbt", nbt);
+      sendToClients(sworld, PACKET_ID, payload);
     }
   }
 
@@ -154,78 +195,31 @@ public class Networking
 
   public static class PacketContainerSyncClientToServer
   {
-    private record PacketData(int container_id, CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readInt(), buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeInt(container_id()); buffer.writeNbt(nbt()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final int cid = data.container_id();
-      final CompoundTag nbt = data.nbt();
-      final Player player = context.player().orElse(null);
-      context.workHandler().submitAsync(() -> {
-        if((player==null) || !(player.containerMenu instanceof INetworkSynchronisableContainer nsc)) return;
-        if(player.containerMenu.containerId != cid) return;
-        nsc.onClientPacketReceived(cid, player, nbt);
-      });
-    }
-
-    public static void sendToServer(int container_id, CompoundTag nbt)
-    {
-      if(nbt==null) return;
-      PacketDistributor.SERVER.noArg().send(new PacketData(container_id, nbt));
-    }
-
-    public static void sendToServer(AbstractContainerMenu container, CompoundTag nbt)
-    {
-      sendToServer(container.containerId, nbt);
-    }
+    protected static final String PACKET_ID = "csc2s";
   }
 
   public static class PacketContainerSyncServerToClient
   {
-    private record PacketData(int container_id, CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readInt(), buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeInt(container_id()); buffer.writeNbt(nbt()); }
-    }
+    protected static final String PACKET_ID = "css2c";
 
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final int cid = data.container_id();
-      final CompoundTag nbt = data.nbt();
-      final Player player = context.player().orElse(null);
-      context.workHandler().submitAsync(() -> {
-        if((player==null) || !(player.containerMenu instanceof Networking.INetworkSynchronisableContainer nsc)) return;
-        if(player.containerMenu.containerId != cid) return;
-        nsc.onServerPacketReceived(cid, nbt);
-      });
-    }
-
-    public static void sendToPlayer(ServerPlayer player, int container_id, CompoundTag nbt)
+    public static void sendToPlayer(ServerPlayer player, int windowId, CompoundTag nbt)
     {
       if(nbt==null || player==null) return;
-      PacketDistributor.PLAYER.with(player).send(new PacketData(container_id, nbt));
+      final CompoundTag payload = new CompoundTag();
+      payload.putInt("cid", windowId);
+      payload.put("nbt", nbt);
+      sendToClient(player, PACKET_ID, payload);
     }
 
     public static void sendToPlayer(ServerPlayer player, AbstractContainerMenu container, CompoundTag nbt)
-    {
-      if(container!=null) sendToPlayer(player, container.containerId, nbt);
-    }
+    { if(container!=null) sendToPlayer(player, container.containerId, nbt); }
 
     public static <C extends AbstractContainerMenu & INetworkSynchronisableContainer>
     void sendToListeners(Level world, C container, CompoundTag nbt)
     {
-      if(!(world instanceof ServerLevel sw)) return;
-      for(ServerPlayer player: sw.players()) {
+      for(Player player: world.players()) {
         if(player.containerMenu.containerId != container.containerId) continue;
-        sendToPlayer(player, container.containerId, nbt);
+        sendToPlayer((ServerPlayer)player, container.containerId, nbt);
       }
     }
   }
@@ -236,64 +230,23 @@ public class Networking
 
   public static class PacketNbtNotifyClientToServer
   {
+    protected static final String PACKET_ID = "nnc2s";
     public static final Map<String, BiConsumer<Player, CompoundTag>> handlers = new HashMap<>();
-
-    private record PacketData(CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeNbt(nbt()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final CompoundTag nbt = data.nbt();
-      final Player player = context.player().orElse(null);
-      if((player==null) || (nbt==null)) return;
-      final String hnd = nbt.getString("hnd");
-      if(hnd.isEmpty() || (!handlers.containsKey(hnd))) return;
-      context.workHandler().submitAsync(() -> handlers.get(hnd).accept(player, nbt));
-    }
-
-    public static void sendToServer(CompoundTag nbt)
-    {
-      if(nbt==null) return;
-      PacketDistributor.SERVER.noArg().send(new PacketData(nbt));
-    }
   }
 
   public static class PacketNbtNotifyServerToClient
   {
+    protected static final String PACKET_ID = "nns2c";
     public static final Map<String, Consumer<CompoundTag>> handlers = new HashMap<>();
-
-    private record PacketData(CompoundTag nbt) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      PacketData(final FriendlyByteBuf buf) { this(buf.readNbt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeNbt(nbt()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      final CompoundTag nbt = data.nbt();
-      if(nbt==null) return;
-      final String hnd = nbt.getString("hnd");
-      if(hnd.isEmpty() || (!handlers.containsKey(hnd))) return;
-      context.workHandler().submitAsync(() -> handlers.get(hnd).accept(nbt));
-    }
 
     public static void sendToPlayer(Player player, CompoundTag nbt)
     {
-      if((nbt==null) || (!(player instanceof ServerPlayer sp))) return;
-      PacketDistributor.PLAYER.with(sp).send(new PacketData(nbt));
+      if((nbt==null) || (!(player instanceof ServerPlayer splayer))) return;
+      sendToClient(splayer, PACKET_ID, nbt);
     }
 
-    public static void sendToPlayers(ServerLevel world, CompoundTag nbt)
-    {
-      if(world!=null) for(ServerPlayer player: world.players()) sendToPlayer(player, nbt);
-    }
+    public static void sendToPlayers(Level world, String handler, CompoundTag nbt)
+    { if(world!=null) for(Player player: world.players()) sendToPlayer(player, nbt); }
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -302,26 +255,9 @@ public class Networking
 
   public static class OverlayTextMessage
   {
+    protected static final String PACKET_ID = "otms2c";
     protected static BiConsumer<Component, Integer> handler_ = null;
     public static final int DISPLAY_TIME_MS = 3000;
-
-    public record PacketData(Component message, int delay) implements CustomPacketPayload
-    {
-      private static ResourceLocation PACKET_ID;
-      private static Component get_component(final FriendlyByteBuf buf)  { try { return buf.readComponent(); } catch(Throwable e) { return Component.translatable("[incorrect translation]"); } }
-      PacketData(final FriendlyByteBuf buf) { this(get_component(buf), buf.readInt()); }
-      @Override public ResourceLocation id() { return PACKET_ID; }
-      @Override public void write(final FriendlyByteBuf buffer) { buffer.writeComponent(message()); buffer.writeInt(delay()); }
-    }
-
-    private static void onReceive(final PacketData data, final PlayPayloadContext context)
-    {
-      if(handler_ == null) return;
-      final Component message = data.message();
-      final int delay = data.delay();
-      if(delay<=0) return;
-      context.workHandler().submitAsync(() -> handler_.accept(message, delay));
-    }
 
     public static void setHandler(BiConsumer<Component, Integer> handler)
     { if(handler_==null) handler_ = handler; }
@@ -332,7 +268,14 @@ public class Networking
     public static void sendToPlayer(ServerPlayer player, Component message, int delay)
     {
       if(Auxiliaries.isEmpty(message)) return;
-      PacketDistributor.PLAYER.with(player).send(new PacketData(message, delay));
+      try {
+        final CompoundTag payload = new CompoundTag();
+        payload.putInt("delay", delay);
+        payload.putString("msg", Auxiliaries.serializeTextComponent(message, player.registryAccess()));
+        sendToClient(player, PACKET_ID, payload);
+      } catch(Throwable e) {
+        Auxiliaries.logger().error("OverlayTextMessage.toBytes() failed: " + e);
+      }
     }
   }
 

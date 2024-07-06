@@ -7,6 +7,8 @@
 package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableList;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -41,8 +43,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.libmc.RsSignals;
 import wile.redstonepen.libmc.StandardBlocks;
@@ -204,7 +204,7 @@ public class CircuitComponents
     { return Collections.singletonList(new ItemStack(this.asItem())); }
 
     @Override
-    public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type)
+    public boolean isPathfindable(BlockState state, PathComputationType type)
     { return true; }
 
     @Override
@@ -409,7 +409,7 @@ public class CircuitComponents
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
-        adjacent_state.neighborChanged(world, adjacent_pos, this, pos, false);
+        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, pos, false);
         if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
         }
@@ -439,13 +439,6 @@ public class CircuitComponents
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int itemSlot, boolean isSelected)
     {
       if((!isSelected) || (!world.isClientSide) || !(entity instanceof Player player)) return;
-      // temp fix 1.20.4 neoforge
-      {
-        final var inv = player.getInventory();
-        final var sel_index = inv.selected;
-        if(sel_index < 0 || sel_index>= inv.getContainerSize()) return;
-        if(!(inv.getItem(sel_index).is(stack.getItem()))) return;
-      }
       final BlockHitResult hr = getPlayerPOVHitResult(world, player, ClipContext.Fluid.ANY);
       final BlockPlaceContext pc = new BlockPlaceContext(new UseOnContext(player, InteractionHand.MAIN_HAND, hr));
       if(!pc.canPlace()) return;
@@ -735,7 +728,7 @@ public class CircuitComponents
         if((redstone_side != left) && (redstone_side != right)) return state;
         power_update_recursion_level_ = 0;
         final BlockPos npos = pos.relative(redstone_side);
-        world.getBlockState(npos).neighborChanged(world, npos, this, pos, false);
+        world.getBlockState(npos).handleNeighborChanged(world, npos, this, pos, false);
         final int pr = getInputPower(world, pos, right);
         final int pl = getInputPower(world, pos, left);
         final boolean track_powered = (pr>0) || (pl>0);

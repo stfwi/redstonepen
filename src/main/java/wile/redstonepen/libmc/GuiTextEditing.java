@@ -9,12 +9,12 @@
 package wile.redstonepen.libmc;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.SharedConstants;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
@@ -28,8 +28,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -68,8 +67,8 @@ public class GuiTextEditing
     {
       super(x, y, width, height, title);
       edit_ = new TextFieldHelper(
-        this::getText, this::setText, this::getClipboard, this::setClipboard,
-        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
+              this::getText, this::setText, this::getClipboard, this::setClipboard,
+              (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
       );
     }
 
@@ -162,7 +161,7 @@ public class GuiTextEditing
     }
 
     public String getWordAtPosition(Guis.Coord2d xy)
-    { return ""; } // implement
+    { return ""; }
 
     //---------------------------------------------------------------------------------
 
@@ -223,7 +222,7 @@ public class GuiTextEditing
     {
       if(super.charTyped(key, code)) return true;
       if((!active) || (!visible)) return false;
-      if(!SharedConstants.isAllowedChatCharacter(key)) return false;
+      if(!StringUtil.isAllowedChatCharacter(key)) return false;
       edit_.insertText(Character.toString(key));
       clearDisplayCache();
       on_changed_.accept(this);
@@ -264,7 +263,7 @@ public class GuiTextEditing
       final DisplayCache cache = getDisplayCache();
       for(LineInfo li:cache.lines) gg.drawString(font_, li.asComponent, li.x, li.y, font_color_);
       this.renderCursor(gg, cache.cursor, cache.cursorAtEnd);
-      this.renderHighlight(cache.selection);
+      this.renderHighlight(gg, cache.selection);
       {
         Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
@@ -326,28 +325,18 @@ public class GuiTextEditing
       }
     }
 
-    private void renderHighlight(Rect2i[] line_rects)
+    private void renderHighlight(GuiGraphics gg, Rect2i[] line_rects)
     {
-      RenderSystem.setShader(GameRenderer::getPositionShader);
-      RenderSystem.setShaderColor(0.0F, 0.0F, 255.0F, 255.0F);
-      RenderSystem.enableColorLogicOp();
-      RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
-      final BufferBuilder buf = Tesselator.getInstance().getBuilder();
-      buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-      final double ox = this.getX() * (1.-font_scale_);
-      final double oy = this.getY() * (1.-font_scale_);
+      final int fill_color = 0x339999ff;
+      int first_y_offset_px = -1;
       for(Rect2i rc: line_rects) {
-        final int x0 = (int)Math.floor(ox+(double)(rc.getX())*font_scale_)-1;
-        final int y0 = (int)Math.floor(oy+(double)(rc.getY())*font_scale_)-1;
-        final int x1 = (int)Math.ceil(x0+(double)(rc.getWidth())*font_scale_);
-        final int y1 = (int)Math.ceil(y0+(double)(rc.getHeight())*font_scale_)-1;
-        buf.vertex(x0, y1, 0.0D).endVertex();
-        buf.vertex(x1, y1, 0.0D).endVertex();
-        buf.vertex(x1, y0, 0.0D).endVertex();
-        buf.vertex(x0, y0, 0.0D).endVertex();
+        var x = rc.getX() - this.getX();
+        var y = rc.getY() - this.getY();
+        var pos0 = screenCoordinates(Guis.Coord2d.of(x, y), true);
+        var pos1 = screenCoordinates(Guis.Coord2d.of(x + rc.getWidth(),y + rc.getHeight()), true);
+        gg.fill(pos0.x-1, pos0.y+first_y_offset_px, pos1.x-1, pos1.y+first_y_offset_px, fill_color);
+        first_y_offset_px = 0;
       }
-      Tesselator.getInstance().end();
-      RenderSystem.disableColorLogicOp();
     }
 
     @Nullable

@@ -5,7 +5,8 @@
     { "item": "redstonepen:pen" }
   ],
   "result": {
-    "item": "redstonepen:pen"
+    "id": "redstonepen:pen",
+    "count": 1
   },
   "aspects": {
     "tool": "redstonepen:pen",

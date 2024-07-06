@@ -9,6 +9,8 @@
 package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.Window;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.client.gui.Font;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -19,8 +21,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
@@ -109,8 +109,8 @@ public class Overlay
     {
       if(deadline() < System.currentTimeMillis()) return;
       if(text()==EMPTY_TEXT) return;
-      Component txt = text();
-      if(txt.getString().isEmpty()) return;
+      String txt = text().getString();
+      if(txt.isEmpty()) return;
       final net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
       final Window win = mc.getWindow();
       final Font fr = mc.font;

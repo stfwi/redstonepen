@@ -17,18 +17,21 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.TickEvent;
+
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -82,13 +85,17 @@ public class ModRedstonePen
 
     private static void onRegister(RegisterEvent event)
     {
-      final String registry_name = Registries.instantiate(event.getRegistry());
-      if(!registry_name.isEmpty()) ModContent.initReferences(registry_name);
+      final String registry_name = event.getRegistry().key().location().toString();
+      if(!registry_name.equals("minecraft:block")) return;
+      Registries.instantiateAll();
+      ModContent.initReferences();
     }
 
-    private static void onRegisterNetwork(final RegisterPayloadHandlerEvent event)
+    private static void onRegisterNetwork(final RegisterPayloadHandlersEvent event)
     {
-      wile.redstonepen.libmc.Networking.init(event);
+      PayloadRegistrar registrar = event.registrar("v1");
+      wile.redstonepen.libmc.Networking.init(registrar);
+      wile.redstonepen.libmc.NetworkingClient.clientInit(registrar);
     }
 
     private static void onLoadComplete(final FMLLoadCompleteEvent event)
@@ -96,7 +103,7 @@ public class ModRedstonePen
     }
   }
 
-  @Mod.EventBusSubscriber(modid=ModConstants.MODID, bus=Mod.EventBusSubscriber.Bus.MOD, value=Dist.CLIENT)
+  @EventBusSubscriber(modid=ModConstants.MODID, bus=EventBusSubscriber.Bus.MOD, value=Dist.CLIENT)
   public static class ClientEvents
   {
     @SubscribeEvent
@@ -108,10 +115,7 @@ public class ModRedstonePen
       BlockEntityRenderers.register((BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"), wile.redstonepen.detail.ModRenderers.TrackTer::new);
       // Player client tick if RCA existing.
       if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (final TickEvent.PlayerTickEvent ev)->{
-          if(ev.phase != TickEvent.Phase.END) return;
-          wile.redstonepen.detail.RcaSync.ClientRca.tick();
-        });
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (final PlayerTickEvent.Post ev)->wile.redstonepen.detail.RcaSync.ClientRca.tick());
       }
     }
 
@@ -129,12 +133,12 @@ public class ModRedstonePen
     }
   }
 
-  @Mod.EventBusSubscriber(modid=ModConstants.MODID, value=Dist.CLIENT)
+  @EventBusSubscriber(modid=ModConstants.MODID, value=Dist.CLIENT)
   public static class ClientGameEvents
   {
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
-    public static void onRenderGui(net.neoforged.neoforge.client.event.RenderGuiOverlayEvent.Post event)
+    public static void onRenderGui(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event)
     {
       Overlay.TextOverlayGui.INSTANCE.onRenderGui(event.getGuiGraphics());
     }
@@ -144,7 +148,7 @@ public class ModRedstonePen
     public static void onRenderWorldOverlay(net.neoforged.neoforge.client.event.RenderLevelStageEvent event)
     {
       if(event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_MIPPED_BLOCKS_BLOCKS) {
-        Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(event.getPoseStack(), event.getPartialTick());
+        Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(event.getPoseStack(), event.getRenderTick());
       }
     }
   }

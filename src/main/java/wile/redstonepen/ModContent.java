@@ -8,7 +8,6 @@ package wile.redstonepen;
 
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -116,22 +115,18 @@ public class ModContent
   public static void initItems()
   {
     Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(64).defaultDurability(0)
+      (new Item.Properties()).stacksTo(64).durability(0)
     ));
     Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).rarity(Rarity.UNCOMMON).stacksTo(1).defaultDurability(256)
+      (new Item.Properties()).stacksTo(1).durability(256)
     ));
   }
 
-  public static void initReferences(String registry_name)
+  public static void initReferences()
   {
-    switch(registry_name) {
-      case "minecraft:block" -> {
-        references.TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)Registries.getBlock("track");
-        references.BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)Registries.getBlock("bridge_relay");
-        references.CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)Registries.getBlock("control_box");
-      }
-    }
+    references.TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)Registries.getBlock("track");
+    references.BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)Registries.getBlock("bridge_relay");
+    references.CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)Registries.getBlock("control_box");
   }
 
   //--------------------------------------------------------------------------------------------------------------------

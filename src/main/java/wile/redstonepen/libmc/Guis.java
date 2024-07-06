@@ -10,6 +10,8 @@ package wile.redstonepen.libmc;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,10 +27,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -50,7 +50,7 @@ public class Guis
     public ContainerGui(T menu, Inventory player_inv, Component title, String background_image, int width, int height)
     {
       super(menu, player_inv, title);
-      this.background_image_ = new ResourceLocation(Auxiliaries.modid(), background_image);
+      this.background_image_ = ResourceLocation.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
       this.player_ = player_inv.player;
       this.imageWidth = width;
       this.imageHeight = height;
@@ -60,7 +60,7 @@ public class Guis
     public ContainerGui(T menu, Inventory player_inv, Component title, String background_image)
     {
       super(menu, player_inv, title);
-      this.background_image_ = new ResourceLocation(Auxiliaries.modid(), background_image);
+      this.background_image_ = ResourceLocation.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
       this.player_ = player_inv.player;
       gui_background_ = new Guis.BackgroundImage(background_image_, imageWidth, imageHeight, Coord2d.ORIGIN);
     }
@@ -100,31 +100,31 @@ public class Guis
     public final ResourceLocation getBackgroundImage()
     { return background_image_; }
 
+    public final int getGuiLeft()
+    { return leftPos; }
+
+    public final int getGuiTop()
+    { return topPos; }
+
     protected void renderBgWidgets(GuiGraphics gg, float partialTicks, int mouseX, int mouseY)
     {}
 
     protected void renderItemTemplate(GuiGraphics gg, ItemStack stack, int x, int y)
     {
-      gg.renderItem(stack, x, y);
-      //      final ItemRenderer ir = itemRenderer;
-      //      final int main_zl = getBlitOffset();
-      //      final float zl = ir.blitOffset;
-      //      final int x0 = getGuiLeft();
-      //      final int y0 = getGuiTop();
-      //      ir.blitOffset = -80;
-      //      ir.renderGuiItem(stack, x0+x, y0+y);
-      //      RenderSystem.disableColorLogicOp(); //RenderSystem.disableColorMaterial();
-      //      RenderSystem.enableDepthTest(); //RenderSystem.enableAlphaTest();
-      //      RenderSystem.defaultBlendFunc();
-      //      RenderSystem.enableBlend();
-      //      ir.blitOffset = zl;
-      //      setBlitOffset(100);
-      //      RenderSystem.colorMask(true, true, true, true);
-      //      RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.8f);
-      //      RenderSystem.setShaderTexture(0, background_image_);
-      //      blit(mx, x0+x, y0+y, x, y, 16, 16);
-      //      RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-      //      setBlitOffset(main_zl);
+      final int x0 = getGuiLeft();
+      final int y0 = getGuiTop();
+      RenderSystem.disableColorLogicOp();
+      RenderSystem.enableDepthTest();
+      RenderSystem.defaultBlendFunc();
+      RenderSystem.setShaderColor(0.8f, 0.8f, 0.8f, 0.4f);
+      RenderSystem.enableBlend();
+      gg.renderItem(stack, x0+x, y0+y);
+      RenderSystem.colorMask(true, true, true, true);
+      RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.4f);
+      RenderSystem.setShaderTexture(0, background_image_);
+      gg.blit(background_image_, x0+x, y0+y, x, y, 16, 16);
+      RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+      RenderSystem.disableBlend();
     }
   }
 
@@ -158,16 +158,16 @@ public class Guis
     public UiWidget init(Screen parent)
     {
       this.parent_ = parent;
-      setX(getX() + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiLeft() : 0));
-      setY(getY() + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiTop() : 0));
+      this.setX(getX() + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0));
+      this.setY(getY() + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0));
       return this;
     }
 
     public UiWidget init(Screen parent, Coord2d position)
     {
       this.parent_ = parent;
-      setX(position.x + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiLeft() : 0));
-      setY(position.y + ((parent instanceof AbstractContainerScreen<?>) ? ((AbstractContainerScreen<?>)parent).getGuiTop() : 0));
+      this.setX(position.x + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiLeft() : 0));
+      this.setY(position.y + ((parent instanceof ContainerGui<?>) ? ((ContainerGui<?>)parent).getGuiTop() : 0));
       return this;
     }
 
@@ -187,8 +187,8 @@ public class Guis
     {
       final Window win = mc_.getWindow();
       return Coord2d.of(
-        Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-getX(), -1, this.width+1),
-        Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-getY(), -1, this.height+1)
+              Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-getX(), -1, this.width+1),
+              Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-getY(), -1, this.height+1)
       );
     }
 
@@ -209,14 +209,16 @@ public class Guis
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
+      setTooltip(null);
     }
 
+    @SuppressWarnings("all")
     public void renderToolTip(GuiGraphics gg, int mouseX, int mouseY)
     {
       if(!visible || (!active) || (tooltip_ == NO_TOOLTIP)) return;
       final Component tip = tooltip_.apply(this);
       if(tip.getString().trim().isEmpty()) return;
-      gg.renderTooltip(mc_.font, List.of(tip.getVisualOrderText()), mouseX, mouseY);
+      gg.renderTooltip(mc_.font, Arrays.asList(tip.getVisualOrderText()), mouseX, mouseY);
     }
   }
 
@@ -352,6 +354,7 @@ public class Guis
     private final Coord2d texture_position_;
     private final ResourceLocation atlas_;
     private Consumer<ImageButton> on_click_ = (bt)->{};
+
 
     public ImageButton(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position)
     {

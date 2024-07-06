@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.11.33    [U] Updated to 1.21 neoforge.
+
     - v1.8.32     [A] Basic Lever, Button, and Pulse Button added.
                   [M] TICKRATE=t now ignores signal interrupts (makes
                       closed loop control simpler, issue #41).

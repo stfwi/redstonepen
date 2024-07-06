@@ -7,16 +7,17 @@
 package wile.redstonepen.blocks;
 
 import com.google.common.collect.ImmutableMap;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -24,6 +25,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -47,8 +49,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.nbt.Tag;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
@@ -82,80 +82,80 @@ public class RedstoneTrack
     public static final class connections
     {
       public static final Direction[] CONNECTION_BIT_ORDER  = {
-        Direction.DOWN,Direction.UP, Direction.NORTH,Direction.SOUTH, Direction.EAST,Direction.WEST
+              Direction.DOWN,Direction.UP, Direction.NORTH,Direction.SOUTH, Direction.EAST,Direction.WEST
       };
 
       // don't want extended enum for that small thing.
       public static final ImmutableMap<Direction,Integer> CONNECTION_BIT_ORDER_REV = new ImmutableMap.Builder<Direction,Integer>()
-        .put(Direction.DOWN, 0)
-        .put(Direction.UP, 1)
-        .put(Direction.NORTH, 2)
-        .put(Direction.SOUTH, 3)
-        .put(Direction.EAST, 4)
-        .put(Direction.WEST, 5)
-        .build();
+              .put(Direction.DOWN, 0)
+              .put(Direction.UP, 1)
+              .put(Direction.NORTH, 2)
+              .put(Direction.SOUTH, 3)
+              .put(Direction.EAST, 4)
+              .put(Direction.WEST, 5)
+              .build();
 
       public static final ImmutableMap<Long,Direction> BULK_FACE_MAPPING = new ImmutableMap.Builder<Long,Direction>()
-        .put(0x0000000000000000L, Direction.DOWN)
-        .put(0x0000000001000000L, Direction.DOWN)
-        .put(0x0000000002000000L, Direction.UP)
-        .put(0x0000000004000000L, Direction.NORTH)
-        .put(0x0000000008000000L, Direction.SOUTH)
-        .put(0x0000000010000000L, Direction.EAST)
-        .put(0x0000000020000000L, Direction.WEST)
-        .build();
+              .put(0x0000000000000000L, Direction.DOWN)
+              .put(0x0000000001000000L, Direction.DOWN)
+              .put(0x0000000002000000L, Direction.UP)
+              .put(0x0000000004000000L, Direction.NORTH)
+              .put(0x0000000008000000L, Direction.SOUTH)
+              .put(0x0000000010000000L, Direction.EAST)
+              .put(0x0000000020000000L, Direction.WEST)
+              .build();
 
       public static final ImmutableMap<Direction,Long> BULK_FACE_MAPPING_REV = new ImmutableMap.Builder<Direction,Long>()
-        .put(Direction.DOWN,  0x0000000001000000L)
-        .put(Direction.UP,    0x0000000002000000L)
-        .put(Direction.NORTH, 0x0000000004000000L)
-        .put(Direction.SOUTH, 0x0000000008000000L)
-        .put(Direction.EAST,  0x0000000010000000L)
-        .put(Direction.WEST,  0x0000000020000000L)
-        .build();
+              .put(Direction.DOWN,  0x0000000001000000L)
+              .put(Direction.UP,    0x0000000002000000L)
+              .put(Direction.NORTH, 0x0000000004000000L)
+              .put(Direction.SOUTH, 0x0000000008000000L)
+              .put(Direction.EAST,  0x0000000010000000L)
+              .put(Direction.WEST,  0x0000000020000000L)
+              .build();
 
       public static final ImmutableMap<Long, Tuple<Direction,Direction>> WIRE_FACE_DIRECTION_MAPPING = new ImmutableMap.Builder<Long,Tuple<Direction,Direction>>()
-        .put(0x00000000L, new Tuple<>(Direction.DOWN,Direction.DOWN))
-        .put(0x00000001L, new Tuple<>(Direction.DOWN,Direction.NORTH))
-        .put(0x00000002L, new Tuple<>(Direction.DOWN,Direction.SOUTH))
-        .put(0x00000004L, new Tuple<>(Direction.DOWN,Direction.EAST))
-        .put(0x00000008L, new Tuple<>(Direction.DOWN,Direction.WEST))
-        .put(0x00000010L, new Tuple<>(Direction.UP,Direction.NORTH))
-        .put(0x00000020L, new Tuple<>(Direction.UP,Direction.SOUTH))
-        .put(0x00000040L, new Tuple<>(Direction.UP,Direction.EAST))
-        .put(0x00000080L, new Tuple<>(Direction.UP,Direction.WEST))
-        .put(0x00000100L, new Tuple<>(Direction.NORTH,Direction.UP))
-        .put(0x00000200L, new Tuple<>(Direction.NORTH,Direction.DOWN))
-        .put(0x00000400L, new Tuple<>(Direction.NORTH,Direction.EAST))
-        .put(0x00000800L, new Tuple<>(Direction.NORTH,Direction.WEST))
-        .put(0x00001000L, new Tuple<>(Direction.SOUTH,Direction.UP))
-        .put(0x00002000L, new Tuple<>(Direction.SOUTH,Direction.DOWN))
-        .put(0x00004000L, new Tuple<>(Direction.SOUTH,Direction.EAST))
-        .put(0x00008000L, new Tuple<>(Direction.SOUTH,Direction.WEST))
-        .put(0x00010000L, new Tuple<>(Direction.EAST,Direction.UP))
-        .put(0x00020000L, new Tuple<>(Direction.EAST,Direction.DOWN))
-        .put(0x00040000L, new Tuple<>(Direction.EAST,Direction.NORTH))
-        .put(0x00080000L, new Tuple<>(Direction.EAST,Direction.SOUTH))
-        .put(0x00100000L, new Tuple<>(Direction.WEST,Direction.UP))
-        .put(0x00200000L, new Tuple<>(Direction.WEST,Direction.DOWN))
-        .put(0x00400000L, new Tuple<>(Direction.WEST,Direction.NORTH))
-        .put(0x00800000L, new Tuple<>(Direction.WEST,Direction.SOUTH))
-        .build();
+              .put(0x00000000L, new Tuple<>(Direction.DOWN,Direction.DOWN))
+              .put(0x00000001L, new Tuple<>(Direction.DOWN,Direction.NORTH))
+              .put(0x00000002L, new Tuple<>(Direction.DOWN,Direction.SOUTH))
+              .put(0x00000004L, new Tuple<>(Direction.DOWN,Direction.EAST))
+              .put(0x00000008L, new Tuple<>(Direction.DOWN,Direction.WEST))
+              .put(0x00000010L, new Tuple<>(Direction.UP,Direction.NORTH))
+              .put(0x00000020L, new Tuple<>(Direction.UP,Direction.SOUTH))
+              .put(0x00000040L, new Tuple<>(Direction.UP,Direction.EAST))
+              .put(0x00000080L, new Tuple<>(Direction.UP,Direction.WEST))
+              .put(0x00000100L, new Tuple<>(Direction.NORTH,Direction.UP))
+              .put(0x00000200L, new Tuple<>(Direction.NORTH,Direction.DOWN))
+              .put(0x00000400L, new Tuple<>(Direction.NORTH,Direction.EAST))
+              .put(0x00000800L, new Tuple<>(Direction.NORTH,Direction.WEST))
+              .put(0x00001000L, new Tuple<>(Direction.SOUTH,Direction.UP))
+              .put(0x00002000L, new Tuple<>(Direction.SOUTH,Direction.DOWN))
+              .put(0x00004000L, new Tuple<>(Direction.SOUTH,Direction.EAST))
+              .put(0x00008000L, new Tuple<>(Direction.SOUTH,Direction.WEST))
+              .put(0x00010000L, new Tuple<>(Direction.EAST,Direction.UP))
+              .put(0x00020000L, new Tuple<>(Direction.EAST,Direction.DOWN))
+              .put(0x00040000L, new Tuple<>(Direction.EAST,Direction.NORTH))
+              .put(0x00080000L, new Tuple<>(Direction.EAST,Direction.SOUTH))
+              .put(0x00100000L, new Tuple<>(Direction.WEST,Direction.UP))
+              .put(0x00200000L, new Tuple<>(Direction.WEST,Direction.DOWN))
+              .put(0x00400000L, new Tuple<>(Direction.WEST,Direction.NORTH))
+              .put(0x00800000L, new Tuple<>(Direction.WEST,Direction.SOUTH))
+              .build();
 
       public static final ImmutableMap<Long,Tuple<Direction,Direction>> INTERNAL_EDGE_CONNECTION_MAPPING = new ImmutableMap.Builder<Long,Tuple<Direction,Direction>>()
-        .put(0x00000001L|0x00000200L, new Tuple<>(Direction.DOWN,Direction.NORTH))
-        .put(0x00000002L|0x00002000L, new Tuple<>(Direction.DOWN,Direction.SOUTH))
-        .put(0x00000004L|0x00020000L, new Tuple<>(Direction.DOWN,Direction.EAST))
-        .put(0x00000008L|0x00200000L, new Tuple<>(Direction.DOWN,Direction.WEST))
-        .put(0x00000010L|0x00000100L, new Tuple<>(Direction.UP,Direction.NORTH))
-        .put(0x00000020L|0x00001000L, new Tuple<>(Direction.UP,Direction.SOUTH))
-        .put(0x00000040L|0x00010000L, new Tuple<>(Direction.UP,Direction.EAST))
-        .put(0x00000080L|0x00100000L, new Tuple<>(Direction.UP,Direction.WEST))
-        .put(0x00000400L|0x00040000L, new Tuple<>(Direction.NORTH,Direction.EAST))
-        .put(0x00000800L|0x00400000L, new Tuple<>(Direction.NORTH,Direction.WEST))
-        .put(0x00004000L|0x00080000L, new Tuple<>(Direction.SOUTH,Direction.EAST))
-        .put(0x00008000L|0x00800000L, new Tuple<>(Direction.SOUTH,Direction.WEST))
-        .build();
+              .put(0x00000001L|0x00000200L, new Tuple<>(Direction.DOWN,Direction.NORTH))
+              .put(0x00000002L|0x00002000L, new Tuple<>(Direction.DOWN,Direction.SOUTH))
+              .put(0x00000004L|0x00020000L, new Tuple<>(Direction.DOWN,Direction.EAST))
+              .put(0x00000008L|0x00200000L, new Tuple<>(Direction.DOWN,Direction.WEST))
+              .put(0x00000010L|0x00000100L, new Tuple<>(Direction.UP,Direction.NORTH))
+              .put(0x00000020L|0x00001000L, new Tuple<>(Direction.UP,Direction.SOUTH))
+              .put(0x00000040L|0x00010000L, new Tuple<>(Direction.UP,Direction.EAST))
+              .put(0x00000080L|0x00100000L, new Tuple<>(Direction.UP,Direction.WEST))
+              .put(0x00000400L|0x00040000L, new Tuple<>(Direction.NORTH,Direction.EAST))
+              .put(0x00000800L|0x00400000L, new Tuple<>(Direction.NORTH,Direction.WEST))
+              .put(0x00004000L|0x00080000L, new Tuple<>(Direction.SOUTH,Direction.EAST))
+              .put(0x00008000L|0x00800000L, new Tuple<>(Direction.SOUTH,Direction.WEST))
+              .build();
 
       // -- bit mapping access -------------------------------------------------------------------------------------
 
@@ -172,9 +172,9 @@ public class RedstoneTrack
       public static long getWireBit(Direction face, Direction wire_direction)
       {
         return connections.WIRE_FACE_DIRECTION_MAPPING.entrySet().stream()
-          .filter(kv->kv.getValue().getA()==face && kv.getValue().getB()==wire_direction)
-          .findFirst()
-          .map(Map.Entry::getKey).orElse(0L);
+                .filter(kv->kv.getValue().getA()==face && kv.getValue().getB()==wire_direction)
+                .findFirst()
+                .map(Map.Entry::getKey).orElse(0L);
       }
 
       public static Tuple<Direction,Direction> getWireBitSideAndDirection(long wirebit)
@@ -234,29 +234,29 @@ public class RedstoneTrack
       private static final double SHAPE_TRACK_HALFWIDTH = 1;
 
       private static final VoxelShape DOWN_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,0, 8+SHAPE_TRACK_HALFWIDTH,SHAPE_LAYER_THICKNESS,16),
-        Auxiliaries.getPixeledAABB(0,0,8-SHAPE_TRACK_HALFWIDTH,16,SHAPE_LAYER_THICKNESS, 8+SHAPE_TRACK_HALFWIDTH)
+              Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,0, 8+SHAPE_TRACK_HALFWIDTH,SHAPE_LAYER_THICKNESS,16),
+              Auxiliaries.getPixeledAABB(0,0,8-SHAPE_TRACK_HALFWIDTH,16,SHAPE_LAYER_THICKNESS, 8+SHAPE_TRACK_HALFWIDTH)
       );
       private static final VoxelShape UP_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,16-SHAPE_LAYER_THICKNESS,0, 8+SHAPE_TRACK_HALFWIDTH,16,16),
-        Auxiliaries.getPixeledAABB(0,16-SHAPE_LAYER_THICKNESS,8-SHAPE_TRACK_HALFWIDTH,16,16, 8+SHAPE_TRACK_HALFWIDTH)
+              Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,16-SHAPE_LAYER_THICKNESS,0, 8+SHAPE_TRACK_HALFWIDTH,16,16),
+              Auxiliaries.getPixeledAABB(0,16-SHAPE_LAYER_THICKNESS,8-SHAPE_TRACK_HALFWIDTH,16,16, 8+SHAPE_TRACK_HALFWIDTH)
       );
       private static final VoxelShape WEST_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(0,0,8-SHAPE_TRACK_HALFWIDTH, SHAPE_LAYER_THICKNESS,16, 8+SHAPE_TRACK_HALFWIDTH),
-        Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,0, SHAPE_LAYER_THICKNESS, 8+SHAPE_TRACK_HALFWIDTH,16)
+              Auxiliaries.getPixeledAABB(0,0,8-SHAPE_TRACK_HALFWIDTH, SHAPE_LAYER_THICKNESS,16, 8+SHAPE_TRACK_HALFWIDTH),
+              Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,0, SHAPE_LAYER_THICKNESS, 8+SHAPE_TRACK_HALFWIDTH,16)
       );
       private static final VoxelShape EAST_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(16-SHAPE_LAYER_THICKNESS,0,8-SHAPE_TRACK_HALFWIDTH, 16,16, 8+SHAPE_TRACK_HALFWIDTH),
-        Auxiliaries.getPixeledAABB(16-SHAPE_LAYER_THICKNESS,8-SHAPE_TRACK_HALFWIDTH,0, 16, 8+SHAPE_TRACK_HALFWIDTH,16)
+              Auxiliaries.getPixeledAABB(16-SHAPE_LAYER_THICKNESS,0,8-SHAPE_TRACK_HALFWIDTH, 16,16, 8+SHAPE_TRACK_HALFWIDTH),
+              Auxiliaries.getPixeledAABB(16-SHAPE_LAYER_THICKNESS,8-SHAPE_TRACK_HALFWIDTH,0, 16, 8+SHAPE_TRACK_HALFWIDTH,16)
       );
 
       private static final VoxelShape NORTH_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,0, 16, 8+SHAPE_TRACK_HALFWIDTH,SHAPE_LAYER_THICKNESS),
-        Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,0,  8+SHAPE_TRACK_HALFWIDTH,16,SHAPE_LAYER_THICKNESS)
+              Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,0, 16, 8+SHAPE_TRACK_HALFWIDTH,SHAPE_LAYER_THICKNESS),
+              Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,0,  8+SHAPE_TRACK_HALFWIDTH,16,SHAPE_LAYER_THICKNESS)
       );
       private static final VoxelShape SOUTH_SHAPE = Auxiliaries.getUnionShape(
-        Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,16-SHAPE_LAYER_THICKNESS, 16, 8+SHAPE_TRACK_HALFWIDTH,16),
-        Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,16-SHAPE_LAYER_THICKNESS,  8+SHAPE_TRACK_HALFWIDTH,16,16)
+              Auxiliaries.getPixeledAABB(0,8-SHAPE_TRACK_HALFWIDTH,16-SHAPE_LAYER_THICKNESS, 16, 8+SHAPE_TRACK_HALFWIDTH,16),
+              Auxiliaries.getPixeledAABB(8-SHAPE_TRACK_HALFWIDTH,0,16-SHAPE_LAYER_THICKNESS,  8+SHAPE_TRACK_HALFWIDTH,16,16)
       );
 
       // maps are too slow, 64 objects are ok to pre-allocate.
@@ -282,52 +282,52 @@ public class RedstoneTrack
     public static final class models
     {
       public static final ImmutableMap<Long,String> STATE_WIRE_MAPPING = new ImmutableMap.Builder<Long,String>()
-        .put(0x00000000L, "none")
-        .put(0x00000001L, "dn")
-        .put(0x00000002L, "ds")
-        .put(0x00000004L, "de")
-        .put(0x00000008L, "dw")
-        .put(0x00000010L, "un")
-        .put(0x00000020L, "us")
-        .put(0x00000040L, "ue")
-        .put(0x00000080L, "uw")
-        .put(0x00000100L, "nu")
-        .put(0x00000200L, "nd")
-        .put(0x00000400L, "ne")
-        .put(0x00000800L, "nw")
-        .put(0x00001000L, "su")
-        .put(0x00002000L, "sd")
-        .put(0x00004000L, "se")
-        .put(0x00008000L, "sw")
-        .put(0x00010000L, "eu")
-        .put(0x00020000L, "ed")
-        .put(0x00040000L, "en")
-        .put(0x00080000L, "es")
-        .put(0x00100000L, "wu")
-        .put(0x00200000L, "wd")
-        .put(0x00400000L, "wn")
-        .put(0x00800000L, "ws")
-        .build();
+              .put(0x00000000L, "none")
+              .put(0x00000001L, "dn")
+              .put(0x00000002L, "ds")
+              .put(0x00000004L, "de")
+              .put(0x00000008L, "dw")
+              .put(0x00000010L, "un")
+              .put(0x00000020L, "us")
+              .put(0x00000040L, "ue")
+              .put(0x00000080L, "uw")
+              .put(0x00000100L, "nu")
+              .put(0x00000200L, "nd")
+              .put(0x00000400L, "ne")
+              .put(0x00000800L, "nw")
+              .put(0x00001000L, "su")
+              .put(0x00002000L, "sd")
+              .put(0x00004000L, "se")
+              .put(0x00008000L, "sw")
+              .put(0x00010000L, "eu")
+              .put(0x00020000L, "ed")
+              .put(0x00040000L, "en")
+              .put(0x00080000L, "es")
+              .put(0x00100000L, "wu")
+              .put(0x00200000L, "wd")
+              .put(0x00400000L, "wn")
+              .put(0x00800000L, "ws")
+              .build();
 
       public static final ImmutableMap<Long,String> STATE_CONNECT_MAPPING = new ImmutableMap.Builder<Long,String>()
-        .put(0x0000000000000000L, "none")
-        .put(0x0000000001000000L, "dc")
-        .put(0x0000000002000000L, "uc")
-        .put(0x0000000004000000L, "nc")
-        .put(0x0000000008000000L, "sc")
-        .put(0x0000000010000000L, "ec")
-        .put(0x0000000020000000L, "wc")
-        .build();
+              .put(0x0000000000000000L, "none")
+              .put(0x0000000001000000L, "dc")
+              .put(0x0000000002000000L, "uc")
+              .put(0x0000000004000000L, "nc")
+              .put(0x0000000008000000L, "sc")
+              .put(0x0000000010000000L, "ec")
+              .put(0x0000000020000000L, "wc")
+              .build();
 
       public static final ImmutableMap<Long,String> STATE_CNTWIRE_MAPPING = new ImmutableMap.Builder<Long,String>()
-        .put(0x0000000000000000L, "none")
-        .put(0x0000000001000000L, "dm")
-        .put(0x0000000002000000L, "um")
-        .put(0x0000000004000000L, "nm")
-        .put(0x0000000008000000L, "sm")
-        .put(0x0000000010000000L, "em")
-        .put(0x0000000020000000L, "wm")
-        .build();
+              .put(0x0000000000000000L, "none")
+              .put(0x0000000001000000L, "dm")
+              .put(0x0000000002000000L, "um")
+              .put(0x0000000004000000L, "nm")
+              .put(0x0000000008000000L, "sm")
+              .put(0x0000000010000000L, "em")
+              .put(0x0000000020000000L, "wm")
+              .build();
     }
   }
 
@@ -389,7 +389,7 @@ public class RedstoneTrack
     { return Items.REDSTONE; }
 
     @Override
-    public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type)
+    public boolean isPathfindable(BlockState state, PathComputationType type)
     { return true; }
 
     @Override
@@ -397,11 +397,11 @@ public class RedstoneTrack
     {
       final int wires = tile(world, pos).map(TrackBlockEntity::getWireFlags).orElse(0);
       final int faces = (((wires & 0x00000f) != 0) ? 0x01 : 0)
-        | (((wires & 0x0000f0) != 0) ? 0x02 : 0)
-        | (((wires & 0x000f00) != 0) ? 0x04 : 0)
-        | (((wires & 0x00f000) != 0) ? 0x08 : 0)
-        | (((wires & 0x0f0000) != 0) ? 0x10 : 0)
-        | (((wires & 0xf00000) != 0) ? 0x20 : 0);
+              | (((wires & 0x0000f0) != 0) ? 0x02 : 0)
+              | (((wires & 0x000f00) != 0) ? 0x04 : 0)
+              | (((wires & 0x00f000) != 0) ? 0x08 : 0)
+              | (((wires & 0x0f0000) != 0) ? 0x10 : 0)
+              | (((wires & 0xf00000) != 0) ? 0x20 : 0);
       return defs.shape.get(faces);
     }
 
@@ -432,7 +432,6 @@ public class RedstoneTrack
     @Deprecated
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
     {
-      // @todo: fabric: not available, need to hook into `RedstoneWireBlock.shouldConnectTo(BlockState blockState, @Nullable Direction direction)` or leave it as it is.
       return (side != null) && (tile(world,pos).map(te->te.hasVanillaRedstoneConnection(side.getOpposite()))).orElse(false);
     }
 
@@ -488,39 +487,51 @@ public class RedstoneTrack
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
     {
-      if(player.getItemInHand(hand).is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return InteractionResult.SUCCESS;
+      return onBlockActivated(state, world, pos, player, ItemStack.EMPTY, InteractionHand.MAIN_HAND, rtr, true);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    {
+      if(stack.is(Items.DEBUG_STICK)) {
+        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof TrackBlockEntity te) te.toggle_trace(player);
-        return InteractionResult.CONSUME;
+        return ItemInteractionResult.CONSUME;
       } else {
-        return onBlockActivated(state, world, pos, player, hand, rtr, false);
+        return switch(onBlockActivated(state, world, pos, player, stack, hand, rtr, false)) {
+          case SUCCESS -> ItemInteractionResult.SUCCESS;
+          case CONSUME -> ItemInteractionResult.CONSUME;
+          case PASS -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+          case FAIL -> ItemInteractionResult.FAIL;
+          case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
+          case SUCCESS_NO_ITEM_USED -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        };
       }
     }
 
-    public InteractionResult onBlockActivated(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr, boolean remove_only)
+    public InteractionResult onBlockActivated(BlockState state, Level world, BlockPos pos, Player player, ItemStack stack, InteractionHand hand, BlockHitResult rtr, boolean remove_only)
     {
       {
-        ItemStack stack = player.getItemInHand(hand);
         if((!stack.isEmpty()) && (stack.getItem()!=Items.REDSTONE) && (!RedstonePenItem.isPen(stack))) {
           BlockPos behind_pos = pos.relative(rtr.getDirection());
           BlockState behind_state = world.getBlockState(behind_pos);
           if(behind_state.isRedstoneConductor(world, behind_pos)) {
-            return behind_state.getBlock().use(behind_state,world,behind_pos, player, hand, rtr);
+            return behind_state.useWithoutItem(world, player, rtr);
           }
           return InteractionResult.PASS;
         }
       }
       if(world.isClientSide()) return InteractionResult.SUCCESS;
-      if(!RedstonePenItem.hasEnoughRedstone(player.getItemInHand(hand), 1, player)) remove_only = true;
+      if(!RedstonePenItem.hasEnoughRedstone(stack, 1, player)) remove_only = true;
       TrackBlockEntity te = tile(world, pos).orElse(null);
       if(te==null) return InteractionResult.FAIL;
       int redstone_use = te.handleActivation(pos, player, hand, rtr.getDirection(), rtr.getLocation(), remove_only);
       if(redstone_use == 0) {
         return InteractionResult.PASS;
       } else if(redstone_use < 0) {
-        RedstonePenItem.pushRedstone(player.getItemInHand(hand), -redstone_use, player);
+        RedstonePenItem.pushRedstone(stack, -redstone_use, player);
         if(te.getWireFlags() == 0) {
           world.setBlock(pos, state.getFluidState().createLegacyBlock(), 1|2);
         } else {
@@ -531,7 +542,7 @@ public class RedstoneTrack
         }
         world.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.4f, 2f);
       } else {
-        RedstonePenItem.popRedstone(player.getItemInHand(hand), redstone_use, player, hand);
+        RedstonePenItem.popRedstone(stack, redstone_use, player, hand);
         world.playSound(null, pos, SoundEvents.METAL_PLACE, SoundSource.BLOCKS, 0.4f, 2.4f);
       }
       updateNeighbourShapes(state, world, pos);
@@ -697,7 +708,8 @@ public class RedstoneTrack
     public TrackBlockEntity(BlockPos pos, BlockState state)
     { super(Registries.getBlockEntityTypeOfBlock(state.getBlock()), pos, state); }
 
-    public CompoundTag readnbt(CompoundTag nbt)
+    @Override
+    public CompoundTag readnbt(HolderLookup.Provider hlp, CompoundTag nbt)
     {
       state_flags_ = nbt.getLong("sflags");
       nets_.clear();
@@ -707,11 +719,11 @@ public class RedstoneTrack
           for(int i=0; i<lst.size(); ++i) {
             CompoundTag route_nbt = lst.getCompound(i);
             nets_.add(new TrackNet(
-              Arrays.stream(route_nbt.getLongArray("npos")).mapToObj(BlockPos::of).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("nsid")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("ifac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("pfac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              route_nbt.getInt("power")
+                    Arrays.stream(route_nbt.getLongArray("npos")).mapToObj(BlockPos::of).collect(Collectors.toList()),
+                    Arrays.stream(route_nbt.getIntArray("nsid")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+                    Arrays.stream(route_nbt.getIntArray("ifac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+                    Arrays.stream(route_nbt.getIntArray("pfac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+                    route_nbt.getInt("power")
             ));
           }
         } catch(Throwable ex) {
@@ -722,10 +734,8 @@ public class RedstoneTrack
       return nbt;
     }
 
-    private CompoundTag writenbt(CompoundTag nbt)
-    { return writenbt(nbt, false); }
-
-    private CompoundTag writenbt(CompoundTag nbt, boolean sync_packet)
+    @Override
+    public CompoundTag writenbt(HolderLookup.Provider hlp, CompoundTag nbt, boolean sync_packet)
     {
       nbt.putLong("sflags", state_flags_);
       if(sync_packet) return nbt;
@@ -746,28 +756,8 @@ public class RedstoneTrack
     }
 
     @Override
-    public void load(CompoundTag nbt)
-    { super.load(nbt); readnbt(nbt); }
-
-    @Override
-    protected void saveAdditional(CompoundTag nbt)
-    { super.saveAdditional(nbt); writenbt(nbt); }
-
-    @Override
-    public CompoundTag getUpdateTag()
-    { CompoundTag nbt = super.getUpdateTag(); writenbt(nbt, true); return nbt; }
-
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) // on client
-    { readnbt(pkt.getTag()); super.onDataPacket(net, pkt); }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag) // on client
-    { load(tag); }
-
-    @Override
     public void onServerPacketReceived(CompoundTag nbt)
-    { readnbt(nbt); }
+    { readnbt(getLevel().registryAccess(), nbt); }
 
     @Override
     public void onClientPacketReceived(Player player, CompoundTag nbt)
@@ -786,7 +776,7 @@ public class RedstoneTrack
       if(schedule && (!getLevel().getBlockTicks().hasScheduledTick(getBlockPos(), ModContent.references.TRACK_BLOCK))) {
         getLevel().scheduleTick(getBlockPos(), ModContent.references.TRACK_BLOCK, 1);
       } else {
-        Networking.PacketTileNotifyServerToClient.sendToPlayers(this, writenbt(new CompoundTag(), true));
+        Networking.PacketTileNotifyServerToClient.sendToPlayers(this, writenbt(getLevel().registryAccess(), new CompoundTag(), true));
       }
       return true;
     }
@@ -964,13 +954,13 @@ public class RedstoneTrack
           nets_.forEach(net->{ if(net.internal_sides.contains(face)) net.power=0; });
           disconnected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
-            getLevel().getBlockState(p).neighborChanged(getLevel(), p, getBlock(), pos, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), pos, false);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
           });
           connected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
-            getLevel().getBlockState(p).neighborChanged(getLevel(), p, getBlock(), pos, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), pos, false);
             getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), p, false);
           });
         }
@@ -1126,7 +1116,7 @@ public class RedstoneTrack
           if(world.getBlockEntity(neighbor.pos) instanceof TrackBlockEntity te) {
             te.handleNeighborChanged(getBlockPos(), change_notifications);
           } else {
-            world.getBlockState(neighbor.pos).neighborChanged(world, neighbor.pos, getBlock(), getBlockPos(), false);
+            world.getBlockState(neighbor.pos).handleNeighborChanged(world, neighbor.pos, getBlock(), getBlockPos(), false);
           }
         } else {
           change_notifications.put(neighbor.pos, getBlockPos());
@@ -1368,7 +1358,7 @@ public class RedstoneTrack
         all_neighbours.forEach((pos)->{
           final BlockState st = world.getBlockState(pos);
           if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE TRACK CHANGES TO %s.", posstr(getBlockPos()), posstr(pos)));
-          st.neighborChanged(world, pos, state.getBlock(), getBlockPos(), false);
+          st.handleNeighborChanged(world, pos, state.getBlock(), getBlockPos(), false);
           world.updateNeighborsAt(pos, st.getBlock());
         });
       }

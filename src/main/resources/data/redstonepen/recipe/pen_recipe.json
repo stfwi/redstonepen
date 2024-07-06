@@ -12,7 +12,8 @@
     { "item": "minecraft:feather" }
   ],
   "result": {
-    "item": "redstonepen:pen"
+    "id": "redstonepen:pen",
+    "count": 1
   },
   "aspects": {
     "initial_durability": 72

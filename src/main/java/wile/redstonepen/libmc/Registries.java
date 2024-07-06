@@ -16,8 +16,7 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,7 +30,6 @@ import java.util.function.Supplier;
 
 public class Registries
 {
-  private static final String modid = ModConstants.MODID;
   private static final Map<String, TagKey<Block>> registered_block_tag_keys = new HashMap<>();
   private static final Map<String, TagKey<Item>> registered_item_tag_keys = new HashMap<>();
 
@@ -50,77 +48,43 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
+
   public static void init()
-  {}
+  {
+  }
 
   public static void instantiateAll()
   {
-    instantiate(BuiltInRegistries.BLOCK);
-    instantiate(BuiltInRegistries.ITEM);
-    instantiate(BuiltInRegistries.BLOCK_ENTITY_TYPE);
-    instantiate(BuiltInRegistries.ENTITY_TYPE);
-    instantiate(BuiltInRegistries.MENU);
-    instantiate(BuiltInRegistries.RECIPE_SERIALIZER);
-    instantiate(BuiltInRegistries.PAINTING_VARIANT);
-    instantiate(BuiltInRegistries.CREATIVE_MODE_TAB);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static String instantiate(Registry<?> registry)
-  {
-    final String id = registry.key().location().toString();
-    switch(id) {
-      case "minecraft:block" -> {
-        registered_blocks.clear();
-        block_suppliers.forEach((reg)->{
-          registered_blocks.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<Block>)registry, new ResourceLocation(modid, reg.getA()), registered_blocks.get(reg.getA()));
-        });
-      }
-      case "minecraft:item" -> {
-        registered_items.clear();
-        item_suppliers.forEach((reg)->{
-          registered_items.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<Item>)registry, new ResourceLocation(modid, reg.getA()), registered_items.get(reg.getA()));
-        });
-      }
-      case "minecraft:block_entity_type" -> {
-        registered_block_entity_types.clear();
-        block_entity_type_suppliers.forEach((reg)->{
-          registered_block_entity_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<BlockEntityType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_block_entity_types.get(reg.getA()));
-        });
-      }
-      case "minecraft:entity_type" -> {
-        registered_entity_types.clear();
-        entity_type_suppliers.forEach((reg)->{
-          registered_entity_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<EntityType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_entity_types.get(reg.getA()));
-        });
-      }
-      case "minecraft:menu" -> {
-        registered_menu_types.clear();
-        menu_type_suppliers.forEach((reg)->{
-          registered_menu_types.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<MenuType<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_menu_types.get(reg.getA()));
-        });
-      }
-      case "minecraft:recipe_serializer" -> {
-        registered_recipe_serializers.clear();
-        recipe_serializers_suppliers.forEach((reg)->{
-          registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-          Registry.register((Registry<RecipeSerializer<?>>)registry, new ResourceLocation(modid, reg.getA()), registered_recipe_serializers.get(reg.getA()));
-        });
-      }
-      case "minecraft:painting_variant" -> {
-      }
-      case "minecraft:creative_mode_tab" -> {
-      }
-      default -> {
-        return "";
-      }
-    }
-    return id;
+    registered_blocks.clear();
+    block_suppliers.forEach((reg)->{
+      registered_blocks.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
+    });
+    registered_items.clear();
+    item_suppliers.forEach((reg)->{
+      registered_items.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.ITEM, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
+    });
+    registered_block_entity_types.clear();
+    block_entity_type_suppliers.forEach((reg)->{
+      registered_block_entity_types.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
+    });
+    registered_entity_types.clear();
+    entity_type_suppliers.forEach((reg)->{
+      registered_entity_types.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
+    });
+    registered_menu_types.clear();
+    menu_type_suppliers.forEach((reg)->{
+      registered_menu_types.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.MENU, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
+    });
+    registered_recipe_serializers.clear();
+    recipe_serializers_suppliers.forEach((reg)->{
+      registered_recipe_serializers.put(reg.getA(), reg.getB().get());
+      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+    });
   }
 
   // -------------------------------------------------------------------------------------------------------------

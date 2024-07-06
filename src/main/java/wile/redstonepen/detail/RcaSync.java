@@ -13,6 +13,8 @@ import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Networking;
 
 import org.jetbrains.annotations.Nullable;
+import wile.redstonepen.libmc.NetworkingClient;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -110,7 +112,7 @@ public class RcaSync
       CompoundTag nbt = new CompoundTag();
       nbt.putString("hnd", MESSAGE_HANDLER_ID);
       nbt.putLong("i", rca.getInputs());
-      Networking.PacketNbtNotifyClientToServer.sendToServer(nbt);
+      NetworkingClient.PacketNbtNotifyClientToServer.sendToServer(nbt);
       rca.setInputsChanged(false);
     }
   }

@@ -1,10 +1,11 @@
 {
   "type": "redstonepen:crafting_extended_shapeless",
   "ingredients": [
-    { "tag": "minecraft:wooden_buttons" },
+    { "item": "minecraft:lever" },
     { "item": "minecraft:iron_nugget" }
   ],
   "result": {
-    "item": "redstonepen:basic_button"
+    "id": "redstonepen:basic_lever",
+    "count": 1
   }
 }

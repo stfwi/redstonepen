@@ -1,6 +1,7 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen",
- "1.20.4": {
+ "1.21": {
+  "1.11.33": "[U] Updated to 1.21 neoforge.",
   "1.8.32": "[A] Basic Lever, Button, and Pulse Button added.\n[M] TICKRATE=t now ignores signal interrupts (makes closed loop control simpler, issue #41).\n[M] Refactoring to improve loader compatibility.",
   "1.8.31": "[F] Fixed RLC UI initialization locking (issue #40, ty shinchai).\n[F] Bridge Relay to Track update fixed.\n[F] RCA init order fixed.\n[M] RLC editor cursor brightness increased.",
   "1.8.30": "[F] Fixed track segments adding/removing updates.",
@@ -43,7 +44,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.20.4-recommended": "1.8.32",
-  "1.20.4-latest": "1.8.32"
+  "1.21-recommended": "1.11.33",
+  "1.21-latest": "1.11.33"
  }
 }

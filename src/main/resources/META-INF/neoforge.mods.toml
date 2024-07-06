@@ -1,9 +1,12 @@
-# @file mods.toml
+# @file neoforge.mods.toml
 # @spec TOML v0.5.0 (https://github.com/toml-lang/toml)
 modLoader="javafml"
 loaderVersion="${version_range_loader}"
 issueTrackerURL="${meta_issues}"
 license="${meta_license}"
+
+[[mixins]]
+config="${meta_modid}.mixins.json"
 
 [[mods]]
 modId="${meta_modid}"
@@ -29,3 +32,10 @@ logoFile="assets/${meta_modid}/logo.png"
   versionRange="[${version_minecraft}]"
   ordering="NONE"
   side="BOTH"
+
+
+
+# The [[accessTransformers]] block allows you to declare where your AT file is.
+# If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
+#[[accessTransformers]]
+#file="META-INF/accesstransformer.cfg"

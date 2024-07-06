@@ -12,6 +12,7 @@
     { "item": "minecraft:feather" }
   ],
   "result": {
-    "item": "redstonepen:quill"
+    "id": "redstonepen:quill",
+    "count": 1
   }
 }

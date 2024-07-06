@@ -1,9 +1,10 @@
 {
   "type": "redstonepen:crafting_extended_shapeless",
   "ingredients": [
-    { "item": "redstonepen:control_box" }
+    { "item": "redstonepen:relay" }
   ],
   "result": {
-    "item": "redstonepen:control_box"
+    "id": "redstonepen:inverted_relay",
+    "count": 1
   }
 }
