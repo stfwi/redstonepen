@@ -15,7 +15,6 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import wile.redstonepen.blocks.ControlBox;
@@ -31,9 +30,7 @@ public class ModRedstonePenClient implements ClientModInitializer
 {
   public ModRedstonePenClient()
   {
-    ModelLoadingPlugin.register(pluginContext->{
-      ModRenderers.TrackTer.registerModels().forEach((mrl)->pluginContext.addModels(mrl));
-    });
+    ModelLoadingPlugin.register(pluginContext->ModRenderers.TrackTer.registerModels().forEach(pluginContext::addModels));
   }
 
   @Override
@@ -43,12 +40,12 @@ public class ModRedstonePenClient implements ClientModInitializer
     Overlay.register();
     registerMenuGuis();
     registerBlockEntityRenderers();
-    Overlay.TextOverlayGui.on_config(
-            0.75,
-            0x00ffaa00,
-            0x55333333,
-            0x55333333,
-            0x55444444
+    Overlay.on_config(
+      0.75,
+      0x00ffaa00,
+      0x55333333,
+      0x55333333,
+      0x55444444
     );
     WorldRenderEvents.AFTER_TRANSLUCENT.register((context)->Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(context.matrixStack(), context.tickCounter().getRealtimeDeltaTicks()));
     if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {

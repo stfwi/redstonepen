@@ -4,6 +4,12 @@
 ----
 ## Version history
 
+    - v1.11.35    [M] RLC parser edited to indicate an error for unknown signal processing
+                      identifiers (".CO", ".RE", ".FE"). (Issue #46, ty aerotactics).
+                  [F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)
+                  [M] Log file tagging improved, Pen debugging capabilities added in
+                      release mode.
+
     - v1.11.34    [F] Fixed Pen recipes.
                   [M] Moved RCA (Redstone Client Adapter) memory map file
                       root from the tmpdir to the game directory, @see

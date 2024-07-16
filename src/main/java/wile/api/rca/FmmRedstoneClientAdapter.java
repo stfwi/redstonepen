@@ -1,6 +1,6 @@
 package wile.api.rca;
 
-import net.fabricmc.loader.api.FabricLoader;
+import wile.redstonepen.libmc.Auxiliaries;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -149,13 +149,7 @@ public class FmmRedstoneClientAdapter
      * @return System formatted IPC file path string representation.
      */
     public static String ipcIoPath(boolean mcSideOutput)
-    {
-      //@todo: TEST RCA MMAP ROOT IN GAMEDIR, NOT TMPDIR; THIS IS FOR CHECKING IF THE CURSEFORGE SCANNER
-      //       CAN BE CONVINCED NOT TO TRIGGER A FALSE POSITIVE, SO THAT MANUAL APPROVAL IS NOT REQUIRED.
-      // (could also be that the issue is the file memory mapping).
-      return FabricLoader.getInstance().getGameDir().resolve("redstonepen." + (mcSideOutput ? 'o' : 'i') +".mmap").toString();
-      // return Path.of(System.getProperty("java.io.tmpdir"), "redstonepen") + "." + (mcSideOutput ? 'o' : 'i') +".mmap";
-    }
+    { return Auxiliaries.getGameDirectory().resolve("redstonepen." + (mcSideOutput ? 'o' : 'i') +".mmap").toString(); } // Before 1.21: Path.of(System.getProperty("java.io.tmpdir")
 
     /**
      * Returns true if the feature is enabled. Initialized after

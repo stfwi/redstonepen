@@ -22,6 +22,8 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jetbrains.annotations.Nullable;
+import wile.redstonepen.ModConstants;
+
 import java.util.Optional;
 
 
@@ -46,6 +48,28 @@ public class Overlay
   { net.minecraft.client.Minecraft.getInstance().execute(()->TextOverlayGui.show(state, pos, displayTimeoutMs)); } // Only called when client side
 
   // -----------------------------------------------------------------------------
+  // Configuration
+  // -----------------------------------------------------------------------------
+
+  private static double overlay_y_ = 0.75;
+  private static int text_color_ = 0x00ffaa00;
+  private static int border_color_ = 0xaa333333;
+  private static int background_color1_ = 0xaa333333;
+  private static int background_color2_ = 0xaa444444;
+
+  public static void on_config(double overlay_y)
+  { on_config(overlay_y, 0x00ffaa00, 0xaa333333, 0xaa333333, 0xaa444444); }
+
+  public static void on_config(double overlay_y, int text_color, int border_color, int background_color1, int background_color2)
+  {
+    overlay_y_ = overlay_y;
+    text_color_ = text_color;
+    border_color_ = border_color;
+    background_color1_ = background_color1;
+    background_color2_ = background_color2;
+  }
+
+  // -----------------------------------------------------------------------------
   // Client side handler
   // -----------------------------------------------------------------------------
 
@@ -55,30 +79,12 @@ public class Overlay
     public static final TextOverlayGui INSTANCE = new TextOverlayGui();
     public static final Component EMPTY_TEXT = Component.literal("");
     public static final BlockState EMPTY_STATE = null;
-    private static double overlay_y_ = 0.75;
-    private static int text_color_ = 0x00ffaa00;
-    private static int border_color_ = 0xaa333333;
-    private static int background_color1_ = 0xaa333333;
-    private static int background_color2_ = 0xaa444444;
     private static long text_deadline_ = 0;
     private static Component text_ = EMPTY_TEXT;
     private static long state_deadline_ = 0;
     private static @Nullable BlockState state_ = EMPTY_STATE;
     private static BlockPos pos_ = BlockPos.ZERO;
-    private net.minecraft.client.Minecraft mc;
 
-    public static void on_config(double overlay_y)
-    { on_config(overlay_y, 0x00ffaa00, 0xaa333333, 0xaa333333, 0xaa444444); }
-
-    public static void on_config(double overlay_y, int text_color, int border_color, int background_color1, int background_color2)
-    {
-      INSTANCE.mc = net.minecraft.client.Minecraft.getInstance();
-      overlay_y_ = overlay_y;
-      text_color_ = text_color;
-      border_color_ = border_color;
-      background_color1_ = background_color1;
-      background_color2_ = background_color2;
-    }
 
     public static synchronized Component text()
     { return text_; }
@@ -102,7 +108,7 @@ public class Overlay
     { return ((state_deadline_ < System.currentTimeMillis()) || (state_==EMPTY_STATE)) ? Optional.empty() : Optional.of(new Tuple<>(state_, pos_)); }
 
     TextOverlayGui()
-    { super(Component.literal("")); }
+    { super(Component.literal(ModConstants.MODID + "Overlay")); }
 
     @Environment(EnvType.CLIENT)
     public void onRenderGui(final net.minecraft.client.gui.GuiGraphics gg)

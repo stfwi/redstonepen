@@ -11,8 +11,8 @@ package wile.redstonepen.libmc;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
-import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -35,7 +35,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -64,10 +63,13 @@ import java.util.stream.Stream;
 @SuppressWarnings("deprecation")
 public class Auxiliaries
 {
-  private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
+  private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ModConstants.MODID);
+  private static boolean development_mode = false;
 
   public static void init()
-  {}
+  {
+    try { development_mode = new java.io.File(Auxiliaries.getGameDirectory().resolve(".redstonepen-dev").toString()).isFile(); } catch(Throwable ignored) {}
+  }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Mod specific exports
@@ -85,11 +87,16 @@ public class Auxiliaries
 
   public interface IExperimentalFeature {}
 
+  public static java.nio.file.Path getGameDirectory()
+  {
+    return FabricLoader.getInstance().getGameDir(); // Fabric
+  }
+
   public static boolean isModLoaded(final String registry_name)
   { return false; } // ModList.get().isLoaded(registry_name); }
 
   public static boolean isDevelopmentMode()
-  { return SharedConstants.IS_RUNNING_IN_IDE; }
+  { return development_mode; }
 
   @Environment(EnvType.CLIENT)
   @SuppressWarnings("all")
