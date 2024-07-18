@@ -79,9 +79,19 @@ approx. as fast as shared memory, and comes with minimal size overhead
 because the `java.nio` encompasses this functionality already. So there are
 two temporary files used as *anchor* for that mapping:
 
-  - `<tmp-directory>/redstonepen.i.mmap`: Input, read by the mod.
+  - Files *before* Minecraft 1.21:
+    - `<tmp-directory>/redstonepen.i.mmap`: Input, read by the mod.
+    - `<tmp-directory>/redstonepen.o.mmap`: Input, written by the mod.
 
-  - `<tmp-directory>/redstonepen.o.mmap`: Input, written by the mod.
+  - Files *since* Minecraft 1.21:
+    - `<game-directory>/redstonepen.i.mmap`: Input, read by the mod.
+    - `<game-directory>/redstonepen.o.mmap`: Input, written by the mod.
+
+    - The "game-directory" is where your current pack or "instance" is,
+      means there is also `logs`, `mods`, `saves`, `resourcepacks` etc
+      in there this directory. *Reason for the change: Some automatic
+      mod checkers trigger when mods contain code that accesses the
+      temporary directory.*
 
   - The mod does **not** create these files itself. The external adapter
     application has to do this. If the mod detects at game start that both
