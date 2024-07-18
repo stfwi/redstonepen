@@ -85,3 +85,7 @@ are in a in the [documentation here](documentation/redstone-logic-control/readme
 ![](documentation/rspen-quill-recipe.png)
 ![](documentation/rspen-penrecipe.png)
 ![](documentation/relay-recipe1.png)
+
+## Community and References
+
+Discord: As a platform for community exchange, the Redstone Pen has a channel on the [Modded Redstone Discord server](https://discord.gg/6K958GsWq5)  (ty Oka/Aerotactics for providing and moderating this).
