@@ -532,6 +532,9 @@ R = TIV1(20) # 1 tick on, 19 ticks off.
 R = TIV2(20, Y) # Pulse every 20 ticks if Y is ON, reset if Y is OFF.
 ```
 
+Note that the accepted minimum interval is 3 game ticks, so that the
+output is distinguishable with one redstone tick resolution.
+
 ##### Signal Counters
 
 Counters are, similar to timers, *instances* with an internal state
@@ -672,6 +675,21 @@ cycle the old value of `R` unless there is a rising
 edge at `Y`, then we take the inverted value. The next
 cycle, this inverted value is already the actual port
 value.
+
+#### Signal ON-Time Measurement
+
+The following simple program tracks the time between
+switching on and off `Y` in ticks. On a rising input
+edge, the current game time is latched (start time),
+and on the falling edge, the difference between that
+start time and the current clock value is latched.
+Hence, `DT` is updated every time `Y` is switched
+off, and contains the time how long it was on:
+
+```
+T0 = IF(Y.RE, CLOCK(), T0)
+DT = IF(Y.FE, CLOCK()-T0, DT)
+```
 
 #### Up/down Ramp
 

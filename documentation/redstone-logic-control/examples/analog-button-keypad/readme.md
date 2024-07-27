@@ -1,5 +1,5 @@
 
-### RCA Example: Using Analog Input for 3x3 Button Keypad
+### RLC Example: Using Analog Input for 3x3 Button Keypad
 
 This example originates in the door lock control setup by `McnzStone`,
 and uses one input (here `Y`ellow) to latch a 3x3 button code sequence.
