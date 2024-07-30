@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.11.36    [F] Fixed RLC preview rendering FOV inconsistency (issue #48, ty Meowca).
+                  [F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).
+                  [F] In-block-multi-track update regression fixed (#51, ty aerotactics).
+
     - v1.11.35    [M] RLC parser edited to indicate an error for unknown signal processing
                       identifiers (".CO", ".RE", ".FE"). (Issue #46, ty aerotactics).
                   [F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)

@@ -47,7 +47,11 @@ public class ModRedstonePenClient implements ClientModInitializer
       0x55333333,
       0x55444444
     );
-    WorldRenderEvents.AFTER_TRANSLUCENT.register((context)->Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(context.matrixStack(), context.tickCounter().getRealtimeDeltaTicks()));
+
+    WorldRenderEvents.BEFORE_BLOCK_OUTLINE.register((context, ignored)->{
+      Overlay.TextOverlayGui.INSTANCE.onRenderWorldOverlay(context.matrixStack(), context.tickCounter().getRealtimeDeltaTicks());
+      return true;
+    });
     if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {
       ClientTickEvents.END_CLIENT_TICK.register(ModRedstonePenClient::onPlayerTickEvent);
     }

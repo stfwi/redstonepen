@@ -64,11 +64,15 @@ import java.util.stream.Stream;
 public class Auxiliaries
 {
   private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ModConstants.MODID);
+  private static final String development_mode_control_file = ".redstonepen-dev";
   private static boolean development_mode = false;
 
   public static void init()
   {
-    try { development_mode = new java.io.File(Auxiliaries.getGameDirectory().resolve(".redstonepen-dev").toString()).isFile(); } catch(Throwable ignored) {}
+    try {
+      development_mode = new java.io.File(Auxiliaries.getGameDirectory().resolve(development_mode_control_file).toString()).isFile();
+    } catch(Throwable ignored) {
+    }
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -97,6 +101,9 @@ public class Auxiliaries
 
   public static boolean isDevelopmentMode()
   { return development_mode; }
+
+  public static String getDevelopmentModeControlFile()
+  { return development_mode_control_file; }
 
   @Environment(EnvType.CLIENT)
   @SuppressWarnings("all")

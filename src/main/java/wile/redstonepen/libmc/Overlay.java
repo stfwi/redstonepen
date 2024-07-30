@@ -138,20 +138,21 @@ public class Overlay
     {
       final Optional<Tuple<BlockState,BlockPos>> sp = state_pos();
       if(sp.isEmpty()) return;
-      final net.minecraft.client.multiplayer.ClientLevel world = net.minecraft.client.Minecraft.getInstance().level;
-      final Player player = net.minecraft.client.Minecraft.getInstance().player;
+      final var mc = net.minecraft.client.Minecraft.getInstance();
+      final net.minecraft.client.multiplayer.ClientLevel world = mc.level;
+      final Player player = mc.player;
       if((player==null) || (world==null)) return;
       final BlockState state = sp.get().getA();
       final BlockPos pos = sp.get().getB();
       @SuppressWarnings("deprecation")
       final int light = (world.hasChunkAt(pos)) ? net.minecraft.client.renderer.LightTexture.pack(world.getBrightness(LightLayer.BLOCK, pos), world.getBrightness(LightLayer.SKY, pos)) : net.minecraft.client.renderer.LightTexture.pack(15, 15);
-      final net.minecraft.client.renderer.MultiBufferSource buffer = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
+      final var buffer = mc.renderBuffers().bufferSource();
       final double px = Mth.lerp(partialTick, player.xo, player.getX());
       final double py = Mth.lerp(partialTick, player.yo, player.getY());
       final double pz = Mth.lerp(partialTick, player.zo, player.getZ());
       mxs.pushPose();
       mxs.translate((pos.getX()-px), (pos.getY()-py-player.getEyeHeight()), (pos.getZ()-pz));
-      net.minecraft.client.Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, mxs, buffer, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+      mc.getBlockRenderer().renderSingleBlock(state, mxs, buffer, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
       mxs.popPose();
     }
   }
