@@ -8,6 +8,8 @@
 #
 MOD_JAR_PREFIX=redstonepen-
 MOD_JAR=$(filter-out %-sources.jar,$(wildcard build/libs/${MOD_JAR_PREFIX}*.jar))
+export JAVA_HOME=$(JDK_HOME_17_0)
+export JDK_HOME=$(JDK_HOME_17_0)
 
 ifeq ($(OS),Windows_NT)
 GRADLE=gradlew.bat --no-daemon

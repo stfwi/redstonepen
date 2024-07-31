@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.8.37     [F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).
+                  [F] In-block-multi-track update regression fixed (#51, ty aerotactics).
+
     - v1.8.32     [A] Basic Lever, Button, and Pulse Button added.
                   [M] TICKRATE=t now ignores signal interrupts (makes
                       closed loop control simpler, issue #41).
