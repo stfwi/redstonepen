@@ -1,5 +1,7 @@
 package wile.api.rca;
 
+import wile.redstonepen.libmc.Auxiliaries;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -147,7 +149,7 @@ public class FmmRedstoneClientAdapter
      * @return System formatted IPC file path string representation.
      */
     public static String ipcIoPath(boolean mcSideOutput)
-    { return Path.of(System.getProperty("java.io.tmpdir"), "redstonepen").toString() + "." + (mcSideOutput ? 'o' : 'i') +".mmap"; }
+    { return Auxiliaries.getGameDirectory().resolve("redstonepen." + (mcSideOutput ? 'o' : 'i') +".mmap").toString(); } // Before 1.21: Path.of(System.getProperty("java.io.tmpdir")
 
     /**
      * Returns true if the feature is enabled. Initialized after

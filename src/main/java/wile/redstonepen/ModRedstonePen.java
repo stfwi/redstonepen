@@ -111,7 +111,7 @@ public class ModRedstonePen
     public static void onClientSetup(final FMLClientSetupEvent event)
     {
       Networking.OverlayTextMessage.setHandler(Overlay.TextOverlayGui::show);
-      Overlay.TextOverlayGui.on_config(0.75, 0x00ffaa00, 0x55333333, 0x55333333, 0x55444444);
+      Overlay.on_config(0.75, 0x00ffaa00, 0x55333333, 0x55333333, 0x55444444);
       BlockEntityRenderers.register((BlockEntityType<RedstoneTrack.TrackBlockEntity>)Registries.getBlockEntityTypeOfBlock("track"), wile.redstonepen.detail.ModRenderers.TrackTer::new);
       // Player client tick if RCA existing.
       if(wile.redstonepen.detail.RcaSync.ClientRca.init()) {

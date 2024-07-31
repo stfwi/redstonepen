@@ -1044,7 +1044,6 @@ public class ControlBox
         rca_input_mask = 0;
         rca_output_mask = 0;
         symbols_.clear();
-        final String[] suffixes = {"", ".re", ".fe", ".co", ".co.re", ".co.fe"};
         for(int i=0; i<Defs.PORT_NAMES.size(); ++i ) {
           final String port = Defs.PORT_NAMES.get(i);
           if(expressions_.symbols.contains(port+".co.re") || expressions_.symbols.contains(port+".co.fe")) {
@@ -1052,7 +1051,7 @@ public class ControlBox
           }
           if(expressions_.assignments.contains(port)) {
             output_mask |= 0xf<<(4*i);
-          } else if(Arrays.stream(suffixes).map(s->port+s).anyMatch(expressions_.symbols::contains)) {
+          } else if(Arrays.stream(MultiLineMathExpr.VALID_SYMBOL_SUFFIXES).map(s->port+s).anyMatch(expressions_.symbols::contains)) {
             input_mask |= 0xf<<(4*i);
           }
         }
@@ -1140,6 +1139,7 @@ public class ControlBox
     public static class MultiLineMathExpr
     {
       public static final MultiLineMathExpr EMPTY = new MultiLineMathExpr();
+      static final String[] VALID_SYMBOL_SUFFIXES = { "", ".re", ".fe", ".co", ".co.re", ".co.fe", ".pt", ".et" }; // comparator override, edges, timers
 
       public static class Entry
       {
@@ -1172,10 +1172,24 @@ public class ControlBox
             if(!entry.parsed.error.isEmpty()) {
               parse_errors.add(entry);
             } else {
-              symbols.addAll(entry.parsed.symbols);
-              if(entry.parsed.expression.type == MathExpr.ExprType.ASSIGN) {
-                entries.add(entry);
-                assignments.add(entry.parsed.assignment_symbol);
+              Optional<String> invalid_symbol = entry.parsed.symbols.stream().filter((sym)->{
+                final int pos = sym.indexOf('.');
+                if(pos < 0) return false;
+                if(pos >= sym.length()-1) return true; // ends with dot, suffix missing.
+                final String suffix = sym.substring(pos);
+                return !Arrays.asList(VALID_SYMBOL_SUFFIXES).contains(suffix);
+              }).findFirst();
+              if(invalid_symbol.isPresent()) {
+                entry.parsed.error = "parse_error";
+                entry.parsed.pe = entry.parsed.line.indexOf(invalid_symbol.get());
+                if(entry.parsed.pe < 0) entry.parsed.pe = entry.parsed.line.length()-1;
+                parse_errors.add(entry);
+              } else {
+                symbols.addAll(entry.parsed.symbols);
+                if(entry.parsed.expression.type == MathExpr.ExprType.ASSIGN) {
+                  entries.add(entry);
+                  assignments.add(entry.parsed.assignment_symbol);
+                }
               }
             }
           }
@@ -1391,10 +1405,10 @@ public class ControlBox
       {
         public final Expr expression;
         public final String assignment_symbol;
-        public final String error;
         public final String line;
         public final Set<String> symbols = new HashSet<>();
 
+        public String error;
         public int pe = -1;
         public char c = ' ';
         public final Map<String, ExprFuncDef> functions = new HashMap<>();

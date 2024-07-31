@@ -1,6 +1,7 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen",
  "1.21": {
+  "1.11.37": "[F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).\n[F] In-block-multi-track update regression fixed (#51, ty aerotactics).\n[M] RLC parser edited to indicate an error for unknown signal processing identifiers (\".CO\", \".RE\", \".FE\"). (Issue #46, ty aerotactics).\n[F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)\n[M] Log file tagging improved, Pen debugging capabilities added in release mode.\n[M] Moved RCA (Redstone Client Adapter) memory map file root from the tmpdir to the game directory, @see https://github.com/stfwi/redstonepen/tree/redstone-client-adapter.",
   "1.11.33": "[U] Updated to 1.21 neoforge.",
   "1.8.32": "[A] Basic Lever, Button, and Pulse Button added.\n[M] TICKRATE=t now ignores signal interrupts (makes closed loop control simpler, issue #41).\n[M] Refactoring to improve loader compatibility.",
   "1.8.31": "[F] Fixed RLC UI initialization locking (issue #40, ty shinchai).\n[F] Bridge Relay to Track update fixed.\n[F] RCA init order fixed.\n[M] RLC editor cursor brightness increased.",
@@ -44,7 +45,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.21-recommended": "1.11.33",
-  "1.21-latest": "1.11.33"
+  "1.21-recommended": "1.11.37",
+  "1.21-latest": "1.11.37"
  }
 }

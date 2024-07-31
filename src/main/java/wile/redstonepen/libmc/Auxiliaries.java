@@ -13,7 +13,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.fml.ModList;
 import net.minecraft.ChatFormatting;
-import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,7 +35,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -46,6 +44,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+
 import org.slf4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
@@ -65,10 +64,17 @@ import java.util.stream.Stream;
 @SuppressWarnings("deprecation")
 public class Auxiliaries
 {
-  private static final Logger logger = com.mojang.logging.LogUtils.getLogger();
+  private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ModConstants.MODID);
+  private static final String development_mode_control_file = ".redstonepen-dev";
+  private static boolean development_mode = false;
 
   public static void init()
-  {}
+  {
+    try {
+      development_mode = new java.io.File(Auxiliaries.getGameDirectory().resolve(development_mode_control_file).toString()).isFile();
+    } catch(Throwable ignored) {
+    }
+  }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Mod specific exports
@@ -86,11 +92,20 @@ public class Auxiliaries
 
   public interface IExperimentalFeature {}
 
+  public static java.nio.file.Path getGameDirectory()
+  {
+    // return FabricLoader.getInstance().getGameDir(); // Fabric
+    return net.neoforged.fml.loading.FMLLoader.getGamePath();
+  }
+
   public static boolean isModLoaded(final String registry_name)
   { return ModList.get().isLoaded(registry_name); }
 
   public static boolean isDevelopmentMode()
-  { return SharedConstants.IS_RUNNING_IN_IDE; }
+  { return development_mode; }
+
+  public static String getDevelopmentModeControlFile()
+  { return development_mode_control_file; }
 
   @OnlyIn(Dist.CLIENT)
   @SuppressWarnings("all")

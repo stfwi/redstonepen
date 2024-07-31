@@ -4,6 +4,17 @@
 ----
 ## Version history
 
+    - v1.11.37    [F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).
+                  [F] In-block-multi-track update regression fixed (#51, ty aerotactics).
+                  [M] RLC parser edited to indicate an error for unknown signal processing
+                      identifiers (".CO", ".RE", ".FE"). (Issue #46, ty aerotactics).
+                  [F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)
+                  [M] Log file tagging improved, Pen debugging capabilities added in
+                      release mode.
+                  [M] Moved RCA (Redstone Client Adapter) memory map file
+                      root from the tmpdir to the game directory, @see
+                      https://github.com/stfwi/redstonepen/tree/redstone-client-adapter.
+
     - v1.11.33    [U] Updated to 1.21 neoforge.
 
     - v1.8.32     [A] Basic Lever, Button, and Pulse Button added.
