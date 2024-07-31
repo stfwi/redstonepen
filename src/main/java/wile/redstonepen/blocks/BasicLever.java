@@ -35,7 +35,7 @@ import java.util.List;
 public class BasicLever
 {
   //--------------------------------------------------------------------------------------------------------------------
-  // DirectedComponentBlock
+  // BasicLeverBlock
   //--------------------------------------------------------------------------------------------------------------------
 
   public static class BasicLeverBlock extends net.minecraft.world.level.block.LeverBlock

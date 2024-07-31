@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.11.37    [F] In-block-multi-track update fix and performance cleanups.
+                  [E] Added Basic Redstone Gauge (*experimental*, signal display).
+                  [E] Added Redstone Remote (*experimental*, lever/button control).
+
     - v1.11.36    [F] Fixed RLC preview rendering FOV inconsistency (issue #48, ty Meowca).
                   [F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).
                   [F] In-block-multi-track update regression fixed (#51, ty aerotactics).

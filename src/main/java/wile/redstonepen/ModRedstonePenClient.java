@@ -40,6 +40,7 @@ public class ModRedstonePenClient implements ClientModInitializer
     Overlay.register();
     registerMenuGuis();
     registerBlockEntityRenderers();
+    processContentClientSide();
     Overlay.on_config(
       0.75,
       0x00ffaa00,
@@ -83,6 +84,7 @@ public class ModRedstonePenClient implements ClientModInitializer
   private static void processContentClientSide()
   {
     BlockRenderLayerMap.INSTANCE.putBlock(ModContent.references.TRACK_BLOCK, RenderType.cutout());
+    BlockRenderLayerMap.INSTANCE.putBlock(ModContent.references.BASIC_GAUGE_BLOCK, RenderType.translucent());
   }
 
 }

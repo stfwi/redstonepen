@@ -1,11 +1,10 @@
 /*
- * @file BaseItem.java
+ * @file RedstonePenItem.java
  * @author Stefan Wilhelm (wile)
  * @copyright (C) 2020 Stefan Wilhelm
  * @license MIT (see https://opensource.org/licenses/MIT)
  */
 package wile.redstonepen.items;
-
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

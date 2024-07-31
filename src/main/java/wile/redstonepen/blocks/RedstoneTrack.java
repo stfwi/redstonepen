@@ -852,7 +852,7 @@ public class RedstoneTrack
         if(p >= 15) break;
       }
       p = ((p <= 0) || (!(getLevel().getBlockState(getBlockPos().relative(own_side)).is(Blocks.REDSTONE_WIRE)))) ? p : (p-1);
-      if(trace_) Auxiliaries.logWarn(String.format("POWR: %s @%s==%d", posstr(getBlockPos()), redstone_side, p));
+      // if(trace_) Auxiliaries.logWarn(String.format("POWR: %s @%s==%d", posstr(getBlockPos()), redstone_side, p));
       return p;
     }
 
@@ -1079,38 +1079,19 @@ public class RedstoneTrack
       return p;
     }
 
-    private boolean isNetConnectedTo(TrackNet net, BlockPos otherPos, @Nullable TrackNet otherNet)
+    private boolean isNetConnectedTo(BlockPos pos, TrackNet net, BlockPos otherPos, @Nullable Direction otherSide, @Nullable TrackNet otherNet)
     {
-      if(otherNet == null) return net.neighbour_positions.stream().anyMatch(np->np.equals(otherPos)); // no track, other block.
-      final BlockPos pos = getBlockPos();
-      if(trace_) Auxiliaries.logWarn(String.format("NBCH:     isNetConnectedTo() pos=%s, net=%s ||| from=%s, fromnet=%s)?", posstr(pos), net, posstr(otherPos), otherNet));
+      if(otherNet == null) return net.neighbour_positions.stream().anyMatch(np->np.equals(otherPos)); // no track, only positional block-connection check.
       for(var i=0; i<net.neighbour_positions.size(); ++i) {
         if(!net.neighbour_positions.get(i).equals(otherPos)) continue;
         final Direction nb_side = net.neighbour_sides.get(i);
-        if(otherNet.internal_sides.contains(nb_side)) return true;
+        if((otherSide != null) && (!otherSide.equals(nb_side))) continue;
+        if(!otherNet.internal_sides.contains(nb_side)) continue;
+        //if(trace_) Auxiliaries.logWarn(String.format("NBCH:       -> isNetConnectedTo()==true, pos=%s, net=%s ||| from=%s, fromnet=%s)?", posstr(pos), net, posstr(otherPos), otherNet));
+        return true;
       }
+      //if(trace_) Auxiliaries.logWarn(String.format("NBCH:       -> isNetConnectedTo()==false, pos=%s, net=%s ||| from=%s, fromnet=%s)?", posstr(pos), net, posstr(otherPos), otherNet));
       return false;
-    }
-
-    private @Nullable TrackNet getNetTo(BlockPos otherPos, TrackNet otherNet, int entry_index)
-    {
-      final BlockPos pos = getBlockPos();
-      for(TrackNet net: nets_) {
-        for(int net_i=0; net_i<net.neighbour_positions.size(); ++net_i) {
-          final BlockPos nb_pos = net.neighbour_positions.get(net_i);
-          if(!nb_pos.equals(otherPos)) continue;
-          final Direction nb_side = net.power_sides.get(net_i);
-          if(pos.relative(nb_side).equals(otherPos)) {
-            if(trace_) Auxiliaries.logWarn(String.format("NBCH:     getNetTo(pos=%s, from=%s, fromnet=%s) no net.", posstr(pos), posstr(otherPos), otherNet));
-            // Straight line, the internal connections have to match.
-            if(otherNet.internal_sides.stream().noneMatch(net.internal_sides::contains)) return null;
-            // Otherwise it's a diagonal (around the corner) connection, there is only one posisble.
-          }
-          return net;
-        }
-      }
-      if(trace_) Auxiliaries.logWarn(String.format("NBCH:     getNetTo(pos=%s, from=%s, fromnet=%s) no net.", posstr(pos), posstr(otherPos), otherNet));
-      return null;
     }
 
     public Map<BlockPos,BlockPos> handleNeighborChanged(BlockPos fromPos)
@@ -1124,9 +1105,9 @@ public class RedstoneTrack
 
     public void handleNetNeighborChanged(TrackNet net, BlockPos fromPos, @Nullable TrackNet fromNet, @Nullable Map<BlockPos,BlockPos> change_notifications)
     {
-      if(!isNetConnectedTo(net, fromPos, fromNet)) return;
       record Neighbor(BlockPos pos, Direction side, int power, boolean direct_update, boolean needs_indirect) {}
       final BlockPos my_pos = getBlockPos();
+      if(!isNetConnectedTo(my_pos, net, fromPos, null, fromNet)) return;
       final Level world = getLevel();
       final List<Neighbor> neighbors = new LinkedList<>();
       if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s from %s (%s)", posstr(my_pos), posstr(fromPos), world.getBlockState(fromPos).getBlock().getDescriptionId()));
@@ -1140,23 +1121,15 @@ public class RedstoneTrack
           neighbors.add(new Neighbor(ext_pos, ext_side, p_vanilla_wire, false, false));
           pmax = Math.max(pmax, p_vanilla_wire-1);
         } else if(ext_state.is(getBlock())) {
-          // @todo: Cleanup block to monadic, this verbose if-if-if-if is for issue tracking in the IDE.
-          final var te = RedstoneTrackBlock.tile(world, ext_pos).orElse(null);
-          if(te != null) {
-            final List<TrackNet> connected_nets = te.nets_.stream().filter(nb_net->isNetConnectedTo(net, ext_pos, nb_net)).toList();
-            if(connected_nets.size() > 0) {
-              if(connected_nets.size() > 1) {
-                if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s from %s (%s) UNEXPECTED MORE THAN ONE TRACK CONNECTION.", posstr(my_pos), posstr(fromPos), world.getBlockState(fromPos).getBlock().getDescriptionId()));
-              }
-              final TrackNet nb_net = connected_nets.get(0);
-              final int p_track = Math.max(0, nb_net.power);
-              neighbors.add(new Neighbor(ext_pos, ext_side, p_track, true, false));
-              pmax = Math.max(pmax, p_track-1);
-            }
+          final TrackNet nb_net = RedstoneTrackBlock.tile(world, ext_pos).flatMap( te->te.nets_.stream().filter( nbn->isNetConnectedTo(my_pos, net, ext_pos, ext_side, nbn) ).findFirst() ).orElse(null);
+          if(nb_net != null) {
+            final int p_track = Math.max(0, nb_net.power);
+            neighbors.add(new Neighbor(ext_pos, ext_side, p_track, true, false));
+            pmax = Math.max(pmax, p_track-1);
           }
         } else if(ext_state.is(ModContent.references.BRIDGE_RELAY_BLOCK)) {
           final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
-          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, true/*@todo check, this should be no direct update/false*/, false));
+          neighbors.add(new Neighbor(ext_pos, ext_side, p_nowire, true, false));
           pmax = Math.max(pmax, p_nowire);
         } else {
           final int p_nowire = getNonWireSignal(world, ext_pos, ext_side.getOpposite());
@@ -1180,11 +1153,11 @@ public class RedstoneTrack
       if(!power_changed) {
         return;
       }
-      if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s updating %d neighbours ...", posstr(my_pos), neighbors.size()));
+      //if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s updating %d neighbours ...", posstr(my_pos), neighbors.size()));
       for(Neighbor neighbor: neighbors) {
         if(neighbor.direct_update) {
           if(world.getBlockEntity(neighbor.pos) instanceof TrackBlockEntity te) {
-            if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s trackupdate %s->%d", posstr(my_pos), posstr(neighbor.pos), pmax));
+            //if(trace_) Auxiliaries.logWarn(String.format("NBCH: %s trackupdate %s->%d", posstr(my_pos), posstr(neighbor.pos), pmax));
             for(var nb_net: te.nets_) {
               te.handleNetNeighborChanged(nb_net, my_pos, net, change_notifications);
             }

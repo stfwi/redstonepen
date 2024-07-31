@@ -35,7 +35,7 @@ import java.util.List;
 public class BasicButton
 {
   //--------------------------------------------------------------------------------------------------------------------
-  // DirectedComponentBlock
+  // BasicButtonBlock
   //--------------------------------------------------------------------------------------------------------------------
 
   public static class BasicButtonBlock extends net.minecraft.world.level.block.ButtonBlock
