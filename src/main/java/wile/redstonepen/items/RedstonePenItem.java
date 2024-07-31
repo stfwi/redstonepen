@@ -273,6 +273,10 @@ public class RedstonePenItem extends StandardItems.BaseItem
       }
       if(p > 0) tc = Auxiliaries.localizable("overlay.indirect_power", powerFormatted(p), max_side.toString()); // @todo: temporary workaround (direction untranslated). Direction may not have a component serialization since codecs are introduced.
     }
+    if(Auxiliaries.isDevelopmentMode()) {
+      final String look_dir = Direction.orderedByNearest(entity)[0].toString().substring(0, 1); // direct index addressing is safe here.
+      tc.append(Component.literal(String.format(" | %s [%d,%d,%d]", look_dir, pos.getX(), pos.getY(), pos.getZ())));
+    }
     Overlay.show((ServerPlayer)entity, tc, 400);
   }
 
