@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "redstonepen:quill_recipe"
+    ]
+  },
+  "criteria": {
+    "has_quill": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": ["minecraft:redstone", "minecraft:feather"] }]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "redstonepen:quill_recipe"
+      }
+    }
+  },
+  "requirements": [
+    [ "has_quill", "has_the_recipe" ]
+  ]
+}

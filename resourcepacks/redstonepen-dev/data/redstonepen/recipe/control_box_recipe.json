@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "QRQ",
+    "EPL",
+    "QGQ"
+  ],
+  "key": {
+    "R": { "item": "minecraft:redstone" },
+    "L": { "item": "minecraft:lapis_lazuli" },
+    "G": { "item": "minecraft:gold_ingot" },
+    "E": { "item": "minecraft:emerald" },
+    "Q": { "item": "minecraft:quartz" },
+    "P": { "item": "redstonepen:quill" }
+  },
+  "result": {
+    "id": "redstonepen:control_box",
+    "count": 1
+  }
+}

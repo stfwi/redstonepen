@@ -1,0 +1,10 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item": "redstonepen:control_box" }
+  ],
+  "result": {
+    "id": "redstonepen:control_box",
+    "count": 1
+  }
+}

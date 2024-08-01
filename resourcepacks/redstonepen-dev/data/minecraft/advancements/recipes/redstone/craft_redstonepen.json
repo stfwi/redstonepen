@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "redstonepen:pen_recipe"
+    ]
+  },
+  "criteria": {
+    "has_pen": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": ["minecraft:redstone_block", "minecraft:feather"] }]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "redstonepen:pen_recipe"
+      }
+    }
+  },
+  "requirements": [
+    [ "has_pen", "has_the_recipe" ]
+  ]
+}

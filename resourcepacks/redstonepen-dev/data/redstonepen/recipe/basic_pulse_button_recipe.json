@@ -1,0 +1,12 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "tag": "minecraft:wooden_buttons" },
+    { "item": "minecraft:iron_nugget" },
+    { "item": "minecraft:bone" }
+  ],
+  "result": {
+    "id": "redstonepen:basic_pulse_button",
+    "count": 1
+  }
+}

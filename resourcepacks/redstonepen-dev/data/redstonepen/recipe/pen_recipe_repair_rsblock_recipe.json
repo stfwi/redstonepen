@@ -1,0 +1,15 @@
+{
+  "type": "redstonepen:crafting_extended_shapeless",
+  "ingredients": [
+    { "item" : "minecraft:redstone_block" },
+    { "item": "redstonepen:pen" }
+  ],
+  "result": {
+    "id": "redstonepen:pen",
+    "count": 1
+  },
+  "aspects": {
+    "tool": "redstonepen:pen",
+    "tool_repair": 9
+  }
+}
