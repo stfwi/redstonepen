@@ -1,7 +1,9 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen/",
  "1.21": {
-  "1.11.37": "[F] In-block-multi-track update fix and performance cleanups.",
+  "1.11.39": "[F] Fixed Remote missing click event handling in survival mode.\n[M] Pen cannot break any blocks except Redstone wires/tracks.",
+  "1.11.38": "[M] Pen/Quill Track segment placement/removal now vanilla-like (right-click: place segment, left-click: remove segment).\n[F] Fixed loot table folder name (causing no drops on break).",
+  "1.11.37": "[F] In-block-multi-track update fix and performance cleanups.\n[E] Added Basic Redstone Gauge (*experimental*, signal display).\n[E] Added Redstone Remote (*experimental*, lever/button control).",
   "1.11.36": "[F] Fixed RLC preview rendering FOV inconsistency (issue #48, ty Meowca).\n[F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).\n[F] In-block-multi-track update regression fixed (#51, ty aerotactics).",
   "1.11.35": "[M] RLC parser edited to indicate an error for unknown signal processing identifiers (\".CO\", \".RE\", \".FE\"). (Issue #46, ty aerotactics).\n[F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)\n[M] Log file tagging improved, Pen debugging capabilities added in release mode.",
   "1.11.34": "[F] Fixed Pen recipes.\n[M] Moved RCA (Redstone Client Adapter) memory map file root from the tmpdir to the game directory, @see https://github.com/stfwi/redstonepen/tree/redstone-client-adapter.",
@@ -57,7 +59,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.21-recommended": "1.11.37",
-  "1.21-latest": "1.11.37"
+  "1.21-recommended": "1.11.39",
+  "1.21-latest": "1.11.39"
  }
 }
