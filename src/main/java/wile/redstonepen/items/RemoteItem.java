@@ -19,7 +19,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -68,30 +67,24 @@ public class RemoteItem extends StandardItems.BaseItem
   { return false; }
 
   @Override
+  public boolean isBarVisible(ItemStack stack)
+  { return false; }
+
+  @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
   {
-    if(!(player instanceof ServerPlayer splayer)) return false;
-    if((state.getBlock() instanceof LeverBlock) || (state.getBlock() instanceof ButtonBlock)) {
       final ItemStack stack = (player.getMainHandItem().getItem() instanceof RemoteItem) ? player.getMainHandItem() : player.getOffhandItem();
-      if(!(stack.getItem() instanceof RemoteItem)) return false;
-      final String name = state.getBlock().getDescriptionId();
-      setRemoteData(stack, pos, name);
-      Overlay.show(splayer, Auxiliaries.localizable("overlay.remote_saved", pos.getX(), pos.getY(), pos.getZ(), Component.translatable(name)), 1500);
-    }
+    attack(stack, pos, player);
     return false;
   }
 
   @Override
-  public float getDestroySpeed(ItemStack stack, BlockState state)
-  { return -1; }
-
-  @Override
-  public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity entity)
-  { return false; }
-
-  @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
-  { return false; }
+  { attack(stack, pos, player); return false; }
+
+  @Override
+  public float getDestroySpeed(ItemStack stack, BlockState state)
+  { return 10000f; }
 
   @Override
   public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand)
@@ -152,4 +145,16 @@ public class RemoteItem extends StandardItems.BaseItem
     Auxiliaries.setItemStackNbt(stack, "remote", nbt);
   }
 
+  private boolean attack(ItemStack stack, BlockPos pos, Player player)
+  {
+    if(!(stack.getItem() instanceof RemoteItem)) return false;
+    if(!(player instanceof ServerPlayer splayer)) return false;
+    final BlockState state = splayer.serverLevel().getBlockState(pos);
+    if((state.getBlock() instanceof LeverBlock) || (state.getBlock() instanceof ButtonBlock)) {
+      final String name = state.getBlock().getDescriptionId();
+      setRemoteData(stack, pos, name);
+      Overlay.show(splayer, Auxiliaries.localizable("overlay.remote_saved", pos.getX(), pos.getY(), pos.getZ(), Component.translatable(name)), 1500);
+    }
+    return true;
+  }
 }

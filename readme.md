@@ -4,6 +4,9 @@
 ----
 ## Version history
 
+    - v1.11.39    [F] Fixed Remote missing click event handling in survival mode.
+                  [M] Pen cannot break any blocks except Redstone wires/tracks.
+
     - v1.11.38    [M] Pen/Quill Track segment placement/removal now vanilla-like
                       (right-click: place segment, left-click: remove segment).
                   [F] Fixed loot table folder name (causing no drops on break).

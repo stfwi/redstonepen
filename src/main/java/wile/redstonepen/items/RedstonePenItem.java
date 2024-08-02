@@ -86,7 +86,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   @Override
   public float getDestroySpeed(ItemStack stack, BlockState state)
-  { return (state.getBlock().defaultDestroyTime() < 0.5f) ? 1f : 0f; }
+  { return (state.getBlock().defaultDestroyTime() < 0.5f) ? 10000f : 0f; }
 
   @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
@@ -95,13 +95,13 @@ public class RedstonePenItem extends StandardItems.BaseItem
     ItemStack stack = player.getItemInHand(player.getUsedItemHand());
     if(!isPen(stack)) stack = player.getMainHandItem();
     if(!isPen(stack)) stack = player.getOffhandItem();
-    if(!isPen(stack)) return false;
-    return (!attack(stack, pos, player));
+    if(isPen(stack)) attack(stack, pos, player);
+    return false;
   }
 
   @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
-  { return (!attack(stack, pos, player)); }
+  { attack(stack, pos, player); return false; }
 
   @Override
   public InteractionResult useOn(UseOnContext context)

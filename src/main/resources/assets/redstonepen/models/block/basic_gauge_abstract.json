@@ -1,6 +1,7 @@
 {
 	"parent": "block/block",
 	"ambientocclusion": false,
+  "render_type": "translucent",
 	"textures": {
 		"particle": "#disp",
 		"disp": "#disp",
