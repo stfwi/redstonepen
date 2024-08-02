@@ -1,5 +1,5 @@
 /*
- * @file BaseItem.java
+ * @file RedstonePenItem.java
  * @author Stefan Wilhelm (wile)
  * @copyright (C) 2020 Stefan Wilhelm
  * @license MIT (see https://opensource.org/licenses/MIT)
@@ -14,13 +14,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -35,8 +32,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import wile.redstonepen.ModConstants;
 import wile.redstonepen.ModContent;
-import wile.redstonepen.blocks.CircuitComponents;
-import wile.redstonepen.blocks.ControlBox;
 import wile.redstonepen.blocks.RedstoneTrack;
 import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.*;
@@ -91,67 +86,26 @@ public class RedstonePenItem extends StandardItems.BaseItem
   { return true; }
 
   @Override
-  public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
-  {
-    if(state.getDestroySpeed(world, pos) > 0) return false;
-    if(state.getShape(world, pos).isEmpty()) return false;
-    if(state.getBlock() instanceof DiodeBlock) return false;
-    if(state.getBlock() instanceof CircuitComponents.DirectedComponentBlock) return false;
-    if(state.getBlock() instanceof ControlBox.ControlBoxBlock) return false;
-    return true;
-  }
-
-  @Override // not really needed, canAttack=false
   public float getDestroySpeed(ItemStack stack, BlockState state)
-  { return -1; }
+  { return (state.getBlock().defaultDestroyTime() < 0.5f) ? 10000f : 0f; }
 
   @Override
-  public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity entity)
+  public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
   {
-    if(!(entity instanceof Player player)) return true;
-    if(state.getBlock() instanceof DiodeBlock) return false;
-    if(state.is(Blocks.REDSTONE_WIRE)) {
-      pushRedstone(stack, 1, player);
-      world.removeBlock(pos, false);
-      return true;
-    }
-    if(state.is(ModContent.references.TRACK_BLOCK)) {
-      HitResult rt = player.pick(10.0, 0f, false);
-      if(rt.getType() != HitResult.Type.BLOCK) return false;
-      final InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-      if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track) {
-        track.onBlockActivated(state, player.getCommandSenderWorld(), pos, player, stack, hand, ((BlockHitResult)rt), true);
-        return true;
-      }
-    }
-    return (state.getDestroySpeed(world, pos) != 0);
+    // Hand needs to be guessed here.
+    ItemStack stack = player.getItemInHand(player.getUsedItemHand());
+    if(!isPen(stack)) stack = player.getMainHandItem();
+    if(!isPen(stack)) stack = player.getOffhandItem();
+    if(isPen(stack)) attack(stack, pos, player);
+    return false;
   }
 
   @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
-  {
-    final Level world = player.getCommandSenderWorld();
-    final BlockState state = world.getBlockState(pos);
-    if(state.getBlock() instanceof RepeaterBlock) return false;
-    if(state.is(Blocks.REDSTONE_WIRE)) {
-      pushRedstone(stack, 1, player);
-      world.removeBlock(pos, false);
-      return true;
-    }
-    if(state.is(ModContent.references.TRACK_BLOCK)) {
-      HitResult rt = player.pick(10.0, 0f, false);
-      if(rt.getType() != HitResult.Type.BLOCK) return false;
-      InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-      if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track) {
-        track.onBlockActivated(state, player.getCommandSenderWorld(), pos, player, stack, hand, ((BlockHitResult)rt), true);
-        return true;
-      }
-    }
-    return (state.getDestroySpeed(world, pos) != 0);
-  }
+  { attack(stack, pos, player); return false; }
 
   @Override
-  public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context)
+  public InteractionResult useOn(UseOnContext context)
   {
     final Player player = context.getPlayer();
     final InteractionHand hand = context.getHand();
@@ -159,45 +113,36 @@ public class RedstonePenItem extends StandardItems.BaseItem
     final Direction facing = context.getClickedFace();
     final Level world = context.getLevel();
     final BlockState state = world.getBlockState(pos);
-    if(state.is(Blocks.REDSTONE_WIRE)) {
-      if(context.getLevel().isClientSide()) return InteractionResult.SUCCESS;
-      pushRedstone(stack, 1, player);
-      world.removeBlock(pos, false);
-      world.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.4f, 2f);
-      return InteractionResult.CONSUME;
-    }
+    final ItemStack stack = context.getItemInHand();
+    // Add to track
     if(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track) {
-      // Add/remove tracks to existing RedstoneTrackBlock
-      if(context.getLevel().isClientSide()) return InteractionResult.SUCCESS;
+      if(world.isClientSide()) return InteractionResult.SUCCESS;
       final BlockHitResult rtr = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), context.isInside());
-      return track.onBlockActivated(state, world, pos, player, stack, hand, rtr, stack.isEmpty());
+      return track.modifySegments(state, world, pos, player, stack, hand, rtr, false, true);
     }
+    // Check if a new track can be placed.
     if(!RedstoneTrack.RedstoneTrackBlock.canBePlacedOnFace(state, world, pos, facing)) {
       // Cannot place here.
-      return InteractionResult.PASS;
+      return InteractionResult.FAIL;
     }
-    if(context.getLevel().isClientSide()) return InteractionResult.SUCCESS;
+    if(world.isClientSide()) return InteractionResult.SUCCESS;
+    // Place new track
     final BlockPos target_pos = pos.relative(facing);
     final BlockState target_state = world.getBlockState(target_pos);
     if(target_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track_block) {
       // Add/remove tracks to existing RedstoneTrackBlock
       final BlockHitResult rtr = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), target_pos, context.isInside());
-      return track_block.onBlockActivated(target_state, world, target_pos, player, stack, hand, rtr, false);
+      return track_block.modifySegments(target_state, world, target_pos, player, stack, hand, rtr, false, true);
     } else {
       final BlockHitResult rtr = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), target_pos, context.isInside());
-      final BlockPlaceContext ctx = new BlockPlaceContext(context.getPlayer(), context.getHand(), new ItemStack(Items.REDSTONE), rtr);
+      final BlockPlaceContext ctx = new BlockPlaceContext(player, context.getHand(), new ItemStack(Items.REDSTONE), rtr);
       final BlockState rs_state = ModContent.references.TRACK_BLOCK.getStateForPlacement(ctx);
       if(rs_state==null) return InteractionResult.FAIL;
       if(!target_state.canBeReplaced(ctx)) return InteractionResult.FAIL;
       if(!world.setBlock(target_pos, rs_state, 1|2|16)) return InteractionResult.FAIL;
       final BlockState placed_state = world.getBlockState(target_pos);
       if(placed_state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track_block) {
-        if(track_block.onBlockActivated(target_state, world, target_pos, player, stack, hand, rtr, false)==InteractionResult.FAIL) {
-          return InteractionResult.FAIL;
-        } else {
-          track_block.checkSmartPlacement(placed_state, world, target_pos, player, hand, rtr);
-          return InteractionResult.CONSUME; // Stack damage already set in onBlockActivated()
-        }
+        return (track_block.modifySegments(target_state, world, target_pos, player, stack, hand, rtr, false, true) == InteractionResult.FAIL) ? InteractionResult.FAIL : InteractionResult.CONSUME;
       } else {
         world.removeBlock(target_pos, false);
         return InteractionResult.FAIL;
@@ -209,7 +154,7 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public void inventoryTick(ItemStack stack, Level world, Entity entity, int itemSlot, boolean isSelected)
   {
     if((!isSelected) || (!entity.isShiftKeyDown()) || (world.isClientSide()) || ((world.getGameTime() & 0x1) != 0) || (!(entity instanceof ServerPlayer))) return;
-    HitResult rt = entity.pick(10.0, 0f, false);
+    final HitResult rt = entity.pick(10.0, 0f, false);
     if(rt.getType() != HitResult.Type.BLOCK) return;
     final BlockHitResult brtr = (BlockHitResult)rt;
     final BlockPos pos = brtr.getBlockPos();
@@ -279,8 +224,25 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   //------------------------------------------------------------------------------------------------------------------
 
-  private String powerFormatted(int p)
-  { return String.format("%02d", p); }
+  private boolean attack(ItemStack stack, BlockPos pos, Player player)
+  {
+    final Level world = player.getCommandSenderWorld();
+    final BlockState state = world.getBlockState(pos);
+    if(state.is(ModContent.references.TRACK_BLOCK)) {
+      final HitResult rt = player.pick(10.0, 0f, false);
+      if(rt.getType() != HitResult.Type.BLOCK) return false;
+      final InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+      if(!(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track)) return false;
+      track.modifySegments(state, player.getCommandSenderWorld(), pos, player, stack, hand, ((BlockHitResult)rt), true, false);
+      return true;
+    } else if(state.is(Blocks.REDSTONE_WIRE)) {
+      pushRedstone(stack, 1, player);
+      world.removeBlock(pos, false);
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   //------------------------------------------------------------------------------------------------------------------
 
@@ -364,5 +326,8 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   public static boolean isPen(ItemStack stack)
   { return (stack.getItem() instanceof RedstonePenItem); }
+
+  private String powerFormatted(int p)
+  { return String.format("%02d", p); }
 
 }

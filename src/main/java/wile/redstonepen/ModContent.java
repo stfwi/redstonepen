@@ -6,6 +6,7 @@
  */
 package wile.redstonepen;
 
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.SoundType;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import wile.redstonepen.blocks.*;
 import wile.redstonepen.items.RedstonePenItem;
+import wile.redstonepen.items.RemoteItem;
 import wile.redstonepen.libmc.StandardBlocks;
 import wile.redstonepen.libmc.Auxiliaries;
 import wile.redstonepen.libmc.Registries;
@@ -32,12 +34,27 @@ public class ModContent
 
   public static void initBlocks()
   {
+    final BlockBehaviour.StateArgumentPredicate<EntityType<?>> never = (w,s,p,e)->false;
+
     Registries.addBlock("track",
       ()->new RedstoneTrack.RedstoneTrackBlock(
         StandardBlocks.CFG_DEFAULT,
         BlockBehaviour.Properties.of().noCollission().instabreak().dynamicShape().randomTicks()
       ),
       RedstoneTrack.TrackBlockEntity::new
+    );
+    Registries.addBlock("control_box",
+      ()->new ControlBox.ControlBoxBlock(
+        StandardBlocks.CFG_CUTOUT,
+        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        new AABB[]{
+          Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
+          Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
+        }
+      ),
+      CircuitComponents.DirectedComponentBlockItem::new,
+      ControlBox.ControlBoxBlockEntity::new,
+      ControlBox.ControlBoxUiContainer::new
     );
     Registries.addBlock("relay",
       ()->new CircuitComponents.RelayBlock(
@@ -55,16 +72,16 @@ public class ModContent
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
-    Registries.addBlock("bistable_relay",
-      ()->new CircuitComponents.BistableRelayBlock(
+    Registries.addBlock("pulse_relay",
+      ()->new CircuitComponents.PulseRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
-    Registries.addBlock("pulse_relay",
-      ()->new CircuitComponents.PulseRelayBlock(
+    Registries.addBlock("bistable_relay",
+      ()->new CircuitComponents.BistableRelayBlock(
         StandardBlocks.CFG_CUTOUT,
         BlockBehaviour.Properties.of().noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
@@ -79,46 +96,42 @@ public class ModContent
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
-    Registries.addBlock("control_box",
-      ()->new ControlBox.ControlBoxBlock(
-        StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
-        new AABB[]{
-          Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
-          Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
-        }
-      ),
-      CircuitComponents.DirectedComponentBlockItem::new,
-      ControlBox.ControlBoxBlockEntity::new,
-      ControlBox.ControlBoxUiContainer::new
+    Registries.addBlock("basic_gauge",
+      ()->new BasicGauge.BasicGaugeBlock(
+        StandardBlocks.CFG_TRANSLUCENT,
+        BlockBehaviour.Properties.of().isValidSpawn(never).strength(0.3f).sound(SoundType.COPPER).noCollission().lightLevel((s)->3)
+      )
     );
     Registries.addBlock("basic_lever",
       ()->new BasicLever.BasicLeverBlock(
         new BasicLever.BasicLeverBlock.Config(0.8f, 0.9f),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_button",
       ()->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 20),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_pulse_button",
       ()->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 2),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn((s,w,p,b)->false).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
   }
 
   public static void initItems()
   {
-    Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).stacksTo(64).durability(0)
-    ));
     Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).stacksTo(1).durability(256)
+      (new Item.Properties()).stacksTo(0).durability(256)
+    ));
+    Registries.addItem("quill", ()->new RedstonePenItem(
+      (new Item.Properties()).stacksTo(1).durability(0)
+    ));
+    Registries.addItem("remote", ()->new RemoteItem(
+      (new Item.Properties()).stacksTo(1).durability(1)
     ));
   }
 
@@ -127,6 +140,7 @@ public class ModContent
     references.TRACK_BLOCK = (RedstoneTrack.RedstoneTrackBlock)Registries.getBlock("track");
     references.BRIDGE_RELAY_BLOCK = (CircuitComponents.BridgeRelayBlock)Registries.getBlock("bridge_relay");
     references.CONTROLBOX_BLOCK = (ControlBox.ControlBoxBlock)Registries.getBlock("control_box");
+    references.BASIC_GAUGE_BLOCK = (BasicGauge.BasicGaugeBlock)Registries.getBlock("basic_gauge");
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -150,6 +164,7 @@ public class ModContent
     public static RedstoneTrack.RedstoneTrackBlock TRACK_BLOCK = null;
     public static CircuitComponents.BridgeRelayBlock BRIDGE_RELAY_BLOCK = null;
     public static ControlBox.ControlBoxBlock CONTROLBOX_BLOCK = null;
+    public static BasicGauge.BasicGaugeBlock BASIC_GAUGE_BLOCK = null;
   }
 
 }

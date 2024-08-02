@@ -41,8 +41,8 @@ public class Registries
   private static final List<Tuple<String, Supplier<? extends RecipeSerializer<?>>>> recipe_serializers_suppliers = new ArrayList<>();
   private static final List<String> block_item_order = new ArrayList<>();
 
-  private static final Map<String, Block> registered_blocks = new HashMap<>();
-  private static final Map<String, Item> registered_items = new HashMap<>();
+  private static final Map<String, Block> registered_blocks = new LinkedHashMap<>();
+  private static final Map<String, Item> registered_items = new LinkedHashMap<>();
   private static final Map<String, BlockEntityType<?>> registered_block_entity_types = new HashMap<>();
   private static final Map<String, EntityType<?>> registered_entity_types = new HashMap<>();
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();

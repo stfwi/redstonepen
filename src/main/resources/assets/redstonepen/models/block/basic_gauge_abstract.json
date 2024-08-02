@@ -1,0 +1,42 @@
+{
+	"parent": "block/block",
+	"ambientocclusion": false,
+  "render_type": "translucent",
+	"textures": {
+		"particle": "#disp",
+		"disp": "#disp",
+		"inner": "redstonepen:block/basic_gauge_inner"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#disp"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#disp"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#disp"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#disp"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#disp"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#disp"}
+			}
+		},
+		{
+			"from": [1, 1, 1],
+			"to": [15, 15, 15],
+			"faces": {
+				"north": {"uv": [1, 1, 15, 15], "texture": "#inner"},
+				"east": {"uv": [1, 1, 15, 15], "texture": "#inner"},
+				"south": {"uv": [1, 1, 15, 15], "texture": "#inner"},
+				"west": {"uv": [1, 1, 15, 15], "texture": "#inner"},
+				"up": {"uv": [1, 1, 15, 15], "texture": "#inner"},
+				"down": {"uv": [1, 1, 15, 15], "texture": "#inner"}
+			}
+		}
+	],
+	"display": {
+		"firstperson_righthand": {
+			"rotation": [0, 135, 0],
+			"scale": [0.4, 0.4, 0.4]
+		}
+	}
+}

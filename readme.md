@@ -4,6 +4,14 @@
 ----
 ## Version history
 
+    - v1.11.38    [F] Fixed loot table folder name (causing no drops on break).
+                  [F] In-block-multi-track update fix and performance cleanups.
+                  [M] Pen/Quill Track segment placement/removal now vanilla-like
+                      (right-click: place segment, left-click: remove segment).
+                  [M] Pen cannot break any blocks except Redstone wires/tracks.
+                  [A] Added Basic Redstone Gauge (*experimental* signal display).
+                  [A] Added Redstone Remote (*experimental* lever/button control).
+
     - v1.11.37    [F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).
                   [F] In-block-multi-track update regression fixed (#51, ty aerotactics).
                   [M] RLC parser edited to indicate an error for unknown signal processing

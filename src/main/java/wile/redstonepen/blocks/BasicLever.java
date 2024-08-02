@@ -35,7 +35,7 @@ import java.util.List;
 public class BasicLever
 {
   //--------------------------------------------------------------------------------------------------------------------
-  // DirectedComponentBlock
+  // BasicLeverBlock
   //--------------------------------------------------------------------------------------------------------------------
 
   public static class BasicLeverBlock extends net.minecraft.world.level.block.LeverBlock
@@ -74,8 +74,8 @@ public class BasicLever
     {
       for(int i=0; i<2; ++i) {
         final Vec3 vpos = Vec3.atCenterOf(pos)
-                .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getNormal()).scale(0.1))
-                .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getNormal()).scale(0.2));
+          .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getNormal()).scale(0.1))
+          .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getNormal()).scale(0.2));
         world.addParticle(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, f), vpos.x(), vpos.y(), vpos.z(), 0.0, 0.0, 0.0);
       }
     }
