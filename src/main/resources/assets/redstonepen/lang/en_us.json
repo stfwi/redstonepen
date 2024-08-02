@@ -51,7 +51,7 @@
   "block.redstonepen.relay.help": "Re-lays incoming signals from the back and the sides to the front with output power 15. Switches on immediately, the switch-off delay is one redstone tick.\nAlso accepts indirect input power from Tracks (connected to a block that propagates redstone signals).",
   "block.redstonepen.track": "Redstone Track",
   "item.redstonepen.pen": "Redstone Pen",
-  "item.redstonepen.pen.help": "Refillable pen used to draw or remove thin Redstone Tracks in all directions. These tracks do normally §lnot§r power the blocks they are placed on (click the center of a track to explicitly place/remove a connector). Sneak while looking at blocks to see what Redstone signal they currently have. Repair with Redstone in your crafting inventory.\nToo many tracks at unconnected faces in one block cause cross-talk and will not work, simply re-route then.",
+  "item.redstonepen.pen.help": "Refillable pen used to draw or remove thin Redstone Tracks in all directions.\nRight-click=place, left-click=remove, sneak:allow center-connectors.\nTracks do normally §lnot§r power the blocks they are placed on (click the center of a track to explicitly place/remove a connector). Sneak while looking at blocks to see what Redstone signal they currently have. Repair with Redstone in your crafting inventory.\nToo many tracks at unconnected faces in one block cause cross-talk and will not work, simply re-route then.",
   "item.redstonepen.pen.tooltip.numstored": "%1$s redstone stored",
   "item.redstonepen.pen.tooltip.rsfrominventory": "Uses redstone in your inventory",
   "item.redstonepen.quill": "Redstone Quill",

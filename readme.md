@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.11.38    [M] Pen/Quill Track segment placement/removal now vanilla-like
+                      (right-click: place segment, left-click: remove segment).
+                  [F] Fixed loot table folder name (causing no drops on break).
+
     - v1.11.37    [F] In-block-multi-track update fix and performance cleanups.
                   [E] Added Basic Redstone Gauge (*experimental*, signal display).
                   [E] Added Redstone Remote (*experimental*, lever/button control).
