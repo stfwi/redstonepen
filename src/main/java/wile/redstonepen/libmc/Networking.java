@@ -197,14 +197,17 @@ public class Networking
     protected static final String PACKET_ID = "nns2c";
     public static final Map<String, Consumer<CompoundTag>> handlers = new HashMap<>();
 
-    public static void sendToPlayer(Player player, CompoundTag nbt)
+    public static void sendToPlayer(Player player, String handler, CompoundTag nbt)
     {
-      if((nbt==null) || (!(player instanceof ServerPlayer splayer))) return;
-      sendToClient(splayer, PACKET_ID, nbt);
+      if((nbt==null) || (handler==null) || (!(player instanceof ServerPlayer splayer))) return;
+      final CompoundTag msg = new CompoundTag();
+      msg.putString("hnd", handler);
+      msg.put("nbt", nbt);
+      sendToClient(splayer, PACKET_ID, msg);
     }
 
     public static void sendToPlayers(Level world, String handler, CompoundTag nbt)
-    { if(world!=null) for(Player player: world.players()) sendToPlayer(player, nbt); }
+    { if(world!=null) for(Player player: world.players()) sendToPlayer(player, handler, nbt); }
   }
 
   //--------------------------------------------------------------------------------------------------------------------

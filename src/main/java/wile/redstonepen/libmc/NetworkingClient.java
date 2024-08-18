@@ -121,9 +121,12 @@ public class NetworkingClient
   @Environment(EnvType.CLIENT)
   public static class PacketNbtNotifyClientToServer extends Networking.PacketNbtNotifyClientToServer
   {
-    public static void sendToServer(CompoundTag nbt)
+    public static void sendToServer(String handlerId, CompoundTag nbt)
     {
-      send(PacketNbtNotifyClientToServer.PACKET_ID, nbt);
+      CompoundTag msg = new CompoundTag();
+      msg.putString("hnd", handlerId);
+      msg.put("nbt", nbt);
+      send(PacketNbtNotifyClientToServer.PACKET_ID, msg);
     }
   }
 

@@ -562,7 +562,7 @@ public class RedstoneTrack
       if(!RedstonePenItem.hasEnoughRedstone(stack, 1, player)) no_add = !no_remove;
       TrackBlockEntity te = tile(world, pos).orElse(null);
       if(te==null) return InteractionResult.FAIL;
-      final boolean no_bulk = !player.isCrouching(); // Sneak-click to enable adding bulk connectors.
+      final boolean no_bulk = false; //!player.isCrouching(); // Sneak-click to enable adding bulk connectors.
       int redstone_use = te.modifySegments(pos, player, player.getItemInHand(hand), rtr.getDirection(), rtr.getLocation(), no_add, no_remove, no_bulk);
       if(redstone_use == 0) {
         return InteractionResult.CONSUME;

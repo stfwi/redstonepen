@@ -4,6 +4,10 @@
 ----
 ## Version history
 
+    - v1.11.40    [A] Redstone Remote can now enable/disable Redstone Logic Controls.
+                  [M] Adapted Pen bulk connector placement (no sneak required now).
+                  [F] Fixed RCA client sync (adapted to changed networking).
+
     - v1.11.39    [F] Fixed Remote missing click event handling in survival mode.
                   [M] Pen cannot break any blocks except Redstone wires/tracks.
 

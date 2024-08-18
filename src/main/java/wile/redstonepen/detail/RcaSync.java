@@ -77,7 +77,7 @@ public class RcaSync
           rca.client_inputs(nbt.getLong("i"));
           nbt.remove("i");
           nbt.putLong("o", rca.server_outputs());
-          Networking.PacketNbtNotifyServerToClient.sendToPlayer(player, nbt);
+          Networking.PacketNbtNotifyServerToClient.sendToPlayer(player, "rcadata", nbt);
         } catch(Throwable ignored) {
           ++num_exceptions;
         }
@@ -107,9 +107,8 @@ public class RcaSync
       if(rca == null) return;
       rca.tick();
       CompoundTag nbt = new CompoundTag();
-      nbt.putString("hnd", MESSAGE_HANDLER_ID);
       nbt.putLong("i", rca.getInputs());
-      NetworkingClient.PacketNbtNotifyClientToServer.sendToServer(nbt);
+      NetworkingClient.PacketNbtNotifyClientToServer.sendToServer(MESSAGE_HANDLER_ID, nbt);
       rca.setInputsChanged(false);
     }
   }
