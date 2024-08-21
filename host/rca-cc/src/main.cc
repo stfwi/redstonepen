@@ -24,11 +24,11 @@ int main(int argc, const char* argv[])
   using namespace std;
   using util::println;
 
-  // Get the time after which the programm shall be aborted via CLI arg, default 1min.
+  // Get the time after which the program shall be aborted via CLI arg, default 1min.
   const auto args = util::cli_arguments<std::string_view>(argc, argv);
   auto test_run_time = uint32_t(60000); // ms
   if(args.size() > 0) {
-    const auto deadline_ms = util::to_number<uint32_t>(std::string(args.front()));
+    const auto deadline_ms = util::to_number<uint32_t>(std::string(args[0]));
     if(!deadline_ms.has_value()) {
       println("Only CLI argument possible for this example is the test run time in milliseconds.");
       return 1;
@@ -37,11 +37,24 @@ int main(int argc, const char* argv[])
       println("Test run-time set to", test_run_time, "via CLI argument.");
     }
   }
+  auto rca_io_directory = (args.size() > 1) ? string(args[1]) : string();
+  if(rca_io_directory.empty()) {
+    // Auto detect in if the program was placed in the game directory or
+    // a sub-directory.
+    static constexpr auto gamedir_marker_file = "usercache.json";
+    const auto cwd = filesystem::current_path();
+    if(filesystem::is_regular_file(cwd / gamedir_marker_file)) {
+      rca_io_directory = cwd.string();
+    } else if(filesystem::is_regular_file(cwd.parent_path() / gamedir_marker_file)) {
+      rca_io_directory = cwd.parent_path().string();
+    }
+  }
+  println("Using RCA I/O files in directory", rca_io_directory, ".");
 
   // Create and open RCA
   auto rca = rca::rlc_client_adapter();
   try {
-    rca.open();
+    rca.open(rca_io_directory);
     rca.set_inputs(0);
   } catch(const std::exception& e) {
     println("Error: ", e.what());

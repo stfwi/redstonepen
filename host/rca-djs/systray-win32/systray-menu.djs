@@ -6,8 +6,16 @@ app.icon("icons/gunpowder.ico");  // Initial icon
 app.tooltip("RCA - Serial Port");
 app.timer(10);                    // 10ms `app.events.on_timer()` period.
 
+const rca_basedir = (function(){
+  const gamedir_marker_file = "usercache.json";
+  const cwd = fs.dirname(fs.cwd()); // systray directory nested in the rca-djs directory.
+  if(fs.isfile(cwd + "/" + gamedir_marker_file)) return cwd;
+  if(fs.isfile(fs.dirname(cwd) + "/" + gamedir_marker_file)) return fs.dirname(cwd);
+  return fs.tmpdir();
+})();
+
 const tty = new sys.serialport();
-const rca = new RedstoneClientAdapter(false);
+const rca = new RedstoneClientAdapter(false, rca_basedir);
 
 const state = {
   settings: {

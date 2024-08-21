@@ -144,23 +144,25 @@ namespace rca {
   public: // Methods
 
     /**
-     * Opens input and output map files,
-     * throws std::runtime_error on error.
+     * Opens input and output map files, throws std::runtime_error on error.
+     * Note: Since mod versions on Minecraft 1.20.4, the game directory is
+     * used for the i/o memory map files.
      * @throw std::runtime_error
      * @return void
      */
-    void open()
+    void open(std::string game_directory="")
     {
       using namespace std::filesystem;
       close();
-      const auto mod_inp_file = (path(temp_directory_path().string()) / mod_input_file_name()).string();
+      if(game_directory == "") game_directory = temp_directory_path().string();
+      const auto mod_inp_file = (path(game_directory) / mod_input_file_name()).string();
       if(!inp_.open(mod_inp_file, inp_.flag_shared|inp_.flag_readwrite, num_redstone_channels(), 0)) {
-        throw std::runtime_error(std::string("Failed to open mod input file ('") + mod_inp_file + "'), errpr: " + inp_.error_message());
+        throw std::runtime_error(std::string("Failed to open mod input file ('") + mod_inp_file + "'), error: " + inp_.error_message());
       }
-      const auto mod_out_file = (path(temp_directory_path().string()) / mod_output_file_name()).string();
-      if(!out_.open(mod_out_file, inp_.flag_shared, num_redstone_channels(), 0)) {
+      const auto mod_out_file = (path(game_directory) / mod_output_file_name()).string();
+      if(!out_.open(mod_out_file, inp_.flag_shared|inp_.flag_readwrite, num_redstone_channels(), 0)) {
         inp_.close();
-        throw std::runtime_error(std::string("Failed to open mod output file ('") + mod_out_file + "'), errpr: " + out_.error_message());
+        throw std::runtime_error(std::string("Failed to open mod output file ('") + mod_out_file + "'), error: " + out_.error_message());
       }
     }
 

@@ -13,7 +13,15 @@ include("./redstone-client-adapter.djs");
 const run_control = {
   exit: false,
   read_timeout: 50e-3,
-  logger: function(line) { alert("[info] " + line.replace(/[\r\n]/g," | ")); }
+  logger: function(line) {
+    alert("[info] " + line.replace(/[\r\n]/g," | "));
+  },
+  rca_basedir: function(){
+    const gamedir_marker_file = "usercache.json";
+    if(fs.isfile(fs.cwd() + "/" + gamedir_marker_file)) return fs.cwd();
+    if(fs.isfile(fs.dirname(fs.cwd()) + "/" + gamedir_marker_file)) return fs.dirname(fs.cwd());
+    return fs.tmpdir();
+  }
 };
 
 /**
@@ -59,7 +67,7 @@ const run_control = {
      return (data.length>0) ? (lines.pop()) : ""; // Only the last data line is relevant.
    };
 
-   const rca = new RedstoneClientAdapter(false);
+   const rca = new RedstoneClientAdapter(false, run_control.rca_basedir());
 
    while(!run_control.exit) {
      // A fixed thread sleep can save some performance depending on the host machine.
@@ -87,7 +95,7 @@ function test_sequence_values(mc_side_simulation, tick_delay_ms, infinitely, min
   mc_side_simulation = mc_side_simulation || false;
   tick_delay_ms = (tick_delay_ms || 10e-3);
   alert("Test sequence, mc-side="+mc_side_simulation+", tick_delay_ms="+tick_delay_ms+" ...");
-  const rca = new RedstoneClientAdapter(mc_side_simulation);
+  const rca = new RedstoneClientAdapter(mc_side_simulation, run_control.rca_basedir());
   const test_data = [];
   while(test_data.length < rca.num_channels()) { test_data.push(0); }
   const setrca = function(data) {
@@ -129,7 +137,7 @@ function test_mod_side_data_reflection(channel_map, mcside)
   channel_map = channel_map.split("").map(function(e){ return Number.parseInt(e,16) }).filter(function(e){ return !Number.isNaN(e)});
   if(channel_map.length != 16) throw new Error("map argument must be 16 hex digits, defining which input channel is echoed at which output channel.");
   print("Channel echo mapping: " + JSON.stringify(channel_map));
-  const rca = new RedstoneClientAdapter(!!mcside);
+  const rca = new RedstoneClientAdapter(!!mcside, run_control.rca_basedir());
   var last_input = "";
   while(true) {
     sys.sleep(1e-3);

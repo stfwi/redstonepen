@@ -11,12 +11,13 @@
  * @constructor
  * @param {boolean} simulate_mc_side
  */
-function RedstoneClientAdapter(simulate_mc_side)
+function RedstoneClientAdapter(simulate_mc_side, rca_basedir)
 {
+  rca_basedir = rca_basedir || fs.tmpdir();
   const reverse = simulate_mc_side || false;
   const map_hex_character_count = 16;
-  const mc_input_path  = (fs.tmpdir() + "/redstonepen.i.mmap").replace(/\\/g, "/");
-  const mc_output_path = (fs.tmpdir() + "/redstonepen.o.mmap").replace(/\\/g, "/");
+  const mc_input_path  = (rca_basedir + "/redstonepen.i.mmap").replace(/\\/g, "/");
+  const mc_output_path = (rca_basedir + "/redstonepen.o.mmap").replace(/\\/g, "/");
 
   var mc_input_map, mc_output_map;
   const reset_mappings = function() {
