@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.11.41    [M] Updated lang zh_cn (ty special_tt).
+
     - v1.11.40    [A] Redstone Remote can now enable/disable Redstone Logic Controls.
                   [M] Adapted Pen bulk connector placement (no sneak required now).
                   [F] Fixed RCA client sync (adapted to changed networking).
