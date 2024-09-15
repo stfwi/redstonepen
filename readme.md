@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.11.39    [M] Updated lang zh_cn (ty special_tt).
+
     - v1.11.38    [F] Fixed loot table folder name (causing no drops on break).
                   [F] In-block-multi-track update fix and performance cleanups.
                   [M] Pen/Quill Track segment placement/removal now vanilla-like
