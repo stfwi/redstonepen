@@ -1,6 +1,7 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen/",
  "1.21": {
+  "1.11.41": "[M] Updated lang zh_cn (ty special_tt).",
   "1.11.40": "[A] Redstone Remote can now enable/disable Redstone Logic Controls.\n[M] Adapted Pen bulk connector placement (no sneak required now).\n[F] Fixed RCA client sync (adapted to changed networking).",
   "1.11.39": "[F] Fixed Remote missing click event handling in survival mode.\n[M] Pen cannot break any blocks except Redstone wires/tracks.",
   "1.11.38": "[M] Pen/Quill Track segment placement/removal now vanilla-like (right-click: place segment, left-click: remove segment).\n[F] Fixed loot table folder name (causing no drops on break).",
@@ -60,7 +61,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.21-recommended": "1.11.40",
-  "1.21-latest": "1.11.40"
+  "1.21-recommended": "1.11.41",
+  "1.21-latest": "1.11.41"
  }
 }
