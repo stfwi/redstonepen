@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.11.41    [A] Redstone Remote can now enable/disable Redstone Logic Controls.
+                  [M] Adapted Pen bulk connector placement (no sneak required now).
+
+    - v1.11.40    [-] (Version skipped in Neoforge).
+
     - v1.11.39    [M] Updated lang zh_cn (ty special_tt).
 
     - v1.11.38    [F] Fixed loot table folder name (causing no drops on break).

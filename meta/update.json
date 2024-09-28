@@ -1,6 +1,8 @@
 {
  "homepage": "https://github.com/stfwi/redstonepen",
  "1.21": {
+  "1.11.41": "[A] Redstone Remote can now enable/disable Redstone Logic Controls.\n[M] Adapted Pen bulk connector placement (no sneak required now).",
+  "1.11.40": "[-] (Version skipped in Neoforge).",
   "1.11.39": "[M] Updated lang zh_cn (ty special_tt).",
   "1.11.38": "[F] Fixed loot table folder name (causing no drops on break).\n[F] In-block-multi-track update fix and performance cleanups.\n[M] Pen/Quill Track segment placement/removal now vanilla-like (right-click: place segment, left-click: remove segment).\n[M] Pen cannot break any blocks except Redstone wires/tracks.\n[A] Added Basic Redstone Gauge (*experimental* signal display).\n[A] Added Redstone Remote (*experimental* lever/button control).",
   "1.11.37": "[F] Added TIVx() minimum interval documentation (issue #50, ty aerotactics).\n[F] In-block-multi-track update regression fixed (#51, ty aerotactics).\n[M] RLC parser edited to indicate an error for unknown signal processing identifiers (\".CO\", \".RE\", \".FE\"). (Issue #46, ty aerotactics).\n[F] Addressed incompatibility with FrozenLib (issue #47, ty GuineaPig)\n[M] Log file tagging improved, Pen debugging capabilities added in release mode.\n[M] Moved RCA (Redstone Client Adapter) memory map file root from the tmpdir to the game directory, @see https://github.com/stfwi/redstonepen/tree/redstone-client-adapter.",
@@ -47,7 +49,7 @@
   "1.0.0-b1": "[A] Initial implementation."
  },
  "promos": {
-  "1.21-recommended": "1.11.39",
-  "1.21-latest": "1.11.39"
+  "1.21-recommended": "1.11.41",
+  "1.21-latest": "1.11.41"
  }
 }

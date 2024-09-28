@@ -243,7 +243,7 @@ public class ControlBox
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
       final BlockPos device_pos = getBlockPos();
-      final boolean device_enabled = (device_state.getValue(ControlBoxBlock.STATE) > 0);
+      final boolean device_enabled = (device_state.getValue(ControlBoxBlock.STATE) > 0) || (device_state.getValue(ControlBoxBlock.POWERED));
       if(!(device_state.getBlock() instanceof final ControlBoxBlock device_block)) return;
       final Set<String> esyms = logic_.expressions().symbols;
       final int last_output_data = logic_.output_data;
@@ -326,12 +326,17 @@ public class ControlBox
     // -------------------------------------------------------------------------------------------
 
     public boolean getEnabled()
-    { return (getBlockState().getValue(ControlBoxBlock.STATE)!=0); }
+    {
+      // @todo: Transitional to prevent breaking setups. ON/OFF state will be "powered".
+      return (getBlockState().getValue(ControlBoxBlock.STATE)!=0) || (getBlockState().getValue(ControlBoxBlock.POWERED));
+    }
 
     public void setEnabled(boolean en)
     {
       if(en == getEnabled()) return;
-      getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.STATE, en?1:0), 1|16);
+      // @todo: Transitional to prevent breaking setups. ON/OFF state will be "powered".
+      getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.STATE, en?1:0), 1|2|16);
+      getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.POWERED, en), 1|2|16);
       if(!en) {
         logic_.symbols_.clear();
         final RcaSync.RcaData rca_data = ((logic_.rca_output_mask)==0) ? (RcaSync.CommonRca.EMPTY) : RcaSync.CommonRca.ofPlayer(activating_player_, false);
