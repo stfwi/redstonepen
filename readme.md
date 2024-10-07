@@ -88,4 +88,8 @@ are in a in the [documentation here](documentation/redstone-logic-control/readme
 
 ## Community and References
 
-Discord: As a platform for community exchange, the Redstone Pen has a channel on the [Modded Redstone Discord server](https://discord.gg/6K958GsWq5)  (ty Oka/Aerotactics for providing and moderating this).
+- Discord: As a platform for community exchange, the Redstone Pen has a channel on the [Modded Redstone Discord server](https://discord.gg/6K958GsWq5)  (ty Oka/Aerotactics for providing and moderating this).
+
+- Credits:
+
+  - The Redstone Remote item is heavily inspired by *Lothazar's* Cyclic Remote Lever.
