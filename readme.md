@@ -4,6 +4,8 @@
 ----
 ## Version history
 
+    - v1.11.42    [M] Fabric updated, mod meta data fixed (issue #62, ty ppc).
+
     - v1.11.41    [M] Updated lang zh_cn (ty special_tt).
 
     - v1.11.40    [A] Redstone Remote can now enable/disable Redstone Logic Controls.
