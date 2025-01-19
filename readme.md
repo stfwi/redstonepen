@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.11.42    [F] Redstone Remote compat issue fixed (issue #63, ty petio).
+                  [F] Fixed RLC custom label retention when breaking (#59, ty toastonrye).
+                  [F] Fixed RLC UI documentation hint contrast (issue #61).
+                  [F] Fixed Track source direction update (issue #58, ty tnoppeney).
+
     - v1.11.41    [A] Redstone Remote can now enable/disable Redstone Logic Controls.
                   [M] Adapted Pen bulk connector placement (no sneak required now).
 
