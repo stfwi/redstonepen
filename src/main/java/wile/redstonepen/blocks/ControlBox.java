@@ -74,6 +74,7 @@ public class ControlBox
         final CompoundTag tedata = cb.writenbt(world.registryAccess(), new CompoundTag());
         if(tedata.contains("logic") && !tedata.getCompound("logic").getString("code").trim().isEmpty()) {
           Auxiliaries.setItemStackNbt(stack, "tedata", tedata);
+          Auxiliaries.setItemLabel(stack, cb.getCustomName());
         }
       }
       return Collections.singletonList(stack);
@@ -168,7 +169,6 @@ public class ControlBox
     private Component custom_name_ = null;
     private boolean trace_ = false;
     private int tick_timer_ = 0;
-    private int num_signal_updates_received_ = 0;
     private int tick_interval_ = 0;
 
     public ControlBoxBlockEntity(BlockPos pos, BlockState state)
@@ -362,7 +362,6 @@ public class ControlBox
       int signal_intr = mask & (getLevel().getSignal(getBlockPos().relative(from_world_side), from_world_side)<<shift);
       int signal_data = mask & (logic_.input_data);
       if(signal_intr == signal_data) return; // no signal change
-      ++num_signal_updates_received_;
       if((signal_intr!=0) && (signal_data==0)) {
         logic_.intr_redges |= mask;
         tick_timer_ = 0;
@@ -511,13 +510,6 @@ public class ControlBox
           sync = 2;
         }
         default -> {
-          final int slotId = nbt.contains("slot") ? nbt.getInt("slot") : -1;
-          //switch(nbt.getString("action")) { default -> {} }
-          if(sync > 0) {
-            inventory_.setChanged();
-            player.getInventory().setChanged();
-            broadcastChanges();
-          }
         }
       }
       if(sync > 0) Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te, sync>1));
@@ -532,7 +524,7 @@ public class ControlBox
   public static class ControlBoxGui extends Guis.ContainerGui<ControlBoxUiContainer>
   {
     private final int VALUE_UPDATE_INTERVAL = 2;
-    private final String tooltip_prefix = ModContent.references.CONTROLBOX_BLOCK.getDescriptionId() + "";
+    private final String tooltip_prefix = ModContent.references.CONTROLBOX_BLOCK.getDescriptionId();
     private final GuiTextEditing.MultiLineTextBox textbox;
     private final Guis.CheckBox start_stop;
     private final Guis.ImageButton cb_copy_all;

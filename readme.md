@@ -4,6 +4,11 @@
 ----
 ## Version history
 
+    - v1.11.43    [F] Fixed RLC custom label retention when breaking (#59, ty toastonrye).
+                  [F] Fixed RLC UI documentation hint contrast (issue #61).
+                  [F] Fixed Track source direction update (issue #58, ty tnoppeney).
+                  [M] Mod meta data fixed (issue #62, ty again ppc).
+
     - v1.11.42    [M] Fabric updated, mod meta data fixed (issue #62, ty ppc).
 
     - v1.11.41    [M] Updated lang zh_cn (ty special_tt).

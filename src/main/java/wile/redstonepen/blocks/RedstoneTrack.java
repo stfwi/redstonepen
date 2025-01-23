@@ -966,7 +966,7 @@ public class RedstoneTrack
       return all_change_notifications;
     }
 
-    private void spawnRedsoneItems(int count)
+    private void spawnRedstoneItems(int count)
     {
       if(count <= 0) return;
       final ItemEntity e = new ItemEntity(getLevel(), getBlockPos().getX()+.5, getBlockPos().getY()+.5, getBlockPos().getZ()+.5, new ItemStack(Items.REDSTONE, count));
@@ -989,7 +989,7 @@ public class RedstoneTrack
           int count = getRedstoneDustCount();
           state_flags_ = new_flags;
           count -= getRedstoneDustCount();
-          spawnRedsoneItems(count);
+          spawnRedstoneItems(count);
           updateConnections(1);
           update_neighbours = true;
         }
@@ -1053,7 +1053,8 @@ public class RedstoneTrack
     {
       final Map<BlockPos,BlockPos> notifications = new LinkedHashMap<>();
       nets_.stream().filter(net->net.neighbour_positions.contains(fromPos)).forEach((net)->handleNetNeighborChanged(net, fromPos, null, notifications));
-      notifications.remove(fromPos);
+      final BlockState fst = getLevel().getBlockState(fromPos);
+      if(fst.is(getBlock()) || fst.isSignalSource()) notifications.remove(fromPos);
       if(trace_ && (notifications.size() > 0)) Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), notifications.entrySet().stream().map(kv-> posstr(kv.getValue())+">"+posstr(kv.getKey())).collect(Collectors.joining(", "))));
       return notifications;
     }
@@ -1291,7 +1292,6 @@ public class RedstoneTrack
                   ext_sides.add(tdir.getOpposite()); // real face.
                   int_sides.add(side);
                   pwr_sides.add(tdir);
-                  continue;
                 }
               }
             }
