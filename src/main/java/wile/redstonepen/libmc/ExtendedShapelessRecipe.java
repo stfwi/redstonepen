@@ -1,4 +1,4 @@
-/*
+/**
  * @file ExtendedShapelessRecipe.java
  * @author Stefan Wilhelm (wile)
  * @copyright (C) 2020 Stefan Wilhelm
@@ -7,27 +7,27 @@
 package wile.redstonepen.libmc;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.entity.player.StackedItemContents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-
-@SuppressWarnings("deprecation")
 public class ExtendedShapelessRecipe implements CraftingRecipe
 {
   public interface IRepairableToolItem
@@ -39,10 +39,12 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   private final String group;
   private final CraftingBookCategory category;
   private final ItemStack result;
-  private final NonNullList<Ingredient> ingredients;
+  private final List<Ingredient> ingredients;
   private final CompoundTag aspects;
 
-  public ExtendedShapelessRecipe(String group, CraftingBookCategory cat, ItemStack output, NonNullList<Ingredient> ingredients, CompoundTag aspects)
+  @Nullable private PlacementInfo placement = null;
+
+  public ExtendedShapelessRecipe(String group, CraftingBookCategory cat, ItemStack output, List<Ingredient> ingredients, CompoundTag aspects)
   {
     this.group = group;
     this.category = cat;
@@ -52,11 +54,11 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   }
 
   @Override
-  public RecipeSerializer<?> getSerializer()
+  public RecipeSerializer<ExtendedShapelessRecipe> getSerializer()
   { return ExtendedShapelessRecipe.SERIALIZER; }
 
   @Override
-  public String getGroup()
+  public String group()
   { return this.group; }
 
   @Override
@@ -71,16 +73,10 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   { return isRepair() || aspects.getBoolean("dynamic"); }
 
   @Override
-  public ItemStack getResultItem(HolderLookup.Provider ra)
-  { return isSpecial() ? ItemStack.EMPTY : this.result; }
-
-  @Override
-  public NonNullList<Ingredient> getIngredients()
-  { return this.ingredients; }
-
-  @Override
-  public boolean canCraftInDimensions(int i, int j)
-  { return i * j >= this.ingredients.size(); }
+  public PlacementInfo placementInfo() {
+    if(placement == null) placement = PlacementInfo.create(this.ingredients);
+    return placement;
+  }
 
   @Override
   public NonNullList<ItemStack> getRemainingItems(CraftingInput inv)
@@ -113,8 +109,8 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
               remaining.set(i, rstack);
             }
           }
-        } else if(stack.getItem().hasCraftingRemainingItem()) {
-          remaining.set(i, new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()));
+        } else if(stack.getItem().getCraftingRemainder().isEmpty()) {
+          remaining.set(i, new ItemStack(stack.getItem().getCraftingRemainder().getItem(), stack.getCount()));
         }
       }
       return remaining;
@@ -124,7 +120,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   @Override
   public boolean matches(CraftingInput input, Level world)
   {
-    final StackedContents stacked = new StackedContents();
+    final StackedItemContents stacked = new StackedItemContents();
     int i = 0;
     for(int j=0; j<input.size(); ++j) {
       final ItemStack ingr = input.getItem(j);
@@ -206,7 +202,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
         ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
         if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) continue;
-        remaining.set(i, stack.getItem().hasCraftingRemainingItem() ? new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()) : stack.copy());
+        remaining.set(i, (!stack.getItem().getCraftingRemainder().isEmpty()) ? new ItemStack(stack.getItem().getCraftingRemainder().getItem(), stack.getCount()) : stack.copy()); // remaining.set(i, stack.getItem().hasCraftingRemainingItem() ? new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()) : stack.copy());
       }
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = remaining.get(i);
@@ -240,61 +236,26 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
     }
 
     @Override
-    public StreamCodec<RegistryFriendlyByteBuf, ExtendedShapelessRecipe> streamCodec() {
-      return STREAM_CODEC;
-    }
+    public StreamCodec<RegistryFriendlyByteBuf, ExtendedShapelessRecipe> streamCodec()
+    { return STREAM_CODEC; }
 
-    @SuppressWarnings("unchecked")
-    private static final MapCodec<ExtendedShapelessRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
-        instance.group(Codec.STRING.optionalFieldOf("group", "")
-                .forGetter(r->r.group),
-        CraftingBookCategory.CODEC
-                .fieldOf("category")
-                .orElse(CraftingBookCategory.MISC)
-                .forGetter(r->r.category),
-        ItemStack.CODEC
-                .fieldOf("result")
-                .forGetter(r->r.result),
-        Ingredient.CODEC_NONEMPTY
-                .listOf().fieldOf("ingredients").flatXmap(list -> {
-                    final Ingredient[] ingredients = list.stream().filter(ing->!ing.isEmpty()).toArray(Ingredient[]::new);
-                    if(ingredients.length == 0) { return DataResult.error(() -> "no ingredients"); }
-                    if(ingredients.length > 9) { return DataResult.error(() -> "too many ingredients"); }
-                    return DataResult.success(NonNullList.of(Ingredient.EMPTY, ingredients));
-                  }, DataResult::success)
-                .forGetter(r->r.ingredients),
-        CompoundTag.CODEC
-                .optionalFieldOf("aspects", new CompoundTag())
-                .forGetter(r->r.aspects)
+    public static final MapCodec<ExtendedShapelessRecipe> CODEC = RecordCodecBuilder.mapCodec(smc -> smc.group(
+        Codec.STRING.optionalFieldOf("group", "").forGetter(r -> r.group),
+        CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(r -> r.category),
+        ItemStack.CODEC.fieldOf("result").forGetter(r -> r.result),
+        Ingredient.CODEC.listOf(1, 9).fieldOf("ingredients").forGetter(r -> r.ingredients),
+        CompoundTag.CODEC.optionalFieldOf("aspects", new CompoundTag()).forGetter(r->r.aspects)
       )
-      .apply(instance, ExtendedShapelessRecipe::new)
+      .apply(smc, ExtendedShapelessRecipe::new)
     );
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ExtendedShapelessRecipe> STREAM_CODEC = StreamCodec.of(
-      ExtendedShapelessRecipe.Serializer::toNetwork,
-      ExtendedShapelessRecipe.Serializer::fromNetwork
+    public static final StreamCodec<RegistryFriendlyByteBuf, ExtendedShapelessRecipe> STREAM_CODEC = StreamCodec.composite(
+      ByteBufCodecs.STRING_UTF8,            r -> r.group,
+      CraftingBookCategory.STREAM_CODEC,    r -> r.category,
+      ItemStack.STREAM_CODEC,               r -> r.result,
+      Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()),  r -> r.ingredients,
+      ByteBufCodecs.COMPOUND_TAG,           r -> r.aspects,
+      ExtendedShapelessRecipe::new
     );
-
-    private static ExtendedShapelessRecipe fromNetwork(RegistryFriendlyByteBuf buf)
-    {
-      final String group = buf.readUtf();
-      final CraftingBookCategory cat = buf.readEnum(CraftingBookCategory.class);
-      final int size = buf.readVarInt();
-      final NonNullList<Ingredient> ingredients = NonNullList.withSize(size, Ingredient.EMPTY);
-      ingredients.replaceAll(ingr->Ingredient.CONTENTS_STREAM_CODEC.decode(buf));
-      final ItemStack stack = ItemStack.STREAM_CODEC.decode(buf);
-      final CompoundTag aspects = buf.readNbt();
-      return new ExtendedShapelessRecipe(group, cat, stack, ingredients, aspects);
-    }
-
-    private static void toNetwork(RegistryFriendlyByteBuf buf, ExtendedShapelessRecipe recipe)
-    {
-      buf.writeUtf(recipe.group);
-      buf.writeEnum(recipe.category);
-      buf.writeVarInt(recipe.ingredients.size());
-      for(Ingredient ingredient : recipe.ingredients) { Ingredient.CONTENTS_STREAM_CODEC.encode(buf, ingredient); }
-      ItemStack.STREAM_CODEC.encode(buf, recipe.result);
-      buf.writeNbt(recipe.getAspects());
-    }
   }
 }

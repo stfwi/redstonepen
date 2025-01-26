@@ -48,7 +48,7 @@ public class ModRenderers
       List<ModelResourceLocation> resources_to_register = new ArrayList<>();
 
       RedstoneTrack.defs.models.STATE_WIRE_MAPPING.entrySet().forEach((kv->{
-        final ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("item/"), "standalone");
+        final ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("track/"), ""); //standalone
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_WIR_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_WIR_POS+i))) != 0) {
             model_rls[i] = mrl;
@@ -58,7 +58,7 @@ public class ModRenderers
         resources_to_register.add(mrl); //  net.neoforged.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
-        ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("item/"), "standalone");
+        ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("track/"), ""); //standalone
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelc_rls[i] = mrl;
@@ -68,7 +68,7 @@ public class ModRenderers
         resources_to_register.add(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CNTWIRE_MAPPING.entrySet().forEach((kv->{
-        ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("item/"), "standalone");
+        ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.tryBuild(ModConstants.MODID, kv.getValue()).withPrefix("track/"), ""); //standalone
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelm_rls[i] = mrl;
@@ -102,7 +102,7 @@ public class ModRenderers
       if(tesr_error_counter <= 0) return;
       try {
         final BlockState block_state = te.getBlockState();
-        final VertexConsumer vxb = buf.getBuffer(ItemBlockRenderTypes.getRenderType(block_state, false));
+        final VertexConsumer vxb = buf.getBuffer(ItemBlockRenderTypes.getRenderType(block_state));
         combinedOverlayIn = OverlayTexture.pack(0, 0);
         mxs.pushPose();
         {

@@ -63,8 +63,8 @@ public class ControlBox
 
   public static class ControlBoxBlock extends CircuitComponents.DirectedComponentBlock implements StandardEntityBlocks.IStandardEntityBlock<ControlBoxBlockEntity>
   {
-    public ControlBoxBlock(long config, BlockBehaviour.Properties builder, AABB[] aabb)
-    { super(config, builder, aabb); }
+    public ControlBoxBlock(long config, BlockBehaviour.Properties properties, AABB[] aabb)
+    { super(config, properties, aabb); }
 
     @Override
     public List<ItemStack> dropList(BlockState state, Level world, @Nullable BlockEntity te, boolean explosion)
@@ -74,7 +74,6 @@ public class ControlBox
         final CompoundTag tedata = cb.writenbt(world.registryAccess(), new CompoundTag());
         if(tedata.contains("logic") && !tedata.getCompound("logic").getString("code").trim().isEmpty()) {
           Auxiliaries.setItemStackNbt(stack, "tedata", tedata);
-          Auxiliaries.setItemLabel(stack, cb.getCustomName());
         }
       }
       return Collections.singletonList(stack);
@@ -126,20 +125,22 @@ public class ControlBox
     { return getSignal(state, world, pos, redstone_side); }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
+    public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
     {
       return useOpenGui(state, world, pos, player);
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    public InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
-      if(stack.is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
+      if(stack.isEmpty()) {
+        return useWithoutItem(state, world, pos, player, rtr);
+      } else if(stack.is(Items.DEBUG_STICK)) {
+        if(world.isClientSide) return InteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof ControlBoxBlockEntity te) te.toggle_trace(player);
-        return ItemInteractionResult.CONSUME;
+        return InteractionResult.CONSUME;
       } else {
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
       }
     }
 
@@ -150,8 +151,8 @@ public class ControlBox
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
       final BlockPos dp = fromPos.subtract(pos);
-      final Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
-      if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
+      final Direction world_side = Direction.getApproximateNearest(dp.getX(), dp.getY(), dp.getZ());
+      cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
   }
@@ -243,7 +244,7 @@ public class ControlBox
       final Level world = getLevel();
       final BlockState device_state = getBlockState();
       final BlockPos device_pos = getBlockPos();
-      final boolean device_enabled = (device_state.getValue(ControlBoxBlock.STATE) > 0) || (device_state.getValue(ControlBoxBlock.POWERED));
+      final boolean device_enabled = device_state.getValue(ControlBoxBlock.POWERED);
       if(!(device_state.getBlock() instanceof final ControlBoxBlock device_block)) return;
       final Set<String> esyms = logic_.expressions().symbols;
       final int last_output_data = logic_.output_data;
@@ -326,16 +327,11 @@ public class ControlBox
     // -------------------------------------------------------------------------------------------
 
     public boolean getEnabled()
-    {
-      // @todo: Transitional to prevent breaking setups. ON/OFF state will be "powered".
-      return (getBlockState().getValue(ControlBoxBlock.STATE)!=0) || (getBlockState().getValue(ControlBoxBlock.POWERED));
-    }
+    { return (getBlockState().getValue(ControlBoxBlock.POWERED)); }
 
     public void setEnabled(boolean en)
     {
       if(en == getEnabled()) return;
-      // @todo: Transitional to prevent breaking setups. ON/OFF state will be "powered".
-      getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.STATE, en?1:0), 1|2|16);
       getLevel().setBlock(getBlockPos(), getBlockState().setValue(ControlBoxBlock.POWERED, en), 1|2|16);
       if(!en) {
         logic_.symbols_.clear();
@@ -490,8 +486,7 @@ public class ControlBox
     public void onServerPacketReceived(int windowId, CompoundTag nbt)
     {
       switch(nbt.getString("action")) {
-        case "serverdata" -> { received_server_data_ = nbt; }
-        default -> {}
+        case "serverdata" -> received_server_data_ = nbt;
       }
     }
 
@@ -510,8 +505,7 @@ public class ControlBox
           te.setRcaPlayerUUID((te.getEnabled() && nbt.getBoolean("withrca")) ? player.getUUID() : null);
           sync = 2;
         }
-        default -> {
-        }
+        default -> {}
       }
       if(sync > 0) Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te, sync>1));
     }
@@ -641,7 +635,7 @@ public class ControlBox
           return c;
         }));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+196,getGuiTop()+14, 16, 16, ()->
-          (errors_.isEmpty()) ? (Component.empty()) : (Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()))
+          (errors_.isEmpty()) ? (Component.empty()) : (Auxiliaries.localizable(tooltip_prefix+".error."+errors_.getFirst().getB()))
         ));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+12, 5, 8, Auxiliaries.localizable(tooltip_prefix+".help.1")));
         tooltips.add(new TooltipDisplay.TipRange(getGuiLeft()+18,getGuiTop()+22, 5, 3, Auxiliaries.localizable(tooltip_prefix+".help.2")));
@@ -716,8 +710,8 @@ public class ControlBox
               cb_error_indicator.setY(0);
               cb_error_indicator.tooltip(Component.empty());
             } else {
-              Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.get(0).getA());
-              cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.get(0).getB()));
+              Guis.Coord2d exy = textbox.getCoordinatesAtIndex(errors_.getFirst().getA());
+              cb_error_indicator.tooltip(Auxiliaries.localizable(tooltip_prefix+".error."+errors_.getFirst().getB()));
               cb_error_indicator.visible = true;
               cb_error_indicator.setX(exy.x);
               cb_error_indicator.setY(exy.y + textbox.getLineHeight());
@@ -1286,13 +1280,13 @@ public class ControlBox
       public static class ExprNeg extends ExprOp
       {
         public ExprNeg(List<Expr> args) { super(ExprType.NEG, args); }
-        public int calc(Map<String, Integer> mem) { return -arguments.get(0).calc(mem); }
+        public int calc(Map<String, Integer> mem) { return -arguments.getFirst().calc(mem); }
       }
 
       public static class ExprNot extends ExprOp
       {
         public ExprNot(List<Expr> args) { super(ExprType.NOT, args); }
-        public int calc(Map<String, Integer> mem) { return (arguments.get(0).calc(mem)==0) ? bool_true() : bool_false(); }
+        public int calc(Map<String, Integer> mem) { return (arguments.getFirst().calc(mem)==0) ? bool_true() : bool_false(); }
       }
 
       public static class ExprMpy extends ExprOp

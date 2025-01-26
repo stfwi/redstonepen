@@ -23,7 +23,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.font.TextFieldHelper;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -67,8 +66,8 @@ public class GuiTextEditing
     {
       super(x, y, width, height, title);
       edit_ = new TextFieldHelper(
-              this::getText, this::setText, this::getClipboard, this::setClipboard,
-              (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
+        this::getText, this::setText, this::getClipboard, this::setClipboard,
+        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
       );
     }
 
@@ -161,7 +160,7 @@ public class GuiTextEditing
     }
 
     public String getWordAtPosition(Guis.Coord2d xy)
-    { return ""; }
+    { return ""; } // todo: implement
 
     //---------------------------------------------------------------------------------
 
@@ -252,7 +251,6 @@ public class GuiTextEditing
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
       if(!this.visible) return;
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
       int ox = (int)(this.getX() * (1.-font_scale_));
       int oy = (int)(this.getY() * (1.-font_scale_));

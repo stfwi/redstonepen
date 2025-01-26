@@ -1,7 +1,8 @@
 {
 	"ambientocclusion": false,
 	"textures": {
-		"r": "redstonepen:block/track_connection"
+		"r": "redstonepen:block/track_connection",
+    "particle": "redstonepen:block/track_connection"
 	},
 	"elements": [
 		{

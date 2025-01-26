@@ -1,77 +1,101 @@
 // @file build.gradle
 plugins {
   id 'java-library'
-  id 'eclipse'
-  id 'idea'
   id 'maven-publish'
-  id 'net.neoforged.gradle.userdev' version '7.0.145'
+  id 'net.neoforged.moddev' version '2.0.76'
+  id 'idea'
 }
+
+tasks.named('wrapper', Wrapper).configure {
+  distributionType = Wrapper.DistributionType.BIN
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 tasks.named('wrapper', Wrapper).configure { distributionType = Wrapper.DistributionType.BIN }
 
 //-----------------------------------------------------------------------------
-version = "${version_mod}"
-group = "${meta_modgroup}"
-base { archivesName = "${meta_modid}-${version_minecraft}-neoforge" }
+version = "${mod_version}"
+group = "${mod_group_id}"
+base { archivesName = "${mod_id}-${minecraft_version}-neoforge" }
 
 repositories {
   mavenLocal()
   // flatDir { dir 'libs' } // Mod jar dependencies in ./libs
 }
 
-//minecraft.accessTransformers.file rootProject.file('src/main/resources/META-INF/accesstransformer.cfg')
-//minecraft.accessTransformers.entry public net.minecraft.client.Minecraft textureManager # textureManager
+neoForge {
+  version = project.neo_version
 
-runs {
-  configureEach {
-    systemProperty 'forge.logging.markers', 'REGISTRIES' // "REGISTRYDUMP", "REGISTRIES", "SCAN"
-    systemProperty 'forge.logging.console.level', 'debug'
-    modSource project.sourceSets.main
+  parchment {
+    mappingsVersion = project.parchment_mappings_version
+    minecraftVersion = project.parchment_minecraft_version
   }
-  client {
-    systemProperty 'forge.enabledGameTestNamespaces', project.meta_modid
+
+  // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+  runs {
+    client {
+      client()
+      systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+    }
+    server {
+      server()
+      programArgument '--nogui'
+      systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+    }
+    data {
+      clientData()
+      programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+    configureEach {
+      systemProperty 'forge.logging.markers', 'REGISTRIES'   // "REGISTRIES", "REGISTRYDUMP", "SCAN"
+      logLevel = org.slf4j.event.Level.INFO // DEBUG or INFO, WARN, ERROR
+    }
   }
-  server {
-    systemProperty 'forge.enabledGameTestNamespaces', project.meta_modid
-    programArgument '--nogui'
-  }
-  gameTestServer {
-    systemProperty 'forge.enabledGameTestNamespaces', project.meta_modid
-  }
-  data {
-    programArguments.addAll '--mod', project.meta_modid, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+
+  mods {
+    "${mod_id}" {
+      sourceSet(sourceSets.main)
+    }
   }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 configurations { runtimeClasspath.extendsFrom localRuntime }
-
-dependencies {
-  implementation "net.neoforged:neoforge:${version_neoforge}"
-}
+dependencies {}
 
 tasks.withType(ProcessResources).configureEach {
-  var property_replacements = [
-    meta_modid:meta_modid, meta_modname:meta_modname, meta_author:meta_author, meta_license:meta_license,
-    meta_description:meta_description, meta_issues:meta_issues, meta_updateurl:meta_updateurl,
-    meta_download:meta_download,
-    version_mod: version_mod,
-    version_minecraft:version_minecraft,
-    version_neoforge:version_neoforge,
-    version_range_loader:version_range_loader,
-    version_range_neoforge:version_range_neoforge,
-    version_range_minecraft: version_range_minecraft,
-    version_pack_format: version_pack_format,
-  ]
-  inputs.properties property_replacements
-  filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
-    expand property_replacements + [project: project]
-  }
   outputs.upToDateWhen { false }
   doLast {
-    file("${sourceSets.main.output.resourcesDir}/.gitversion-${meta_modid}").text = 'git log "-1" "--format=%h"'.execute().in.text.trim()
+    file("build/generated/sources/modMetadata/.gitversion-${mod_id}").text = 'git log "-1" "--format=%h"'.execute().in.text.trim()
   }
 }
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+  var replaceProperties = [
+    minecraft_version      : minecraft_version,
+    minecraft_version_range: minecraft_version_range,
+    neo_version            : neo_version,
+    neo_version_range      : neo_version_range,
+    loader_version_range   : loader_version_range,
+    mod_id                 : mod_id,
+    mod_name               : mod_name,
+    mod_license            : mod_license,
+    mod_version            : mod_version,
+    mod_authors            : mod_authors,
+    mod_description        : mod_description,
+    pack_format_version    : pack_format_version,
+    meta_issues            : meta_issues,
+    meta_updateurl         : meta_updateurl,
+    meta_download          : meta_download
+  ]
+  inputs.properties replaceProperties
+  expand replaceProperties
+  from "src/main/templates"
+  into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 publishing {
 }

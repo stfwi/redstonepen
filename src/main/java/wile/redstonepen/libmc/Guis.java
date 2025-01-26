@@ -18,7 +18,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@SuppressWarnings("deprecation")
+
 public class Guis
 {
   // -------------------------------------------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ public class Guis
     @Override
     protected final void renderBg(GuiGraphics gg, float partialTicks, int mouseX, int mouseY)
     {
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
+      // RenderSystem.setShader(GameRenderer::getPositionTexShader); // @todo: Check effects, removed in 1.21.2
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
@@ -122,7 +122,7 @@ public class Guis
       RenderSystem.colorMask(true, true, true, true);
       RenderSystem.setShaderColor(0.7f, 0.7f, 0.7f, 0.4f);
       RenderSystem.setShaderTexture(0, background_image_);
-      gg.blit(background_image_, x0+x, y0+y, x, y, 16, 16);
+      util.blit(gg, background_image_, x0+x, y0+y, x, y, 16, 16);
       RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
       RenderSystem.disableBlend();
     }
@@ -187,8 +187,8 @@ public class Guis
     {
       final Window win = mc_.getWindow();
       return Coord2d.of(
-              Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-getX(), -1, this.width+1),
-              Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-getY(), -1, this.height+1)
+        Mth.clamp(((int)(mc_.mouseHandler.xpos() * (double)win.getGuiScaledWidth() / (double)win.getScreenWidth()))-getX(), -1, this.width+1),
+        Mth.clamp(((int)(mc_.mouseHandler.ypos() * (double)win.getGuiScaledHeight() / (double)win.getScreenHeight()))-getY(), -1, this.height+1)
       );
     }
 
@@ -269,10 +269,10 @@ public class Guis
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
-      gg.blit(atlas_, getX(), getY(), texture_position_base_.x, texture_position_base_.y, width, height);
+      util.blit(gg, atlas_, getX(), getY(), texture_position_base_.x, texture_position_base_.y, width, height);
       if((progress_max_ > 0) && (progress_ > 0)) {
         int w = Mth.clamp((int)Math.round((progress_ * width) / progress_max_), 0, width);
-        gg.blit(atlas_, getX(), getY(), texture_position_filled_.x, texture_position_filled_.y, w, height);
+        util.blit(gg, atlas_, getX(), getY(), texture_position_filled_.x, texture_position_filled_.y, w, height);
       }
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
@@ -299,7 +299,7 @@ public class Guis
     {
       if(!visible) return;
       RenderSystem.setShaderTexture(0, atlas_);
-      gg.blit(atlas_, getX(), getY(), atlas_position_.x, atlas_position_.y, width, height);
+      util.blit(gg, atlas_, getX(), getY(), atlas_position_.x, atlas_position_.y, width, height);
     }
   }
 
@@ -336,14 +336,13 @@ public class Guis
     @Override
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = checked_ ? texture_position_on_ : texture_position_off_;
-      gg.blit(atlas_, getX(), getY(), pos.x, pos.y, width, height);
+      util.blit(gg, atlas_, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
   }
@@ -373,14 +372,13 @@ public class Guis
     @Override
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = texture_position_;
-      gg.blit(atlas_, getX(), getY(), pos.x, pos.y, width, height);
+      util.blit(gg, atlas_, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
   }
@@ -405,14 +403,13 @@ public class Guis
     @Override
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, atlas_);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
       Coord2d pos = texture_position_;
-      gg.blit(atlas_, getX(), getY(), pos.x, pos.y, width, height);
+      util.blit(gg, atlas_, getX(), getY(), pos.x, pos.y, width, height);
       if(isHovered) renderToolTip(gg, mouseX, mouseY);
     }
   }
@@ -427,4 +424,30 @@ public class Guis
     public TextBox withEditable(boolean e) { super.setEditable(e); return this; }
     public TextBox withResponder(Consumer<String> r) { super.setResponder(r); return this; }
   }
+
+  // -------------------------------------------------------------------------------------------------------------------
+  // Gui auxiliary functions
+  // -------------------------------------------------------------------------------------------------------------------
+
+  private static class util {
+
+    public static void blit(GuiGraphics gg, ResourceLocation atlas, int ui_x, int ui_y, int atlas_x, int atlas_y, int width, int height)
+    {
+      gg.blit(RenderType::guiTextured, atlas, ui_x, ui_y, 0f, 0f, atlas_x, atlas_y, width, height);
+
+      // inline sprite: Performance fcked up
+      //      ResourceLocation resourceLocation = SPRITES.get(this.isActive(), this.isFocused());
+      //      gg.blitSprite(RenderType::guiTextured, atlas, ui_x, ui_y, width, height);
+
+      // Direct render: bufferSource private
+      //      RenderType renderType = RenderType.guiTextured(atlas);
+      //      Matrix4f matrix4f = gg.pose().last().pose();
+      //      VertexConsumer vertexConsumer = gg  .bufferSource.getBuffer(renderType);
+      //      vertexConsumer.addVertex(matrix4f, (float)(ui_x), (float)(ui_y), 0.0F).setUv(atlas_x, atlas_y).setColor(-1);
+      //      vertexConsumer.addVertex(matrix4f, (float)(ui_x+width), (float)(ui_y), 0.0F).setUv(atlas_x+width, atlas_y).setColor(-1);
+      //      vertexConsumer.addVertex(matrix4f, (float)(ui_x+width), (float)(ui_y+height), 0.0F).setUv(atlas_x, atlas_y+height).setColor(-1);
+      //      vertexConsumer.addVertex(matrix4f, (float)(ui_x), (float)(ui_y+height), 0.0F).setUv(atlas_x, atlas_y+height).setColor(-1);
+    }
+  }
+
 }

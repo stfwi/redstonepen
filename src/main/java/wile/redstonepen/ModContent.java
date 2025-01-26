@@ -8,7 +8,6 @@ package wile.redstonepen;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -37,16 +36,16 @@ public class ModContent
     final BlockBehaviour.StateArgumentPredicate<EntityType<?>> never = (w,s,p,e)->false;
 
     Registries.addBlock("track",
-      ()->new RedstoneTrack.RedstoneTrackBlock(
+      (properties)->new RedstoneTrack.RedstoneTrackBlock(
         StandardBlocks.CFG_DEFAULT,
-        BlockBehaviour.Properties.of().noCollission().instabreak().dynamicShape().randomTicks()
+        properties.noCollission().instabreak().dynamicShape().randomTicks().noLootTable()
       ),
       RedstoneTrack.TrackBlockEntity::new
     );
     Registries.addBlock("control_box",
-      ()->new ControlBox.ControlBoxBlock(
+      (properties)->new ControlBox.ControlBoxBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak().noLootTable(),
         new AABB[]{
           Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
           Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
@@ -57,81 +56,81 @@ public class ModContent
       ControlBox.ControlBoxUiContainer::new
     );
     Registries.addBlock("relay",
-      ()->new CircuitComponents.RelayBlock(
+      (properties)->new CircuitComponents.RelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("inverted_relay",
-      ()->new CircuitComponents.InvertedRelayBlock(
+      (properties)->new CircuitComponents.InvertedRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("pulse_relay",
-      ()->new CircuitComponents.PulseRelayBlock(
+      (properties)->new CircuitComponents.PulseRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("bistable_relay",
-      ()->new CircuitComponents.BistableRelayBlock(
+      (properties)->new CircuitComponents.BistableRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("bridge_relay",
-      ()->new CircuitComponents.BridgeRelayBlock(
+      (properties)->new CircuitComponents.BridgeRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        properties.noCollission().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
     );
     Registries.addBlock("basic_gauge",
-      ()->new BasicGauge.BasicGaugeBlock(
+      (properties)->new BasicGauge.BasicGaugeBlock(
         StandardBlocks.CFG_TRANSLUCENT,
-        BlockBehaviour.Properties.of().isValidSpawn(never).strength(0.3f).sound(SoundType.COPPER).noCollission().lightLevel((s)->3)
+        properties.isValidSpawn(never).strength(0.3f).sound(SoundType.COPPER).noCollission().lightLevel((s)->3)
       )
     );
     Registries.addBlock("basic_lever",
-      ()->new BasicLever.BasicLeverBlock(
+      (properties)->new BasicLever.BasicLeverBlock(
         new BasicLever.BasicLeverBlock.Config(0.8f, 0.9f),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        properties.noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_button",
-      ()->new BasicButton.BasicButtonBlock(
+      (properties)->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 20),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        properties.noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_pulse_button",
-      ()->new BasicButton.BasicButtonBlock(
+      (properties)->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 2),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        properties.noCollission().isValidSpawn(never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
   }
 
   public static void initItems()
   {
-    Registries.addItem("pen", ()->new RedstonePenItem(
-      (new Item.Properties()).stacksTo(0).durability(256)
+    Registries.addItem("pen", (properties)->new RedstonePenItem(
+      properties.stacksTo(0).durability(256)
     ));
-    Registries.addItem("quill", ()->new RedstonePenItem(
-      (new Item.Properties()).stacksTo(1).durability(0)
+    Registries.addItem("quill", (properties)->new RedstonePenItem(
+      properties.stacksTo(1).durability(0)
     ));
-    Registries.addItem("remote", ()->new RemoteItem(
-      (new Item.Properties()).stacksTo(1).durability(1)
+    Registries.addItem("remote", (properties)->new RemoteItem(
+      properties.stacksTo(1).durability(1)
     ));
   }
 

@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -33,10 +34,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -59,9 +61,12 @@ public class CircuitComponents
   // DirectedComponentBlock
   //--------------------------------------------------------------------------------------------------------------------
 
+  private static BlockPos getFromPos(BlockPos pos, Orientation orientation)
+  { return pos.relative(orientation.getFront()).relative(orientation.getSide()); }
+
   public static class DirectedComponentBlock extends StandardBlocks.WaterLoggable
   {
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final IntegerProperty ROTATION = IntegerProperty.create("rotation", 0, 3);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final IntegerProperty STATE = IntegerProperty.create("state", 0, 1);
@@ -178,16 +183,16 @@ public class CircuitComponents
       return Shapes.block();
     }
 
-    public DirectedComponentBlock(long config, BlockBehaviour.Properties builder, AABB[] aabbs)
+    public DirectedComponentBlock(long config, BlockBehaviour.Properties properties, AABB[] aabbs)
     {
-      super(config, builder.pushReaction(PushReaction.DESTROY));
+      super(config, properties.pushReaction(PushReaction.DESTROY));
       registerDefaultState(super.defaultBlockState().setValue(FACING, Direction.NORTH).setValue(ROTATION,0).setValue(POWERED,false).setValue(STATE,0));
       stateDefinition.getPossibleStates().forEach((state)->shapes_.put(state, mapped_shape(state, aabbs)));
       fill_state_facing_lookups(stateDefinition.getPossibleStates());
     }
 
-    public DirectedComponentBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { this(config, builder, new AABB[]{aabb}); }
+    public DirectedComponentBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { this(config, properties, new AABB[]{aabb}); }
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -216,11 +221,11 @@ public class CircuitComponents
     { return getShape(state, world, pos, context); }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter world, BlockPos pos)
+    public VoxelShape getVisualShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context)
     { return shapes_.getOrDefault(state, Shapes.block()); }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
+    public boolean propagatesSkylightDown(BlockState state)
     { return !state.getValue(WATERLOGGED); }
 
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
@@ -263,7 +268,7 @@ public class CircuitComponents
         case SOUTH, NORTH -> hit_r.multiply(1, 1, 0);
         default -> hit_r.multiply(1, 0, 1);
       };
-      final Direction dir = Direction.getNearest(hit.x(), hit.y(), hit.z());
+      final Direction dir = Direction.getApproximateNearest(hit.x(), hit.y(), hit.z());
       int rotation = 0;
       switch(face) {
         case DOWN:
@@ -314,9 +319,9 @@ public class CircuitComponents
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    public BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ta, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource rnd)
     {
-      if((state=super.updateShape(state, facing, facingState, world, pos, facingPos)) == null) return state;
+      if((state=super.updateShape(state, world, ta, pos, facing, facingPos, facingState, rnd)) == null) return null;
       if(!canSurvive(state, world, pos)) return Blocks.AIR.defaultBlockState();
       return (world instanceof ServerLevel sworld) ? update(state, sworld, pos, facingPos) : state;
     }
@@ -337,7 +342,7 @@ public class CircuitComponents
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)
     {
       if(isMoving || state.is(newState.getBlock())) return;
-      super.onRemove(state, world, pos, newState, isMoving);
+      super.onRemove(state, world, pos, newState, false);
       if(!world.isClientSide()) {
         notifyOutputNeighbourOfStateChange(state, world, pos);
         world.updateNeighborsAt(pos, this);
@@ -348,17 +353,19 @@ public class CircuitComponents
     { return false; }
 
     @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
-    { update(state, world, pos, fromPos); }
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, @Nullable Orientation orientation, boolean isMoving)
+    { update(state, world, pos, getFromPos(pos, orientation)); }
 
     @OnlyIn(Dist.CLIENT)
-    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction side, float chance) {
+    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction side, float chance)
+    {
       if(rand.nextFloat() < chance) {
         double c2 = chance * rand.nextFloat();
         double p0 = 0.5 + (side.getStepX()*0.4) + (c2*.1);
         double p1 = 0.5 + (side.getStepY()*0.4) + (c2*.1);
         double p2 = 0.5 + (side.getStepZ()*0.4) + (c2*.1);
-        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        // @todo: Optimize using int-map (like vanilla wire statically)
+        world.addParticle(new DustParticleOptions(ARGB.colorFromFloat(1.0f, (float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 
@@ -409,9 +416,9 @@ public class CircuitComponents
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
-        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, pos, false);
+        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, null, false);
         if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
-          world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
+          world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite(), null);
         }
       } catch(Throwable ex) {
         Auxiliaries.logError("Curcuit neighborChanged recursion detected, dropping!");
@@ -467,8 +474,8 @@ public class CircuitComponents
       return false;
     }
 
-    public RelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { super(config, builder, aabb); }
+    public RelayBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { super(config, properties, aabb); }
 
     @Override
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
@@ -511,8 +518,8 @@ public class CircuitComponents
 
   public static class InvertedRelayBlock extends RelayBlock
   {
-    public InvertedRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { super(config, builder, aabb); }
+    public InvertedRelayBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { super(config, properties, aabb); }
 
     @Override
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
@@ -551,8 +558,8 @@ public class CircuitComponents
 
   public static class BistableRelayBlock extends RelayBlock
   {
-    public BistableRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { super(config, builder, aabb); }
+    public BistableRelayBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { super(config, properties, aabb); }
 
     @Override
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
@@ -569,11 +576,11 @@ public class CircuitComponents
       final boolean pwstate = state.getValue(POWERED);
       if(powered == pwstate) return state;
       state = state.setValue(POWERED, powered);
-      if(powered && !pwstate) {
+      if(powered) {
         state = state.setValue(STATE, (state.getValue(STATE)==0) ? (1) : (0));
         world.setBlock(pos, state, 2|16);
         notifyOutputNeighbourOfStateChange(state, world, pos);
-      } else if(!powered && pwstate) {
+      } else {
         world.setBlock(pos, state, 2|16);
       }
       return state;
@@ -586,8 +593,8 @@ public class CircuitComponents
 
   public static class PulseRelayBlock extends RelayBlock
   {
-    public PulseRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { super(config, builder, aabb); }
+    public PulseRelayBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { super(config, properties, aabb); }
 
     @Override
     public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction redstone_side)
@@ -632,8 +639,8 @@ public class CircuitComponents
   {
     private int power_update_recursion_level_ = 0;
 
-    public BridgeRelayBlock(long config, BlockBehaviour.Properties builder, AABB aabb)
-    { super(config, builder, aabb); }
+    public BridgeRelayBlock(long config, BlockBehaviour.Properties properties, AABB aabb)
+    { super(config, properties, aabb); }
 
     protected int getInputPower(Level world, BlockPos relay_pos, Direction redstone_side)
     {
@@ -712,7 +719,7 @@ public class CircuitComponents
         if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
           if(powered) {
             world.setBlock(pos, (state=state.setValue(POWERED,true)), 2|16);
-            world.neighborChanged(pos.relative(getOutputFacing(state)), this, pos);
+            world.neighborChanged(pos.relative(getOutputFacing(state)), this, null);
           } else {
             world.scheduleTick(pos, this, 2);
           }
@@ -722,13 +729,13 @@ public class CircuitComponents
       if(fromPos != null) {
         // Wire branch update
         final Vec3i v = pos.subtract(fromPos);
-        final Direction redstone_side = Direction.getNearest(v.getX(), v.getY(), v.getZ());
+        final Direction redstone_side = Direction.getApproximateNearest(v.getX(), v.getY(), v.getZ());
         final Direction left = getLeftFacing(state);
         final Direction right = getRightFacing(state);
         if((redstone_side != left) && (redstone_side != right)) return state;
         power_update_recursion_level_ = 0;
         final BlockPos npos = pos.relative(redstone_side);
-        world.getBlockState(npos).handleNeighborChanged(world, npos, this, pos, false);
+        world.getBlockState(npos).handleNeighborChanged(world, npos, this, null, false);
         final int pr = getInputPower(world, pos, right);
         final int pl = getInputPower(world, pos, left);
         final boolean track_powered = (pr>0) || (pl>0);

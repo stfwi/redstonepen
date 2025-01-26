@@ -9,18 +9,18 @@ package wile.redstonepen.blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -35,13 +35,13 @@ public class BasicGauge
   // BasicGaugeBlock
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class BasicGaugeBlock extends StandardBlocks.Cutout
+  public static class BasicGaugeBlock extends StandardBlocks.BaseBlock
   {
     public static final IntegerProperty POWER = BlockStateProperties.POWER;
 
     public BasicGaugeBlock(long config, BlockBehaviour.Properties properties)
     {
-      super(config, properties.isRedstoneConductor((w,p,s)->false));
+      super(config, properties.isRedstoneConductor((s,w,p)->false));
       registerDefaultState(defaultBlockState().setValue(POWER,0));
     }
 
@@ -67,7 +67,7 @@ public class BasicGauge
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving)
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, @Nullable Orientation orientation, boolean isMoving)
     {
       if(world.isClientSide) return;
       final int p = world.getBestNeighborSignal(pos);
@@ -76,10 +76,10 @@ public class BasicGauge
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction dir, BlockState fromState, LevelAccessor world_accessor, BlockPos pos, BlockPos fromPos)
+    public BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ta, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource rnd)
     {
-      if(!(world_accessor instanceof final ServerLevel world)) return state;
-      return state.setValue(POWER, world.getBestNeighborSignal(pos));
+      if(!(world instanceof final ServerLevel sworld)) return state;
+      return state.setValue(POWER, sworld.getBestNeighborSignal(pos));
     }
 
     // Forge Compliancy

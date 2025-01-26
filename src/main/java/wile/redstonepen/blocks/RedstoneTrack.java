@@ -21,11 +21,11 @@ import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -42,6 +42,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
@@ -49,7 +50,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.nbt.Tag;
-import org.joml.Vector3f;
 import wile.redstonepen.ModContent;
 import wile.redstonepen.blocks.RedstoneTrack.defs.connections;
 import wile.redstonepen.items.RedstonePenItem;
@@ -65,6 +65,8 @@ public class RedstoneTrack
   //--------------------------------------------------------------------------------------------------------------------
   // Definitions
   //--------------------------------------------------------------------------------------------------------------------
+
+  static final Orientation NO_ORIENTATION_YET = null;
 
   public static final class defs
   {
@@ -337,8 +339,8 @@ public class RedstoneTrack
 
   public static class RedstoneTrackBlock extends StandardBlocks.WaterLoggable implements EntityBlock
   {
-    public RedstoneTrackBlock(long config, BlockBehaviour.Properties builder)
-    { super(config, builder.pushReaction(PushReaction.DESTROY)); }
+    public RedstoneTrackBlock(long config, BlockBehaviour.Properties properties)
+    { super(config, properties.pushReaction(PushReaction.DESTROY)); }
 
     public static Optional<TrackBlockEntity> tile(BlockGetter world, BlockPos pos)
     { final BlockEntity te=world.getBlockEntity(pos); return (((te instanceof TrackBlockEntity) && (!te.isRemoved())) ? Optional.of((TrackBlockEntity)te) : Optional.empty()); }
@@ -408,16 +410,16 @@ public class RedstoneTrack
     { return Shapes.empty(); }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
+    public boolean propagatesSkylightDown(BlockState state)
     { return !state.getValue(WATERLOGGED); }
 
     @Override
     public boolean useShapeForLightOcclusion(BlockState state)
     { return true; }
 
-    @Override
-    public RenderShape getRenderShape(BlockState state)
-    { return RenderShape.ENTITYBLOCK_ANIMATED; }
+@Override
+public RenderShape getRenderShape(BlockState state)
+{ return RenderShape.MODEL; }
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos)
@@ -448,16 +450,16 @@ public class RedstoneTrack
     { if(!tile(world,pos).map(te->te.sync(false)).orElse(false)) world.removeBlock(pos, false); }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    public BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ta, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource rnd)
     {
       if(!world.isClientSide()) {
         if(tile(world, pos).map(te->te.handleShapeUpdate(facing, facingState, facingPos, false)).orElse(true)) {
-          world.scheduleTick(pos, this, 1);
-        } else {
-          world.removeBlock(pos, false);
+          ta.scheduleTick(pos, this, 1);
+        } else if(world instanceof ServerLevel sworld) {
+          sworld.removeBlock(pos, false);
         }
       }
-      return super.updateShape(state, facing, facingState, world, pos, facingPos);
+      return super.updateShape(state, world, ta, pos, facing, facingPos, facingState, rnd);
     }
 
     @Override
@@ -470,42 +472,36 @@ public class RedstoneTrack
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
+    public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult rtr)
     {
       // Allows removing a Redstone dust segment.
       return modifySegments(state, world, pos, player, ItemStack.EMPTY, InteractionHand.MAIN_HAND, rtr, true, false);
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    public InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(stack.is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
+        if(world.isClientSide) return InteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof TrackBlockEntity te) te.toggle_trace(player);
-        return ItemInteractionResult.CONSUME;
+        return InteractionResult.CONSUME;
       } else {
         // Place segment using Quill/Pen or Redstone dust.
-        return switch(modifySegments(state, world, pos, player, stack, hand, rtr, false, RedstonePenItem.isPen(stack))) {
-          case SUCCESS -> ItemInteractionResult.SUCCESS;
-          case CONSUME -> ItemInteractionResult.CONSUME;
-          case PASS -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-          case FAIL -> ItemInteractionResult.FAIL;
-          case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
-          case SUCCESS_NO_ITEM_USED -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        };
+        return modifySegments(state, world, pos, player, stack, hand, rtr, false, RedstonePenItem.isPen(stack));
       }
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston)
     {
+BlockPos fromPos = pos.relative(Direction.EAST);
       if(world.isClientSide()) return;
       try {
         final Map<BlockPos,BlockPos> blocks_to_update = tile(world, pos).map(te->te.handleNeighborChanged(fromPos)).orElse(Collections.emptyMap());
         if(blocks_to_update.isEmpty()) return;
         for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
           if(update_pos.getKey().equals(update_pos.getValue())) continue;
-          world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
+          world.neighborChanged(update_pos.getKey(), this, NO_ORIENTATION_YET);
         }
       } catch(Throwable ex) {
         Auxiliaries.logError("Track neighborChanged recursion detected, dropping!");
@@ -519,7 +515,8 @@ public class RedstoneTrack
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction from, Direction to, float minChance, float maxChance) {
+    private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, int color, Direction from, Direction to, float minChance, float maxChance)
+    {
       float f = maxChance - minChance;
       if(rand.nextFloat() < 0.3f * f) {
         double c1 = 0.4375;
@@ -527,7 +524,7 @@ public class RedstoneTrack
         double p0 = 0.5 + (c1 * from.getStepX()) + (c2*.4 * to.getStepX());
         double p1 = 0.5 + (c1 * from.getStepY()) + (c2*.4 * to.getStepY());
         double p2 = 0.5 + (c1 * from.getStepZ()) + (c2*.4 * to.getStepZ());
-        world.addParticle(new DustParticleOptions(new Vector3f(color.toVector3f()),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        world.addParticle(new DustParticleOptions(color,1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 
@@ -538,7 +535,7 @@ public class RedstoneTrack
       if(rand.nextFloat() > 0.4) return;
       final TrackBlockEntity te = tile(world,pos).orElse(null);
       if((te == null) || ((te.getStateFlags() & defs.STATE_FLAG_PWR_MASK) == 0)) return;
-      final Vec3 color = new Vec3(0.6f,0,0);
+      final int color = ARGB.colorFromFloat(1.0F, 0.6f,0,0);
       for(Direction side: Direction.values()) {
         int p = te.getSidePower(side);
         if(p == 0) continue;
@@ -556,7 +553,7 @@ public class RedstoneTrack
         if(behind_state.isRedstoneConductor(world, behind_pos)) {
           return behind_state.useWithoutItem(world, player, rtr);
         }
-        return InteractionResult.sidedSuccess(world.isClientSide());
+        return InteractionResult.SUCCESS;
       }
       if(world.isClientSide()) return InteractionResult.SUCCESS;
       if(!RedstonePenItem.hasEnoughRedstone(stack, 1, player)) no_add = !no_remove;
@@ -573,7 +570,7 @@ public class RedstoneTrack
         } else {
           final Map<BlockPos,BlockPos> blocks_to_update = te.updateAllPowerValuesFromAdjacent();
           for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
-            world.neighborChanged(update_pos.getKey(), this, update_pos.getValue());
+            world.neighborChanged(update_pos.getKey(), this, NO_ORIENTATION_YET/*update_pos.getValue()*/);
           }
         }
         world.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.4f, 2f);
@@ -601,14 +598,14 @@ public class RedstoneTrack
       world.updateNeighborsAt(pos, this);
       for(Direction dir0: BlockBehaviour.UPDATE_SHAPE_ORDER) {
         BlockPos ppos = pos.relative(dir0);
-        world.updateNeighborsAtExceptFromFacing(ppos, world.getBlockState(ppos).getBlock(), dir0.getOpposite());
+        world.updateNeighborsAtExceptFromFacing(ppos, world.getBlockState(ppos).getBlock(), dir0.getOpposite(), NO_ORIENTATION_YET);
         for(Direction dir1: BlockBehaviour.UPDATE_SHAPE_ORDER) {
           if(dir0 == dir1.getOpposite()) return;
           ppos = pos.relative(dir0).relative(dir1);
           if(ppos == pos) continue;
           final BlockState diagonal_state = world.getBlockState(ppos);
           if(diagonal_state.getBlock() != this) continue;
-          world.neighborChanged(ppos, this, pos);
+          world.neighborChanged(ppos, this, NO_ORIENTATION_YET/*pos*/);
         }
       }
     }
@@ -835,7 +832,7 @@ public class RedstoneTrack
           case SOUTH, NORTH -> hit_r.multiply(1, 1, 0);
           default           -> hit_r.multiply(1, 0, 1);
         };
-        final Direction dir = Direction.getNearest(hit.x(), hit.y(), hit.z());
+        final Direction dir = Direction.getApproximateNearest(hit.x(), hit.y(), hit.z());
         final boolean face_is_empty = (getWireFlags() & defs.connections.getAllElementsOnFace(face)) == 0;
         if((!no_bulk) && (!face_is_empty) && (hit.length() < 0.10) && ((!no_add) || (getConnectionFlags()!=0))) {
           // Centre connection
@@ -916,14 +913,14 @@ public class RedstoneTrack
           nets_.forEach(net->{ if(net.internal_sides.contains(face)) net.power=0; });
           disconnected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
-            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), pos, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), NO_ORIENTATION_YET /*pos*/, false);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
           });
           connected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
-            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), pos, false);
-            getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), p, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), NO_ORIENTATION_YET /*pos*/, false);
+            getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), NO_ORIENTATION_YET/*p*/, false);
           });
         }
         sync(true);
@@ -966,7 +963,7 @@ public class RedstoneTrack
       return all_change_notifications;
     }
 
-    private void spawnRedstoneItems(int count)
+    private void spawnRedsoneItems(int count)
     {
       if(count <= 0) return;
       final ItemEntity e = new ItemEntity(getLevel(), getBlockPos().getX()+.5, getBlockPos().getY()+.5, getBlockPos().getZ()+.5, new ItemStack(Items.REDSTONE, count));
@@ -989,7 +986,7 @@ public class RedstoneTrack
           int count = getRedstoneDustCount();
           state_flags_ = new_flags;
           count -= getRedstoneDustCount();
-          spawnRedstoneItems(count);
+          spawnRedsoneItems(count);
           updateConnections(1);
           update_neighbours = true;
         }
@@ -1005,7 +1002,7 @@ public class RedstoneTrack
       if(update_neighbours) {
         final Level world = getLevel();
         final Block block = getBlock();
-        handleNeighborChanged(fromPos).forEach((chpos, frpos)->world.neighborChanged(chpos, block, frpos));
+        handleNeighborChanged(fromPos).forEach((chpos, frpos)->world.neighborChanged(chpos, block, NO_ORIENTATION_YET/*frpos*/));
       }
       return (getWireFlags()!=0);
     }
@@ -1053,9 +1050,8 @@ public class RedstoneTrack
     {
       final Map<BlockPos,BlockPos> notifications = new LinkedHashMap<>();
       nets_.stream().filter(net->net.neighbour_positions.contains(fromPos)).forEach((net)->handleNetNeighborChanged(net, fromPos, null, notifications));
-      final BlockState fst = getLevel().getBlockState(fromPos);
-      if(fst.is(getBlock()) || fst.isSignalSource()) notifications.remove(fromPos);
-      if(trace_ && (notifications.size() > 0)) Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), notifications.entrySet().stream().map(kv-> posstr(kv.getValue())+">"+posstr(kv.getKey())).collect(Collectors.joining(", "))));
+      notifications.remove(fromPos);
+      if(trace_ && (!notifications.isEmpty())) Auxiliaries.logWarn(String.format("NBCH: %s updates: [%s]", posstr(getBlockPos()), notifications.entrySet().stream().map(kv-> posstr(kv.getValue())+">"+posstr(kv.getKey())).collect(Collectors.joining(", "))));
       return notifications;
     }
 
@@ -1118,7 +1114,7 @@ public class RedstoneTrack
               te.handleNetNeighborChanged(nb_net, my_pos, net, change_notifications);
             }
           } else {
-            world.getBlockState(neighbor.pos).handleNeighborChanged(world, neighbor.pos, getBlock(), my_pos, false);
+            world.getBlockState(neighbor.pos).handleNeighborChanged(world, neighbor.pos, getBlock(), NO_ORIENTATION_YET/*my_pos*/, false);
           }
         } else {
           change_notifications.putIfAbsent(neighbor.pos, my_pos);
@@ -1292,6 +1288,7 @@ public class RedstoneTrack
                   ext_sides.add(tdir.getOpposite()); // real face.
                   int_sides.add(side);
                   pwr_sides.add(tdir);
+                  continue;
                 }
               }
             }
@@ -1356,7 +1353,7 @@ public class RedstoneTrack
         all_neighbours.forEach((pos)->{
           final BlockState st = world.getBlockState(pos);
           if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE TRACK CHANGES TO %s.", posstr(getBlockPos()), posstr(pos)));
-          st.handleNeighborChanged(world, pos, state.getBlock(), getBlockPos(), false);
+          st.handleNeighborChanged(world, pos, state.getBlock(), NO_ORIENTATION_YET/*getBlockPos()*/, false);
           world.updateNeighborsAt(pos, st.getBlock());
         });
       }

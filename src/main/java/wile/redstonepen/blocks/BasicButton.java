@@ -59,7 +59,7 @@ public class BasicButton
       world.setBlock(pos, state.setValue(POWERED, true), 1|2);
       this.press(state, world, pos, player);
       if(world.isClientSide) makeParticle(state, world, pos, 1.0f);
-      return InteractionResult.sidedSuccess(world.isClientSide);
+      return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -72,8 +72,8 @@ public class BasicButton
     {
       for(int i=0; i<3; ++i) {
         final Vec3 vpos = Vec3.atCenterOf(pos)
-          .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getNormal()).scale(0.1))
-          .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getNormal()).scale(0.4));
+          .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getUnitVec3i()).scale(0.1))
+          .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getUnitVec3i()).scale(0.4));
         world.addParticle(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, f), vpos.x(), vpos.y(), vpos.z(), 0.0, 0.0, 0.0);
       }
     }

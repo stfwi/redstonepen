@@ -129,7 +129,7 @@ public class ModRedstonePen
     @SubscribeEvent
     public static void onRegisterModels(final ModelEvent.RegisterAdditional event)
     {
-      wile.redstonepen.detail.ModRenderers.TrackTer.registerModels().forEach(event::register);
+      wile.redstonepen.detail.ModRenderers.TrackTer.registerModels().forEach((mrl)->event.register(mrl.id()));
     }
   }
 

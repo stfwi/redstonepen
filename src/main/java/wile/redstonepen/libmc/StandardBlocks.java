@@ -15,15 +15,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -34,7 +32,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
@@ -147,17 +144,17 @@ public class StandardBlocks
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
-    { return (((config & CFG_WATERLOGGABLE)==0) || (!state.getValue(WATERLOGGED))) && super.propagatesSkylightDown(state, reader, pos); }
+    public boolean propagatesSkylightDown(BlockState state)
+    { return (((config & CFG_WATERLOGGABLE)==0) || (!state.getValue(WATERLOGGED))) && super.propagatesSkylightDown(state); }
 
     @Override
     public FluidState getFluidState(BlockState state)
     { return (((config & CFG_WATERLOGGABLE)!=0) && state.getValue(WATERLOGGED)) ? Fluids.WATER.getSource(false) : super.getFluidState(state); }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    public BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ta, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource rnd)
     {
-      if(((config & CFG_WATERLOGGABLE)!=0) && (state.getValue(WATERLOGGED))) world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+      if(((config & CFG_WATERLOGGABLE)!=0) && (state.getValue(WATERLOGGED))) ta.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
       return state;
     }
 
@@ -223,12 +220,12 @@ public class StandardBlocks
     { return false; }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
+    public boolean propagatesSkylightDown(BlockState state)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
         if(state.getValue(WATERLOGGED)) return false;
       }
-      return super.propagatesSkylightDown(state, reader, pos);
+      return super.propagatesSkylightDown(state);
     }
 
     @Override
@@ -241,10 +238,10 @@ public class StandardBlocks
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    public BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ta, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource rnd)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
-        if(state.getValue(WATERLOGGED)) world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+        if(state.getValue(WATERLOGGED)) ta.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
       }
       return state;
     }
@@ -271,7 +268,7 @@ public class StandardBlocks
 
   public static class Directed extends Cutout implements IStandardBlock
   {
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     protected final Map<BlockState,VoxelShape> vshapes;
 
     public Directed(long config, BlockBehaviour.Properties properties, final Function<List<BlockState>, Map<BlockState,VoxelShape>> shape_supplier)
@@ -418,7 +415,7 @@ public class StandardBlocks
 
   public static class Horizontal extends Cutout implements IStandardBlock
   {
-    public static final DirectionProperty HORIZONTAL_FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> HORIZONTAL_FACING = BlockStateProperties.HORIZONTAL_FACING;
     protected final Map<BlockState,VoxelShape> vshapes;
     protected final Map<BlockState,VoxelShape> cshapes;
 

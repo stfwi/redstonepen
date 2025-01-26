@@ -15,7 +15,9 @@ build
 *.log
 *.jks
 eclipse
+repo
 run
+run-data
 tests
 signing.*
 src/main/java/archive
@@ -36,8 +38,3 @@ desktop.ini
 Thumbs.db
 forge*changelog.txt
 /*.txt
-
-## Initial testing:
-# RedstoneTrack.java
-# ControlBox.java
-# CircuitComponents.java

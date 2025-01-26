@@ -234,7 +234,7 @@ public class Auxiliaries
 
     @OnlyIn(Dist.CLIENT)
     public static boolean addInformation(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
-    { return addInformation(stack.getDescriptionId(), stack.getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
+    { return addInformation(stack.getItem().getDescriptionId(), stack.getItem().getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
   }
 
   @SuppressWarnings("unused")
@@ -274,7 +274,6 @@ public class Auxiliaries
   public static CompoundTag getItemStackNbt(ItemStack stack, String key)
   {
     final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
-    if(nbt==null) return new CompoundTag();
     final Tag data = nbt.get(key);
     if((data==null) || (data.getId() != CompoundTag.TAG_COMPOUND)) return new CompoundTag();
     return (CompoundTag)data.copy();

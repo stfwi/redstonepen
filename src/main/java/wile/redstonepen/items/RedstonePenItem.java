@@ -62,14 +62,6 @@ public class RedstonePenItem extends StandardItems.BaseItem
   }
 
   @Override
-  public int getEnchantmentValue()
-  { return 0; }
-
-  @Override
-  public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair)
-  { return false; }
-
-  @Override
   public boolean isBarVisible(ItemStack stack)
   { return stack.isDamageableItem() && (stack.getDamageValue()>0); }
 
