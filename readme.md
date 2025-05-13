@@ -4,6 +4,13 @@
 A [Minecraft](https://minecraft.net) (Java Edition) mod adding a pen to draw
 Redstone tracks more accurately. Inspired by the Redstone Paste mod.
 
+## Mod EOL Notifier
+
+Hey ladies && guys, here a notifier for you that I discontinue modding, so the 
+versions `redstonepen-1.21.1-fabric-1.11.43` and `redstonepen-1.21-neoforge-1.11.42`
+***are the final releases*** (available on Curse and Modrinth). MC Java coding and 
+being active in such a vivid and cool community was really a fun hobby. Cheers, WilE.
+
 ## Distribution file download
 
 Main distribution channels for this mod:
